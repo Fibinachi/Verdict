@@ -1,0 +1,229 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Legal Database with IPC sections and U.S. Federal Law citations",
+    "lastUpdated": "2024-01-01"
+  },
+  "citations": [
+    {
+      "id": "ipc-302",
+      "code": "IPC Section",
+      "section": "302",
+      "title": "Murder",
+      "text": "Whoever commits murder shall be punished with death, or imprisonment for life, and shall also be liable to fine.",
+      "description": "Punishment for murder - death or life imprisonment",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["murder", "homicide", "death", "killing", "life imprisonment"]
+    },
+    {
+      "id": "ipc-304",
+      "code": "IPC Section",
+      "section": "304",
+      "title": "Culpable Homicide Not Amounting to Murder",
+      "text": "Whoever commits culpable homicide not amounting to murder shall be punished with imprisonment for life, or imprisonment of either description for a term which may extend to ten years, and shall also be liable to fine.",
+      "description": "Punishment for culpable homicide not amounting to murder",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["culpable homicide", "manslaughter", "death", "killing", "not murder"]
+    },
+    {
+      "id": "ipc-320",
+      "code": "IPC Section",
+      "section": "320",
+      "title": "Grievous Hurt",
+      "text": "Grievous hurt is whoever causes permanent injury, causes any permanent loss of sight or hearing, leaves person disfigured, or causes any ailment that endangers life.",
+      "description": "Definition of grievous hurt - permanent injury",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["grievous hurt", "permanent injury", "disfigurement", "serious injury"]
+    },
+    {
+      "id": "ipc-34",
+      "code": "IPC Section",
+      "section": "34",
+      "title": "Acts Done by Several Persons in Furtherance of Common Intention",
+      "text": "When a criminal act is done by several persons in furtherance of the common intention of all, each of such persons is liable for that act in the same manner as if it were done by him alone.",
+      "description": "Common intention - joint liability",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["common intention", "joint", "conspiracy", "multiple persons"]
+    },
+    {
+      "id": "ipc-38",
+      "code": "IPC Section",
+      "section": "38",
+      "title": "Good Faith",
+      "text": "Nothing is an offence done by a person who is bound by law to do it, or by mistake of fact believing himself bound by such law.",
+      "description": "Good faith defence",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["good faith", "mistake of fact", "lawful"]
+    },
+    {
+      "id": "ipc-420",
+      "code": "IPC Section",
+      "section": "420",
+      "title": "Cheating and Dishonestly Inducing Delivery of Property",
+      "text": "Whoever cheats and thereby induces the person deceived to deliver any property, shall be punished with imprisonment of either description for a term which may extend to seven years, and shall also be liable to fine.",
+      "description": "Fraud and cheating charges",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["cheating", "fraud", "deception", "property", "theft", "scam"]
+    },
+    {
+      "id": "ipc-376",
+      "code": "IPC Section",
+      "section": "376",
+      "title": "Rape",
+      "text": "Whoever commits rape shall be punished with rigorous imprisonment of not less than seven years, which may extend to life, and shall also be liable to fine.",
+      "description": "Punishment for rape",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["rape", "sexual assault", "molestation"]
+    },
+    {
+      "id": "ipc-379",
+      "code": "IPC Section",
+      "section": "379",
+      "title": "Theft",
+      "text": "Whoever, intending to take dishonestly any movable property out of the possession of a person without that person's consent, moves that property, commits theft.",
+      "description": "Theft - taking property dishonestly",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["theft", "stealing", "dishonest", "property", "robbery"]
+    },
+    {
+      "id": "ipc-406",
+      "code": "IPC Section",
+      "section": "406",
+      "title": "Criminal Breach of Trust",
+      "text": "Whoever, being in any manner entrusted with property, or with any dominion over property, dishonestly misappropriates or converts to his own use, shall be punished.",
+      "description": "Criminal breach of trust",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["breach of trust", "misappropriation", "embezzlement", "fiduciary"]
+    },
+    {
+      "id": "ipc-441",
+      "code": "IPC Section",
+      "section": "441",
+      "title": "Criminal Trespass",
+      "text": "Whoever enters into or upon property in the possession of another with intent to commit an offence, or to intimidate, insult or annoy any person, commits criminal trespass.",
+      "description": "Criminal trespass",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["trespass", "entry", "unlawful", "property", "invasion"]
+    },
+    {
+      "id": "ipc-498a",
+      "code": "IPC Section",
+      "section": "498A",
+      "title": "Husband or Relative of Husband Subjecting Wife to Cruelty",
+      "text": "Whoever, being the husband or the relative of the husband of a woman, subjects such woman to cruelty shall be punished with imprisonment for a term which may extend to three years and shall also be liable to fine.",
+      "description": "Domestic cruelty - wife harassment",
+      "jurisdiction": "India",
+      "category": "Criminal",
+      "keywords": ["dowry", "cruelty", "domestic violence", "harassment", "wife"]
+    },
+    {
+      "id": "us-18-101",
+      "code": "18 U.S.C.",
+      "section": "101",
+      "title": "Definitions",
+      "text": "As used in this title, the term 'person' includes any individual, corporation, company, association, firm, partnership, society, or joint stock company.",
+      "description": "Federal criminal law definitions",
+      "jurisdiction": "United States Federal",
+      "category": "Criminal",
+      "keywords": ["definition", "person", "corporation", "federal"]
+    },
+    {
+      "id": "us-18-1035",
+      "code": "18 U.S.C.",
+      "section": "1035",
+      "title": "False Statements to Healthcare Matters",
+      "text": "Whoever, in any matter involving a health care benefit program, knowingly and willfully falsifies or conceals a material fact, shall be fined or imprisoned up to 5 years.",
+      "description": "Healthcare fraud",
+      "jurisdiction": "United States Federal",
+      "category": "Criminal",
+      "keywords": ["healthcare", "fraud", "false statements", "medical"]
+    },
+    {
+      "id": "us-18-1341",
+      "code": "18 U.S.C.",
+      "section": "1341",
+      "title": "Mail Fraud",
+      "text": "Whoever, having devised or intending to devise any scheme or artifice to defraud, uses the mail for the execution of such scheme, shall be fined and imprisoned up to 20 years.",
+      "description": "Mail fraud statute",
+      "jurisdiction": "United States Federal",
+      "category": "Criminal",
+      "keywords": ["mail fraud", "fraud", "scheme", "defraud"]
+    },
+    {
+      "id": "us-18-1343",
+      "code": "18 U.S.C.",
+      "section": "1343",
+      "title": "Fraud by Wire, Radio, or Television",
+      "text": "Whoever, having devised or intending to devise a scheme to defraud, transmits or causes to be transmitted by wire, radio, or television in interstate commerce, shall be fined and imprisoned.",
+      "description": "Wire fraud statute",
+      "jurisdiction": "United States Federal",
+      "category": "Criminal",
+      "keywords": ["wire fraud", "fraud", "electronic", "interstate"]
+    },
+    {
+      "id": "us-18-1956",
+      "code": "18 U.S.C.",
+      "section": "1956",
+      "title": "Money Laundering",
+      "text": "Whoever knowingly conducts or attempts to conduct a financial transaction knowing the property involved represents proceeds of unlawful activity, shall be fined.",
+      "description": "Money laundering statute",
+      "jurisdiction": "United States Federal",
+      "category": "Criminal",
+      "keywords": ["money laundering", "launder", "proceeds", "illegal"]
+    },
+    {
+      "id": "us-18-1961",
+      "code": "18 U.S.C.",
+      "section": "1961",
+      "title": "Racketeering",
+      "text": "The term 'racketeering activity' means any act or threat involving murder, kidnapping, gambling, arson, robbery, bribery, extortion, or dealing in narcotic drugs.",
+      "description": "RICO Act definitions",
+      "jurisdiction": "United States Federal",
+      "category": "Criminal",
+      "keywords": ["racketeering", "RICO", "organized crime", "extortion"]
+    },
+    {
+      "id": "us-21-841",
+      "code": "21 U.S.C.",
+      "section": "841",
+      "title": "Controlled Substances",
+      "text": "It is unlawful for any person to knowingly or intentionally manufacture, distribute, or dispense a controlled substance.",
+      "description": "Drug possession and distribution",
+      "jurisdiction": "United States Federal",
+      "category": "Criminal",
+      "keywords": ["controlled substance", "drugs", "narcotics", "marijuana", "cocaine"]
+    },
+    {
+      "id": "us-26-7201",
+      "code": "26 U.S.C.",
+      "section": "7201",
+      "title": "Tax Evasion",
+      "text": "Any person who willfully attempts to evade or defeat any tax shall be guilty of a felony and fined up to $100,000.",
+      "description": "Tax evasion statute",
+      "jurisdiction": "United States Federal",
+      "category": "Criminal",
+      "keywords": ["tax evasion", "tax fraud", "IRS", "income tax"]
+    },
+    {
+      "id": "us-42-1983",
+      "code": "42 U.S.C.",
+      "section": "1983",
+      "title": "Civil Action for Deprivation of Rights",
+      "text": "Every person who, under color of law, subjects any person to the deprivation of rights, shall be liable in a civil action.",
+      "description": "Civil rights violations - Section 1983",
+      "jurisdiction": "United States Federal",
+      "category": "Civil",
+      "keywords": ["section 1983", "civil rights", "constitutional", "deprivation"]
+    }
+  ]
+}

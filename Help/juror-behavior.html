@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juror Behavior - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        .bar-container { background: #243342; border-radius: 6px; height: 20px; margin-bottom: 10px; overflow: hidden; }
+        .bar { height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: bold; color: #1B2631; }
+        .bar-green { background: #2ECC71; }
+        .bar-blue { background: #3498DB; }
+        .bar-red { background: #E74C3C; }
+        .metric { background: #243342; border-radius: 6px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #3498DB; }
+        .metric h3 { margin-top: 0; color: #2ECC71; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Juror Behavior</h1>
+
+        <p>Jurors in Verdict are sophisticated AI-driven agents with individual personalities, biases, and decision-making processes. Understanding how jurors form opinions is key to running a realistic simulation.</p>
+
+        <div class="metric">
+            <h3>Sentiment (0% - 100%)</h3>
+            <p>Sentiment represents the juror's overall attitude toward the case. It is influenced by:</p>
+            <ul>
+                <li>Evidence presented and its perceived strength.</li>
+                <li>Witness testimony and credibility.</li>
+                <li>Attorney arguments and effectiveness.</li>
+                <li>The juror's inherent biases and background.</li>
+            </ul>
+            <p>A higher percentage indicates a more positive sentiment toward the plaintiff/prosecution's case.</p>
+            <div class="bar-container">
+                <div class="bar bar-green" style="width: 72%;">72% Sentiment</div>
+            </div>
+        </div>
+
+        <div class="metric">
+            <h3>Verdict Lean (0% - 100%)</h3>
+            <p>Verdict lean indicates which way the juror is leaning:</p>
+            <ul>
+                <li><strong>0%</strong> &mdash; Strongly favors the Defense.</li>
+                <li><strong>50%</strong> &mdash; Neutral / Undecided.</li>
+                <li><strong>100%</strong> &mdash; Strongly favors the Plaintiff/Prosecution.</li>
+            </ul>
+            <p>Verdict lean is the primary indicator of how a juror is likely to vote if the trial ended today.</p>
+            <div class="bar-container">
+                <div class="bar bar-blue" style="width: 65%;">65% Plaintiff Lean</div>
+            </div>
+        </div>
+
+        <div class="metric">
+            <h3>Bias (-1.0 to +1.0)</h3>
+            <p>Bias represents the juror's inherent predisposition:</p>
+            <ul>
+                <li><strong>-1.0</strong> &mdash; Strong bias toward the Defense.</li>
+                <li><strong>0.0</strong> &mdash; Neutral / No inherent bias.</li>
+                <li><strong>+1.0</strong> &mdash; Strong bias toward the Plaintiff/Prosecution.</li>
+            </ul>
+            <p>Bias is influenced by the juror's demographics, background memories, and personality traits. It acts as a baseline that trial events modify over time.</p>
+        </div>
+
+        <div class="metric">
+            <h3>Memories vs. Trial Events</h3>
+            <p>Jurors have two types of memory stores:</p>
+            <ul>
+                <li><strong>Background Memories</strong> &mdash; Pre-existing knowledge, experiences, and beliefs that shape the juror's worldview. These are set when the juror is created.</li>
+                <li><strong>Trial Events</strong> &mdash; Memories created during the trial process, tagged with <code>Source = "TrialEvent"</code>. These include evidence presentations, witness testimony, and arguments.</li>
+            </ul>
+            <p>Both types of memories influence the juror's sentiment and verdict lean, but trial events have a more immediate impact.</p>
+        </div>
+
+        <div class="metric">
+            <h3>Memory Decay (0.95)</h3>
+            <p>Memories in Verdict undergo decay over time. The decay factor is <strong>0.95</strong>, meaning that each memory's influence gradually diminishes. This simulates the natural human tendency to forget or deprioritize older information.</p>
+            <p>More recent memories have a stronger influence on the juror's current sentiment and verdict lean than older ones.</p>
+        </div>
+
+        <div class="metric">
+            <h3>Demographic Influence</h3>
+            <p>A juror's demographics (age, gender, occupation, education, income, region) influence their biases and how they interpret evidence. For example:</p>
+            <ul>
+                <li>Education level may affect how a juror processes complex evidence.</li>
+                <li>Occupation may give a juror specialized knowledge relevant to the case.</li>
+                <li>Regional background may influence cultural perspectives and values.</li>
+            </ul>
+            <p>When you use the <strong>Generate Jury</strong> button, jurors are created with diverse demographics to create a realistic cross-section of the population.</p>
+        </div>
+
+        <div class="metric">
+            <h3>Model Weight Calibration</h3>
+            <p>Verdict uses configurable bias factor weights to calibrate how strongly juror demographics and background influence opinion formation and evidence interpretation. The default values are based on established jury research that identifies which attributes tend to have the largest measurable effects in voir dire and verdict prediction.</p>
+            <ul>
+                <li><strong>Age</strong> &mdash; Older jurors often display greater skepticism and risk aversion, while younger jurors may be more receptive to plaintiff narratives.</li>
+                <li><strong>Gender</strong> &mdash; Gender can affect empathy, credibility assessments, and perceptions of harm.</li>
+                <li><strong>Education Level</strong> &mdash; Higher education is strongly correlated with better evidence comprehension and a greater ability to parse complex legal issues.</li>
+                <li><strong>Income Level</strong> &mdash; Economic status influences attitudes toward damages, liability, and authority.</li>
+                <li><strong>Political Affiliation</strong> &mdash; Ideology is one of the strongest predictors of juror attitudes about punishment, authority, and personal responsibility.</li>
+                <li><strong>Ethnicity</strong> &mdash; Race and ethnicity shape credibility judgments, fairness perceptions, and juror empathy.</li>
+                <li><strong>Religion</strong> &mdash; Religious belief influences moral judgement, harm assessment, and views on wrongdoing.</li>
+                <li><strong>Juror Experience</strong> &mdash; Prior jury service and familiarity with courtroom process affect confidence, deliberation style, and susceptibility to persuasion.</li>
+                <li><strong>Legal Knowledge</strong> &mdash; Greater legal familiarity improves evidence interpretation and reduces confusion from instructions.</li>
+                <li><strong>Professional Background</strong> &mdash; Occupation and expertise affect how jurors weight technical evidence and expert testimony.</li>
+                <li><strong>Community Ties</strong> &mdash; Local connections and civic engagement influence trust in the process and attachment to community norms.</li>
+                <li><strong>Communication Style</strong> &mdash; Jurors respond to clarity, narrative coherence, emotional tone, and speaker credibility.</li>
+            </ul>
+<p>Further reading and research summaries are available from authoritative jury research sources:</p>
+             <ul>
+                 <li><a href="juror-bias-research.html">VERDICT Juror Bias Research Documentation</a> &mdash; Detailed research findings and default weight values used in this application.</li>
+                 <li><a href="https://www.americanbar.org/groups/jury/" target="_blank" rel="noopener">American Bar Association Jury Research</a></li>
+                 <li><a href="https://www.ncsc.org/Topics/Jury/Research" target="_blank" rel="noopener">National Center for State Courts Jury Research</a></li>
+                 <li><a href="https://www.apa.org/pubs/journals/law" target="_blank" rel="noopener">APA Law and Human Behavior Journal</a></li>
+             </ul>
+        </div>
+
+        <div class="note">
+            <strong>Tip:</strong> Monitor juror sentiment and verdict lean throughout the trial using the Juror Report. This allows you to adjust your strategy to persuade undecided jurors or reinforce support from favorable ones.
+        </div>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

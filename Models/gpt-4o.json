@@ -1,0 +1,12 @@
+{
+  "FriendlyName": "GPT-4o",
+  "Provider": "OpenAI",
+  "ModelId": "gpt-4o",
+  "Endpoint": "https://api.openai.com/v1",
+  "ApiKey": "",
+  "Status": "Ready",
+  "CustomSettings": {
+    "Temperature": "0.7",
+    "MaxTokens": "4096"
+  }
+}

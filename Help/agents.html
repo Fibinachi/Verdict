@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agents - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Agents Overview</h1>
+
+        <p>Agents are the characters that populate your courtroom. Each agent has a role (Judge, Juror, Attorney, Witness, etc.), a profile with prompts and memories, and can be assigned to a specific seat in the courtroom layout.</p>
+
+        <h2>Adding Agents</h2>
+        <p>To add an agent to an empty seat:</p>
+        <ol>
+            <li>Click the <strong>"+"</strong> button on any empty seat in the courtroom.</li>
+            <li>The <strong>Agent Profile Window</strong> opens, allowing you to configure the agent's details.</li>
+            <li>Fill in the agent's name, role, and other profile information.</li>
+            <li>Click <strong>Save</strong> to place the agent in the seat.</li>
+        </ol>
+
+        <h2>Editing Agent Profiles</h2>
+        <p>To edit an existing agent:</p>
+        <ol>
+            <li><strong>Right-click</strong> on the agent's seat.</li>
+            <li>Select <strong>Edit Profile</strong> from the context menu.</li>
+            <li>The Agent Profile Window opens with the current settings pre-filled.</li>
+            <li>Modify the agent's name, prompt, memories, or settings as needed.</li>
+            <li>Click <strong>Save</strong> to apply changes.</li>
+        </ol>
+
+        <h2>Saving Characters (.VCS Files)</h2>
+        <p>You can save any agent as a reusable character profile:</p>
+        <ol>
+            <li><strong>Right-click</strong> on the agent's seat.</li>
+            <li>Select <strong>Save as Character .VCS</strong> from the context menu.</li>
+            <li>The agent's profile (prompts, memories, settings) is saved as a <code>.vcs</code> (Verdict Character Settings) file in the <code>/Characters</code> repository.</li>
+            <li>Saved characters can be loaded later to quickly populate seats with pre-configured agents.</li>
+        </ol>
+
+        <h2>Deleting Agents</h2>
+        <p>To remove an agent from a seat:</p>
+        <ol>
+            <li><strong>Right-click</strong> on the agent's seat.</li>
+            <li>Select <strong>Delete</strong> from the context menu.</li>
+            <li>The agent is removed from the seat. Note that this does not delete saved character files.</li>
+        </ol>
+
+        <h2>Other Context Menu Options</h2>
+        <ul>
+            <li><strong>Chat</strong> &mdash; Opens the Agent Chat window for LLM-powered conversation with the agent.</li>
+            <li><strong>Juror Report</strong> &mdash; (Juror seats only) Opens the Juror Report window showing sentiment, verdict lean, and memories.</li>
+            <li><strong>Generate Likely Juror</strong> &mdash; (Juror seats only) Automatically generates a juror profile with demographic data.</li>
+            <li><strong>Save to Casefile</strong> &mdash; Saves the agent's current state into the case file.</li>
+        </ul>
+
+        <h2>Agent Roles</h2>
+        <p>Available agent roles include: Judge, Juror, Attorney (Prosecution/Plaintiff), Attorney (Defense), Witness, Court Reporter, Clerk, Observer, and Client. Each role has specific behaviors and interactions within the simulation.</p>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

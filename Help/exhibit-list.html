@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exhibit List - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #34495E; }
+        th { background: #243342; color: #3498DB; font-weight: bold; }
+        td { color: #ECF0F1; }
+        tr:hover td { background: #2C3E50; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Exhibit List</h1>
+
+        <p>The Exhibit List provides a comprehensive view of all evidence submitted in the current case. It is accessible from the Case menu.</p>
+
+        <h2>Opening the Exhibit List</h2>
+        <ol>
+            <li>Click the <strong>Case</strong> menu in the main menu bar.</li>
+            <li>Select <strong>_Exhibit List</strong> from the dropdown menu.</li>
+            <li>The <strong>ExhibitListWindow</strong> opens, displaying all evidence in a table format.</li>
+        </ol>
+
+        <h2>Table Columns</h2>
+        <p>The Exhibit List displays evidence in a <code>ListView</code> with the following columns:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Column</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Exhibit #</strong></td>
+                    <td>A sequential number assigned to each piece of evidence when submitted.</td>
+                </tr>
+                <tr>
+                    <td><strong>File Name</strong></td>
+                    <td>The original filename of the submitted evidence document or image.</td>
+                </tr>
+                <tr>
+                    <td><strong>Summary</strong></td>
+                    <td>A brief AI-generated summary of the evidence content.</td>
+                </tr>
+                <tr>
+                    <td><strong>Clerk Notes</strong></td>
+                    <td>Any notes added by the clerk or user regarding the evidence.</td>
+                </tr>
+                <tr>
+                    <td><strong>Strength</strong></td>
+                    <td>An AI-assessed strength rating indicating how compelling the evidence is.</td>
+                </tr>
+                <tr>
+                    <td><strong>Admitted</strong></td>
+                    <td>A checkbox or indicator showing whether the evidence has been formally admitted into the case.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Using the Exhibit List</h2>
+        <ul>
+            <li>Review all submitted evidence in one centralized location.</li>
+            <li>Check the <strong>Strength</strong> column to identify the most compelling evidence for your arguments.</li>
+            <li>Use the <strong>Admitted</strong> status to track which evidence has been formally entered into the record.</li>
+            <li>Refer to exhibit numbers when referencing evidence during trial proceedings.</li>
+        </ul>
+
+        <div class="note">
+            <strong>Tip:</strong> The Exhibit List is read-only for viewing. To add new evidence, use the ADMIT EVIDENCE button or drag files onto the Clerk seat in the main courtroom.
+        </div>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

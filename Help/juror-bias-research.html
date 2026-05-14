@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juror Bias Research - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #34495E; }
+        th { background: #243342; color: #2ECC71; }
+        tr:hover { background: #243342; }
+        .citation { font-size: 0.9em; color: #95A5A6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Juror Bias Research</h1>
+        
+        <p>This documentation summarizes peer-reviewed research on how demographic and psychological factors affect juror perception and decision-making in courtroom simulations. The findings inform the default weight values used in the VERDICT bias factor system.</p>
+
+        <h2>Key Research Studies</h2>
+
+        <h3>Political Affiliation and Ideology</h3>
+        <p><strong>Primary Finding</strong>: Political ideology significantly influences verdict decisions, with measurable effects on conviction rates.</p>
+        <ul>
+            <li><strong>Forresta (2025)</strong> - "Beyond a reasonable doubt: the impact of jurors' political affiliations on jury trials" (Journal of Law and Economics):
+                <ul>
+                    <li>Independent jurors decrease guilty verdicts by 2.93%</li>
+                    <li>Democratic jurors show a negative but not statistically significant impact on conviction rates</li>
+                    <li>Democratic jurors are 3.7 percentage points more likely to be removed from a seated jury</li>
+                </ul>
+            </li>
+            <li><strong>Politics in the Courtroom (2018)</strong> - Swedish study on political party affiliation:
+                <ul>
+                    <li>Far-right Swedish Democrat jurors increased convictions by 17 percentage points for defendants with Arabic names</li>
+                    <li>Far-left Vänster party increased convictions by 14 percentage points with female victims</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>Religious Affiliation and Religiosity</h3>
+        <p><strong>Primary Finding</strong>: Religious identity and depth of religious commitment affect verdict decisions and witness credibility assessments.</p>
+        <ul>
+            <li><strong>House of Worship Mass Shooting (2024)</strong> - Pozzulo et al.:
+                <ul>
+                    <li>Christian defendants received more guilty verdicts than Muslim defendants</li>
+                    <li>Moral outrage partially mediated defendant religion effects</li>
+                </ul>
+            </li>
+            <li><strong>Religious Oath Studies</strong> - Fraser & Fehr:
+                <ul>
+                    <li>Jurors more likely to trust witnesses who give religious oaths</li>
+                    <li>Religious fundamentalism associated with discrimination against religious out-groups</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>Race and Ethnicity</h3>
+        <p><strong>Primary Finding</strong>: Racial bias significantly impacts juror decision-making, with white-dominated juries showing higher conviction rates against non-white defendants.</p>
+        <ul>
+            <li><strong>Indigenous Canadians Study (2025)</strong> - Vettese, Pica, &amp; Pozzulo:
+                <ul>
+                    <li>Racial bias scores moderate relationships between race and verdict decisions</li>
+                </ul>
+            </li>
+            <li><strong>RAND Civil Jury Study (2024)</strong>:
+                <ul>
+                    <li>Age matters: older jurors tend toward more conservative verdicts</li>
+                    <li>Race does not usually predict outcomes when controlling for other factors</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>Age</h3>
+        <p><strong>Primary Finding</strong>: Age affects both witness credibility assessment and defendant treatment.</p>
+        <ul>
+            <li><strong>Pozzulo et al. (2017)</strong> - Age influences confidence in eyewitness testimony</li>
+            <li><strong>Sheahan et al. (2021)</strong> - Defendant age affects juror decisions in abuse cases</li>
+        </ul>
+
+        <h3>Education Level</h3>
+        <p><strong>Primary Finding</strong>: Higher education levels correlate with more rigorous evidence evaluation and skepticism toward weak evidence.</p>
+        <ul>
+            <li>RAND Study (2024) and supporting literature show higher education is associated with more analytical thinking</li>
+            <li>More educated jurors are more skeptical of weak evidence</li>
+        </ul>
+
+        <h3>Gender</h3>
+        <p><strong>Primary Finding</strong>: Gender affects both how jurors perceive victims/witnesses and how they evaluate evidence.</p>
+        <ul>
+            <li>Male defendants with female victims receive harsher judgments</li>
+            <li>Gender of juror also affects decision-making patterns</li>
+        </ul>
+
+        <h2>Default Bias Factor Weight Values</h2>
+
+        <p>Based on the research synthesis, the following table provides recommended default weight values for each bias factor. These values represent the relative strength of each factor's influence on juror perception.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Factor</th>
+                    <th>Default Weight</th>
+                    <th>Research Basis</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Political Affiliation</td>
+                    <td>0.90</td>
+                    <td>Strongest predictor of verdict direction (Forresta 2025, Politics in Courtroom 2018)</td>
+                </tr>
+                <tr>
+                    <td>Education Level</td>
+                    <td>0.80</td>
+                    <td>High education correlates with analytical evaluation (RAND 2024)</td>
+                </tr>
+                <tr>
+                    <td>Legal Knowledge</td>
+                    <td>0.75</td>
+                    <td>Expertise influences evidence evaluation</td>
+                </tr>
+                <tr>
+                    <td>Juror Experience</td>
+                    <td>0.70</td>
+                    <td>Experience affects deliberation participation</td>
+                </tr>
+                <tr>
+                    <td>Community Ties</td>
+                    <td>0.65</td>
+                    <td>Social identity influences decisions</td>
+                </tr>
+                <tr>
+                    <td>Ethnicity</td>
+                    <td>0.60</td>
+                    <td>Strong influence, varies by context</td>
+                </tr>
+                <tr>
+                    <td>Age</td>
+                    <td>0.55</td>
+                    <td>Influences perspective and credibility assessment</td>
+                </tr>
+                <tr>
+                    <td>Income Level</td>
+                    <td>0.50</td>
+                    <td>Economic perspective, moderated by other factors</td>
+                </tr>
+                <tr>
+                    <td>Gender</td>
+                    <td>0.45</td>
+                    <td>Moderate context-dependent influence</td>
+                </tr>
+                <tr>
+                    <td>Religion</td>
+                    <td>0.40</td>
+                    <td>Moderate influence, varies by case type</td>
+                </tr>
+                <tr>
+                    <td>Communication Style</td>
+                    <td>0.35</td>
+                    <td>Least direct influence on verdict direction</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Implementation</h2>
+
+        <p>These default values are used in:</p>
+        <ul>
+            <li><code>ToyJurorLogicEngine.cs</code> - Coefficient calculations for trait generation</li>
+            <li><code>JuryCalculationService.cs</code> - Background weight calculations</li>
+            <li><code>JuryDemographicsService.cs</code> - Juror profile generation</li>
+        </ul>
+        <p>The weights can be adjusted via the Model Weights window for specific case scenarios.</p>
+
+        <h2>References</h2>
+
+        <ol class="citation">
+            <li>Forresta, A. (2025). "Beyond a reasonable doubt: the impact of jurors' political affiliations on jury trials." Journal of Law and Economics, 68, 361-386. <a href="https://eprints.soton.ac.uk/494474" target="_blank">https://eprints.soton.ac.uk/494474</a></li>
+            <li>Vettese, A., Pica, E., &amp; Pozzulo, J. (2024). "House of Worship Mass Shooting: The Influence of Defendant Age, Religion, and Victim Religion on Mock-Juror Decision-Making." Journal of Police and Criminal Psychology, 39, 693–705. <a href="https://doi.org/10.1007/s11896-024-09695-6" target="_blank">DOI: 10.1007/s11896-024-09695-6</a></li>
+            <li>Vettese, A., &amp; Pozzulo, J. (2025). "When Indigenous Canadians Take the Stand: The Influence of Age and Race on Mock-Juror Perceptions and Verdict Decisions." Journal of Police and Criminal Psychology. <a href="https://doi.org/10.1007/s11896-025-09742-w" target="_blank">DOI: 10.1007/s11896-025-09742-w</a></li>
+            <li>RAND Corporation. (2024). "The Role of Juror Demographics in Civil Trials." Working Paper WRA4984-1. <a href="https://www.rand.org/pubs/working_papers/WRA4984-1.html" target="_blank">https://www.rand.org/pubs/working_papers/WRA4984-1.html</a></li>
+            <li>Social Cognitive Processes Study. (2022). "Social cognitive processes explain bias in juror decisions." PMC, 9949508. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9949508/" target="_blank">https://pmc.ncbi.nlm.nih.gov/articles/PMC9949508/</a></li>
+            <li>Politics in the Courtroom Study. (2018). "Political Ideology and Jury Decision Making." Journal of the European Economic Association, 17(3), 834–878. <a href="https://academic.oup.com/jeea/article/17/3/834/4981454" target="_blank">https://academic.oup.com/jeea/article/17/3/834/4981454</a></li>
+            <li>Fraser &amp; Fehr. (2025). "Studying Religious Symbols and Bias in Court Proceedings." Osgoode Hall Journal. <a href="https://digitalcommons.osgoode.yorku.ca/cgi/viewcontent.cgi?article=4067" target="_blank">https://digitalcommons.osgoode.yorku.ca/cgi/viewcontent.cgi?article=4067</a></li>
+            <li>ACLU. (2025). "Fatal Flaws: Revealing the Racial and Religious Gerrymandering of the Capital Jury." <a href="https://assets.aclu.org/live/uploads/2025/06/Fatal-Flaws-Revealing-the-Racial-and-Religious-Gerrymandering-of-the-Capital-Jury-1.pdf" target="_blank">https://assets.aclu.org/</a></li>
+        </ol>
+
+        <div class="footer">
+            <p>This documentation is also available as <a href="../docs/JurorBiasResearch.md">Markdown</a> in the docs directory.</p>
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

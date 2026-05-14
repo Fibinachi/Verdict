@@ -1,0 +1,19 @@
+{
+  "CaseName": "Test Case",
+  "CaseNumber": "TC-001",
+  "CourtName": "Test Court",
+  "Jurisdiction": "Test Jurisdiction",
+  "Mode": "Civil",
+  "TrialPhase": "Trial",
+  "CurrentDebateStage": "OpeningStatements",
+  "ProsecutionPlaintiffPrompt": "Plaintiff's side of the case",
+  "DefensePrompt": "Defense's side of the case",
+  "GeneralPrompt": "General instructions for the simulation",
+  "JurisdictionSpecifics": "Specifics to this jurisdiction",
+  "InsuranceReserve": 100000.0,
+  "EstimatedSettlement": 50000.0,
+  "Evidence": [],
+  "Pleadings": [],
+  "EventLog": [],
+  "AvailableModels": []
+}

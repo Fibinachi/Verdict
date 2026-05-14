@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Management - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        pre { background: #243342; color: #ECF0F1; padding: 15px; border-radius: 6px; overflow-x: auto; margin-bottom: 15px; border-left: 3px solid #3498DB; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Case Management</h1>
+
+        <h2>File Menu Overview</h2>
+        <p>The File menu provides all case-level operations including creating, opening, saving, and managing recent cases.</p>
+
+        <h2>New Case</h2>
+        <p>Select <strong>File &gt; New Case</strong> to create a new case. You will be prompted to enter:</p>
+        <ul>
+            <li><strong>Case Name</strong> &mdash; A descriptive title for the case (e.g., "Smith v. Johnson").</li>
+            <li><strong>Plaintiff/Prosecution</strong> &mdash; The party bringing the case.</li>
+            <li><strong>Defendant</strong> &mdash; The party being accused or sued.</li>
+            <li><strong>Case Type</strong> &mdash; Criminal or Civil.</li>
+        </ul>
+        <p>Once created, the case name appears in the window title bar and a corresponding <code>.jur</code> file is created when saved.</p>
+
+        <h2>Open Case</h2>
+        <p>Select <strong>File &gt; Open Case</strong> to load an existing case from a <code>.jur</code> file. These files contain the full simulation state including agent configurations, evidence, memories, and trial phase information.</p>
+        <p>When a case is loaded, the courtroom layout is populated with the saved agents and the title bar updates to reflect the case name and current stage.</p>
+
+        <h2>Save / Save As</h2>
+        <ul>
+            <li><strong>File &gt; Save</strong> &mdash; Saves the current case to its associated <code>.jur</code> file. If the case has not been saved before, this behaves like Save As.</li>
+            <li><strong>File &gt; Save As</strong> &mdash; Saves the current case to a new <code>.jur</code> file, allowing you to create a copy or save to a different location.</li>
+        </ul>
+        <p>When you save a case, a sibling directory named <code>[CaseName]_Assets/</code> is created alongside the <code>.jur</code> file to store evidence documents and agent artifacts.</p>
+
+        <h2>Recent Files</h2>
+        <p>The <strong>File &gt; Recent Files</strong> submenu lists recently opened <code>.jur</code> files for quick access. Click any entry to load that case directly.</p>
+
+        <h2>Case Settings</h2>
+        <p>Select <strong>File &gt; Case Settings</strong> (or use the Case Settings button) to open the <strong>CaseSettingsWindow</strong>. Here you can configure:</p>
+        <ul>
+            <li><strong>Case Name</strong> &mdash; Edit the case title.</li>
+            <li><strong>Plaintiff / Defendant</strong> &mdash; Update party names.</li>
+            <li><strong>Jurisdiction</strong> &mdash; Set the jurisdiction type.</li>
+            <li><strong>Case Mode</strong> &mdash; Switch between Criminal and Civil modes.</li>
+            <li><strong>Jury Instructions</strong> &mdash; Configure instructions for the jury.</li>
+        </ul>
+
+        <div class="note">
+            <strong>Tip:</strong> Case files use the <code>.jur</code> extension and are stored as JSON. You can back up or share case files by copying the <code>.jur</code> file and its associated <code>_Assets</code> folder.
+        </div>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

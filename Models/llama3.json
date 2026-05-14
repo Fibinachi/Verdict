@@ -1,0 +1,12 @@
+{
+  "FriendlyName": "Llama 3 (Ollama)",
+  "Provider": "Ollama",
+  "ModelId": "llama3",
+  "Endpoint": "http://localhost:11434",
+  "ApiKey": "",
+  "Status": "Local",
+  "CustomSettings": {
+    "Temperature": "0.7",
+    "MaxTokens": "4096"
+  }
+}

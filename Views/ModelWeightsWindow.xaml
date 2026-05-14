@@ -1,0 +1,252 @@
+<Window x:Class="Verdict.Views.ModelWeightsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="clr-namespace:Verdict.Converters"
+        mc:Ignorable="d"
+        Title="Model Weight Configuration" Height="500" Width="600"
+        WindowStartupLocation="CenterOwner" Background="#F0F0F0">
+    <Window.Resources>
+        <conv:NullToBoolConverter x:Key="NullToBoolConverter"/>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header with Model Info -->
+        <GroupBox Header="Selected Model" Grid.Row="0" Margin="0,0,0,10">
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding SelectedModel.FriendlyName}" FontWeight="Bold" FontSize="14"/>
+                    <TextBlock Text="{Binding SelectedModel.Provider}" Margin="0,2,0,5" Foreground="Gray"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" Content="Reset All Weights" Click="ResetAllWeights_Click" 
+                        Padding="10,5" Background="#E74C3C" Foreground="White"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Bias Settings Section -->
+        <GroupBox Header="Model Attribute Weight Configuration" Grid.Row="1">
+            <Grid Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Age Weight -->
+                <Grid Grid.Row="0" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Age Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding AgeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding AgeBiasWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Gender Weight -->
+                <Grid Grid.Row="1" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Gender Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding GenderBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding GenderBiasWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Education Weight -->
+                <Grid Grid.Row="2" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Education Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding EducationBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding EducationBiasWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Income Weight -->
+                <Grid Grid.Row="3" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Income Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding IncomeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding IncomeBiasWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Political Affiliation Weight -->
+                <Grid Grid.Row="4" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Political Affiliation Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding PoliticalBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding PoliticalBiasWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Ethnicity Weight -->
+                <Grid Grid.Row="5" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Ethnicity Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding EthnicityBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding EthnicityBiasWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Religion Weight -->
+                <Grid Grid.Row="6" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Religion Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding ReligionBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding ReligionBiasWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Juror Experience Weight -->
+                <Grid Grid.Row="7" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Juror Experience Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding JurorExperienceWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding JurorExperienceWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Legal Knowledge Weight -->
+                <Grid Grid.Row="8" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Legal Knowledge Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding LegalKnowledgeWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding LegalKnowledgeWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Professional Background Weight -->
+                <Grid Grid.Row="9" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Professional Background Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding ProfessionalBackgroundWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding ProfessionalBackgroundWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Community Ties Weight -->
+                <Grid Grid.Row="10" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Community Ties Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding CommunityTiesWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding CommunityTiesWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Communication Style Weight -->
+                <Grid Grid.Row="11" Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Communication Style Weight:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                            Value="{Binding CommunicationStyleWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                            IsSnapToTickEnabled="False" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding CommunicationStyleWeight, StringFormat={}{0:F2}}"
+                               VerticalAlignment="Center" Width="40" Margin="10,0,0,0"/>
+                </Grid>
+
+                <!-- Preset Weights -->
+                <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                    <Button Content="Balanced Weights" Click="BalancedWeights_Click" Width="120" Margin="0,0,10,0"/>
+                    <Button Content="Expert Focus" Click="ExpertFocus_Click" Width="120" Margin="0,0,10,0"/>
+                    <Button Content="Diverse Perspective" Click="DiversePerspective_Click" Width="130"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Apply" Click="Apply_Click" Width="75" Margin="0,0,5,0"/>
+            <Button Content="Cancel" IsCancel="True" Width="75"/>
+        </StackPanel>
+    </Grid>
+</Window>

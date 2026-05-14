@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courtroom Layout - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        .seat { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.9em; }
+        .seat-bench { background: #8E44AD; color: #fff; }
+        .seat-plaintiff { background: #2980B9; color: #fff; }
+        .seat-defense { background: #C0392B; color: #fff; }
+        .seat-jury { background: #27AE60; color: #fff; }
+        .seat-observer { background: #7F8C8D; color: #fff; }
+        .seat-clerk { background: #2ECC71; color: #1B2631; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Courtroom Layout</h1>
+
+        <p>The Verdict courtroom is organized into several distinct areas, each serving a specific function in the simulation.</p>
+
+        <h2>Bench Area</h2>
+        <p>The bench area is located at the front of the courtroom and contains three seats with <code>Margin="12,0"</code> spacing for visual separation:</p>
+        <ul>
+            <li><span class="seat seat-bench">Judge</span> &mdash; Presides over the courtroom. Right-click for options including Chat and Edit Profile.</li>
+            <li><span class="seat seat-bench">Reporter</span> &mdash; Court reporter seat for recording proceedings.</li>
+            <li><span class="seat seat-bench">Witness Box</span> &mdash; Where witnesses are seated during testimony.</li>
+        </ul>
+
+        <h2>Counsel Tables</h2>
+        <ul>
+            <li><span class="seat seat-plaintiff">Prosecution / Plaintiff</span> &mdash; Right-side table for the prosecution or plaintiff's legal team.</li>
+            <li><span class="seat seat-defense">Defense</span> &mdash; Left-side table for the defense legal team.</li>
+        </ul>
+        <p>Each counsel table can hold multiple agents. Click <strong>+</strong> to add an attorney or party representative.</p>
+
+        <h2>Jury Box</h2>
+        <p>The jury box contains:</p>
+        <ul>
+            <li><strong>12 Primary Seats</strong> &mdash; For the main jury panel.</li>
+            <li><strong>2 Alternate Seats</strong> &mdash; For alternate jurors who may replace primary jurors if needed.</li>
+        </ul>
+        <p>Use the <strong>Generate Jury</strong> button to automatically populate the jury box with demographically-generated jurors. Each juror has unique demographics, biases, and personality traits that influence their decision-making.</p>
+        <p>Right-click any juror seat to access <strong>Juror Report</strong> for detailed sentiment and verdict lean analysis.</p>
+
+        <h2>Observer Box</h2>
+        <p>The observer box provides up to <strong>6 seats</strong> for gallery observation:</p>
+        <ul>
+            <li><strong>4 Observer Seats</strong> &mdash; For general observers or additional personnel.</li>
+            <li><strong>2 Client Slots</strong> &mdash; Reserved for the plaintiff and defendant clients.</li>
+        </ul>
+
+        <h2>Clerk Seat</h2>
+        <p><span class="seat seat-clerk">Clerk</span> &mdash; The clerk seat is highlighted in green and serves as the evidence submission point. You can:</p>
+        <ul>
+            <li>Drag and drop document files onto the clerk seat to submit them as evidence.</li>
+            <li>Use the <strong>ADMIT EVIDENCE</strong> button to open a file dialog for document selection.</li>
+        </ul>
+
+        <h2>Interactive Points</h2>
+        <ul>
+            <li><strong>Left-click "+"</strong> on any empty seat to add or activate an agent (opens Agent Profile window).</li>
+            <li><strong>Right-click</strong> any occupied seat for a context menu with options: Edit Profile, Generate Likely Juror, Chat, Juror Report, Save as Character (.VCS), Save to Casefile, Delete.</li>
+            <li><strong>Central Podium Button</strong> focuses the input prompt for text entry.</li>
+        </ul>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

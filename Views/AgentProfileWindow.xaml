@@ -1,0 +1,599 @@
+﻿<Window x:Class="Verdict.Views.AgentProfileWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:Verdict.Models"
+        xmlns:conv="clr-namespace:Verdict.Converters"
+        mc:Ignorable="d"
+        Title="Agent Profile Editor" Height="650" Width="580"
+        WindowStartupLocation="CenterOwner" Background="#F0F0F0"
+        SnapsToDevicePixels="True">
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style x:Key="TabBodyPanel" TargetType="StackPanel">
+            <Setter Property="Margin" Value="12,8,12,8"/>
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,6,0,2"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#333333"/>
+        </Style>
+
+        <Style x:Key="FieldTextBox" TargetType="TextBox">
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style x:Key="FieldComboBox" TargetType="ComboBox">
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#2C3E50"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header with agent name and role -->
+        <Border Grid.Row="0" Background="#2C3E50" Padding="12,8" CornerRadius="4" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Agent Profile" FontWeight="Bold" FontSize="16" Foreground="White" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Role, StringFormat=' â€” {0}'}" FontSize="14" Foreground="#E67E22" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                <TextBlock Text="{Binding Name, StringFormat=' â€” {0}'}" FontSize="14" Foreground="#BDC3C7" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Tab Control -->
+        <TabControl Grid.Row="1" Background="White" BorderBrush="#CCCCCC" BorderThickness="1">
+            <!-- ===== TAB 1: General ===== -->
+            <TabItem Header="General" FontSize="12" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Style="{StaticResource TabBodyPanel}">
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Basic Information"/>
+
+                        <UniformGrid Columns="2" Margin="0,0,0,8">
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Full Name"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Age"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Gender"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding Gender, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="Male"/>
+                                    <ComboBoxItem Content="Female"/>
+                                    <ComboBoxItem Content="Non-binary"/>
+                                    <ComboBoxItem Content="Other"/>
+                                </ComboBox>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Race / Ethnicity"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding Race, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="White"/>
+                                    <ComboBoxItem Content="Black / African American"/>
+                                    <ComboBoxItem Content="Hispanic / Latino"/>
+                                    <ComboBoxItem Content="Asian"/>
+                                    <ComboBoxItem Content="Native American"/>
+                                    <ComboBoxItem Content="Multiracial"/>
+                                    <ComboBoxItem Content="Other"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Occupation"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding Occupation, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Education Level"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding EducationLevel, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="High School"/>
+                                    <ComboBoxItem Content="Some College"/>
+                                    <ComboBoxItem Content="Associate Degree"/>
+                                    <ComboBoxItem Content="Bachelor's Degree"/>
+                                    <ComboBoxItem Content="Master's Degree"/>
+                                    <ComboBoxItem Content="Juris Doctor (JD)"/>
+                                    <ComboBoxItem Content="Doctorate (PhD)"/>
+                                    <ComboBoxItem Content="MD"/>
+                                </ComboBox>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Income Level"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding IncomeLevel, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="Lower Class"/>
+                                    <ComboBoxItem Content="Lower Middle Class"/>
+                                    <ComboBoxItem Content="Middle Class"/>
+                                    <ComboBoxItem Content="Upper Middle Class"/>
+                                    <ComboBoxItem Content="Upper Class"/>
+                                </ComboBox>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Zip Code"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding ZipCode, UpdateSourceTrigger=PropertyChanged}" MaxLength="10"/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <Separator Margin="0,4,0,8"/>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Profile &amp; Status"/>
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Current Trial Status"/>
+                        <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding CurrentStatus, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                            <ComboBoxItem Content="Attentive"/>
+                            <ComboBoxItem Content="Bored"/>
+                            <ComboBoxItem Content="Skeptical"/>
+                            <ComboBoxItem Content="Focused"/>
+                            <ComboBoxItem Content="Distracted"/>
+                            <ComboBoxItem Content="Sympathetic"/>
+                            <ComboBoxItem Content="Hostile"/>
+                        </ComboBox>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Background Profile / Persona"/>
+                        <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding Profile, UpdateSourceTrigger=PropertyChanged}" 
+                                 TextWrapping="Wrap" AcceptsReturn="True" Height="60"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== TAB 2: Demographics ===== -->
+            <TabItem Header="Demographics" FontSize="12" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Style="{StaticResource TabBodyPanel}">
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Personal Background"/>
+
+                        <UniformGrid Columns="2" Margin="0,0,0,8">
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Marital Status"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding MaritalStatus, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="Single"/>
+                                    <ComboBoxItem Content="Married"/>
+                                    <ComboBoxItem Content="Divorced"/>
+                                    <ComboBoxItem Content="Widowed"/>
+                                    <ComboBoxItem Content="Separated"/>
+                                    <ComboBoxItem Content="Domestic Partnership"/>
+                                </ComboBox>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Parental Status"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding ParentalStatus, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="No Children"/>
+                                    <ComboBoxItem Content="Has Children"/>
+                                    <ComboBoxItem Content="Empty Nester"/>
+                                </ComboBox>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Religious Affiliation"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding ReligiousAffiliation, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="Non-religious"/>
+                                    <ComboBoxItem Content="Protestant"/>
+                                    <ComboBoxItem Content="Catholic"/>
+                                    <ComboBoxItem Content="Jewish"/>
+                                    <ComboBoxItem Content="Muslim"/>
+                                    <ComboBoxItem Content="Hindu"/>
+                                    <ComboBoxItem Content="Buddhist"/>
+                                    <ComboBoxItem Content="Other"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Political Affiliation"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding PoliticalAffiliation, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="Independent"/>
+                                    <ComboBoxItem Content="Democratic"/>
+                                    <ComboBoxItem Content="Republican"/>
+                                    <ComboBoxItem Content="Libertarian"/>
+                                    <ComboBoxItem Content="Other/None"/>
+                                </ComboBox>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Specialized Knowledge / SME"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding SpecializedKnowledge, UpdateSourceTrigger=PropertyChanged}" 
+                                         ToolTip="Define expertise (e.g. 'Certified Public Accountant', 'Retired Nurse')"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Bias (-1.0 to 1.0)"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding Bias, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Verdict Lean (0.0=Def, 1.0=Pltf)"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding VerdictLean, UpdateSourceTrigger=PropertyChanged}" 
+                                         IsEnabled="{Binding HasOpinion}"/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <!-- Client-specific fields -->
+                        <Border Visibility="{Binding IsClient, Converter={StaticResource BoolToVis}}" 
+                                Background="#FEF9E7" BorderBrush="#F9E79F" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionHeader}" Text="Client Settings" Foreground="#D35400"/>
+                                <UniformGrid Columns="2" Margin="0,8,0,0">
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Style="{StaticResource FieldLabel}" Text="Settlement Authority ($)"/>
+                                        <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding SettlementAuthority, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource FieldLabel}" Text="Risk Perception (0.0 - 1.0)"/>
+                                        <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding RiskPerception, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== TAB 3: Psychographics ===== -->
+            <TabItem Header="Psychographics" FontSize="12" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Style="{StaticResource TabBodyPanel}">
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Media &amp; Consumer Profile"/>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Media Consumption (News, Social, TV)"/>
+                        <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding MediaConsumption, UpdateSourceTrigger=PropertyChanged}" 
+                                 TextWrapping="Wrap" AcceptsReturn="True" Height="50"/>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Consumer Segment"/>
+                        <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding ConsumerSegment, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                            <ComboBoxItem Content="General"/>
+                            <ComboBoxItem Content="Early Adopter"/>
+                            <ComboBoxItem Content="Traditionalist"/>
+                            <ComboBoxItem Content="Value Seeker"/>
+                            <ComboBoxItem Content="Influencer"/>
+                            <ComboBoxItem Content="Conservative Buyer"/>
+                        </ComboBox>
+
+                        <Separator Margin="0,8,0,8"/>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Lifestyle &amp; Interests"/>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Hobbies &amp; Interests"/>
+                        <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding Hobbies, UpdateSourceTrigger=PropertyChanged}" 
+                                 TextWrapping="Wrap" AcceptsReturn="True" Height="50"/>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Viewing Characteristics (Trial Bias)"/>
+                        <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding ViewingCharacteristics, UpdateSourceTrigger=PropertyChanged}" 
+                                 TextWrapping="Wrap" AcceptsReturn="True" Height="50"/>
+
+                        <Separator Margin="0,8,0,8"/>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Sentiment &amp; Valuation"/>
+
+                        <UniformGrid Columns="2" Margin="0,0,0,4">
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Sentiment (0.0 - 1.0)"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding Sentiment, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Case Valuation"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding Valuation, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== TAB 4: Legal / Directives ===== -->
+            <TabItem Header="Legal &amp; Directives" FontSize="12" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Style="{StaticResource TabBodyPanel}">
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="LLM Directives"/>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Role System Prompt (overrides built-in default)"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Style="{StaticResource FieldTextBox}" Text="{Binding RoleSystemPrompt, UpdateSourceTrigger=PropertyChanged}"
+                                     TextWrapping="Wrap" AcceptsReturn="True" Height="70" Margin="0,0,4,0"
+                                     Background="#1A252F" Foreground="#E8F4FD"
+                                     ToolTip="The system prompt sent to the LLM for this agent's role. Leave empty to use the built-in default."/>
+                            <Button Grid.Column="1" Content="Reset" VerticalAlignment="Top" Padding="6,3"
+                                    Background="#E74C3C" Foreground="White" BorderThickness="0"
+                                    Click="ResetRolePrompt_Click" ToolTip="Restore the built-in default prompt for this role"/>
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Agent System Prompt (persona / additional instructions)"/>
+                        <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding SystemPrompt, UpdateSourceTrigger=PropertyChanged}" 
+                                 TextWrapping="Wrap" AcceptsReturn="True" Height="80"
+                                 Background="#1A252F" Foreground="White"/>
+
+                        <Separator Margin="0,8,0,8"/>
+
+                        <!-- Judge-specific fields -->
+                        <Border x:Name="JudgeSection" Background="#EBF5FB" BorderBrush="#AED6F1" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionHeader}" Text="Judicial Profile" Foreground="#2980B9"/>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Judicial Rulings &amp; Precedents"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding JudicialRulings, UpdateSourceTrigger=PropertyChanged}" 
+                                         TextWrapping="Wrap" AcceptsReturn="True" Height="50"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Written Opinions (Legal Philosophy)"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding WrittenOpinions, UpdateSourceTrigger=PropertyChanged}" 
+                                         TextWrapping="Wrap" AcceptsReturn="True" Height="50"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Judicial Temperament"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding JudicialTemperament, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                                    <ComboBoxItem Content="Strict Constructionist"/>
+                                    <ComboBoxItem Content="Activist"/>
+                                    <ComboBoxItem Content="Moderate"/>
+                                    <ComboBoxItem Content="Proceduralist"/>
+                                    <ComboBoxItem Content="Pragmatic"/>
+                                    <ComboBoxItem Content="Lenient"/>
+                                    <ComboBoxItem Content="Strict"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Trial Preferences"/>
+
+                        <UniformGrid Columns="2">
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Role"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding Role, UpdateSourceTrigger=PropertyChanged}" IsEnabled="False"/>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Communication Team"/>
+                                <ComboBox Style="{StaticResource FieldComboBox}" Text="{Binding CommunicationTeam, UpdateSourceTrigger=PropertyChanged}" IsEditable="False">
+                                    <ComboBoxItem Content="Plaintiff"/>
+                                    <ComboBoxItem Content="Defendant"/>
+                                    <ComboBoxItem Content="Neutral"/>
+                                </ComboBox>
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Judge: answer only when asked"/>
+                                <CheckBox Content="Restrict spontaneous participation" IsChecked="{Binding OnlyAnswerWhenAsked, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Document Count"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" Text="{Binding DocumentCount, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== TAB 5: Memories ===== -->
+            <TabItem Header="Memories" FontSize="12" FontWeight="SemiBold">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Style="{StaticResource SectionHeader}" Text="Agent Memory Store"/>
+
+                    <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+                        <TabItem Header="Trial Events (Poll)" FontSize="11">
+                            <ListBox ItemsSource="{Binding TrialEvents}" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" Margin="0,4,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="6,4" Margin="0,1" Background="#F8F9FA" CornerRadius="3">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" FontWeight="SemiBold" FontSize="12"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <TextBlock Text="Impact: " FontSize="10" Foreground="#7F8C8D"/>
+                                                    <TextBlock Text="{Binding Strength, StringFormat=F2}" FontSize="10" Foreground="#2ECC71" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding Timestamp, StringFormat='  |  {0:g}'}" FontSize="10" Foreground="#95A5A6" Margin="8,0,0,0"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </TabItem>
+                        <TabItem Header="Background Memories" FontSize="11">
+                            <ListBox ItemsSource="{Binding Memories}" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" Margin="0,4,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="6,4" Margin="0,1" Background="#F8F9FA" CornerRadius="3">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" FontSize="12"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <TextBlock Text="Strength: " FontSize="10" Foreground="#7F8C8D"/>
+                                                    <TextBlock Text="{Binding Strength, StringFormat=F2}" FontSize="10" Foreground="#E67E22" FontWeight="Bold"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </TabItem>
+                    </TabControl>
+                </Grid>
+            </TabItem>
+            
+            <!-- ===== TAB 6: Models ===== -->
+            <TabItem Header="Models" FontSize="12" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Style="{StaticResource TabBodyPanel}">
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="AI Model Selection"/>
+                        
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Select Default Model for this Agent"/>
+                        <ComboBox x:Name="ModelSelector" Style="{StaticResource FieldComboBox}" 
+                                  ItemsSource="{Binding AvailableModels}" DisplayMemberPath="FriendlyName" 
+                                  SelectedValuePath="FriendlyName" SelectedValue="{Binding SelectedModel}"
+                                  ToolTip="Choose which AI model this agent will use by default"/>
+                                   
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Model Selection Behavior" Margin="0,12,0,4"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#555555" Margin="0,0,0,8">
+                            If a specific model is selected above, this agent will use that model. Otherwise, the system will automatically try available models in sequence until finding one that works for this agent's interactions.
+                        </TextBlock>
+
+                        <Separator Margin="0,8,0,8"/>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Model Control Variables"/>
+
+                        <UniformGrid Columns="2" Margin="0,0,0,8">
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Temperature Override (0.0–2.0)"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" 
+                                         Text="{Binding ModelTemperatureOverride, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Leave empty to use the global default. Higher = more creative, Lower = more deterministic."/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Max Tokens Override"/>
+                                <TextBox Style="{StaticResource FieldTextBox}" 
+                                         Text="{Binding ModelMaxTokensOverride, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Leave empty to use the global default. Controls response length."/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <Separator Margin="0,8,0,8"/>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Bias Factors"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#555555" Margin="0,0,0,8">
+                            Each factor biases the agent toward plaintiff (positive) or defense (negative). Add custom factors as needed.
+                        </TextBlock>
+
+                        <ListBox ItemsSource="{Binding BiasFactors}" Height="200" BorderBrush="#CCCCCC" BorderThickness="1" Background="White">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" IsEditable="True"
+                                                  Margin="0,0,4,0" Padding="4,2" MinWidth="160">
+                                            <ComboBoxItem Content="Political Affiliation"/>
+                                            <ComboBoxItem Content="Education Level"/>
+                                            <ComboBoxItem Content="Income Level"/>
+                                            <ComboBoxItem Content="Religious Affiliation"/>
+                                            <ComboBoxItem Content="Media Consumption"/>
+                                            <ComboBoxItem Content="Occupation"/>
+                                            <ComboBoxItem Content="Age"/>
+                                            <ComboBoxItem Content="Gender"/>
+                                            <ComboBoxItem Content="Race / Ethnicity"/>
+                                            <ComboBoxItem Content="Marital Status"/>
+                                            <ComboBoxItem Content="Parental Status"/>
+                                            <ComboBoxItem Content="Consumer Segment"/>
+                                            <ComboBoxItem Content="Hobbies"/>
+                                            <ComboBoxItem Content="Specialized Knowledge"/>
+                                        </ComboBox>
+                                        <TextBox Grid.Column="1" Text="{Binding Weight, UpdateSourceTrigger=PropertyChanged}" Width="60" Margin="0,0,4,0" Padding="4,2" HorizontalContentAlignment="Center"/>
+                                        <Button Grid.Column="2" Content="✕" Width="24" Height="24" Padding="0" 
+                                                Background="#E74C3C" Foreground="White" BorderThickness="0"
+                                                ToolTip="Remove this bias factor"
+                                                Click="RemoveBiasFactor_Click" Tag="{Binding}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Button Content="+ Add Bias Factor" Margin="0,8,0,0" Padding="8,4" Background="#3498DB" Foreground="White" BorderThickness="0"
+                                Click="AddBiasFactor_Click" HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== TAB 7: Weights ===== -->
+            <TabItem Header="Weights" FontSize="12" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Style="{StaticResource TabBodyPanel}">
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Bias Dimension Weights"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#555555" Margin="0,0,0,12">Override the global model weights for this agent. Range 0.0-1.0.</TextBlock>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Age Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding AgeBiasWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding AgeBiasWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Gender Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding GenderBiasWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding GenderBiasWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Education Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding EducationBiasWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding EducationBiasWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Income Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding IncomeBiasWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding IncomeBiasWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Political Affiliation Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding PoliticalBiasWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding PoliticalBiasWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Ethnicity Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding EthnicityBiasWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding EthnicityBiasWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Religion Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding ReligionBiasWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding ReligionBiasWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Juror Experience Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding JurorExperienceWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding JurorExperienceWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Legal Knowledge Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding LegalKnowledgeWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding LegalKnowledgeWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Professional Background Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding ProfessionalBackgroundWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding ProfessionalBackgroundWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Community Ties Weight:" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" TickFrequency="0.1" TickPlacement="BottomRight" VerticalAlignment="Center" Value="{Binding CommunityTiesWeight, TargetNullValue=0.5}"/>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0" Text="{Binding CommunityTiesWeight, TargetNullValue='--', StringFormat={}{0:F2}}"/>
+                        </Grid>
+
+                        <Separator Margin="0,12,0,8"/>
+                        <Button Content="Reset to Global Defaults" Click="ResetWeights_Click" Padding="8,4"
+                                Background="#E74C3C" Foreground="White" BorderThickness="0" HorizontalAlignment="Left"
+                                ToolTip="Clear all per-agent weight overrides"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Bottom buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Save Profile" IsDefault="True" Click="Save_Click" 
+                    Width="110" Height="30" Margin="0,0,8,0"
+                    Background="#2ECC71" Foreground="White" FontWeight="Bold" BorderThickness="0"/>
+            <Button Content="Cancel" IsCancel="True" Click="Cancel_Click" 
+                    Width="80" Height="30"
+                    Background="#95A5A6" Foreground="White" BorderThickness="0"/>
+        </StackPanel>
+    </Grid>
+</Window>

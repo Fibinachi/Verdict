@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Configuration - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        .provider { display: inline-block; background: #243342; color: #3498DB; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; margin: 3px; border: 1px solid #34495E; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Model Configuration</h1>
+
+        <p>Verdict supports multiple LLM (Large Language Model) providers for AI-powered features including agent chat, evidence analysis, and juror behavior simulation. Proper model configuration is essential for the application to function correctly.</p>
+
+        <h2>Accessing Model Settings</h2>
+        <ol>
+            <li>Click the <strong>Settings</strong> menu in the main menu bar.</li>
+            <li>Select <strong>Model Settings</strong> from the dropdown menu.</li>
+            <li>The <strong>ModelSettingsWindow</strong> opens, displaying all configured models and providers.</li>
+        </ol>
+
+        <h2>Supported Providers</h2>
+        <p>Verdict includes providers for the following LLM services:</p>
+        <p>
+            <span class="provider">OpenAI</span>
+            <span class="provider">Anthropic</span>
+            <span class="provider">Google Gemini</span>
+            <span class="provider">Ollama</span>
+            <span class="provider">Hugging Face</span>
+            <span class="provider">Alibaba</span>
+            <span class="provider">NVIDIA</span>
+            <span class="provider">Intel</span>
+            <span class="provider">DeepSeek</span>
+        </p>
+
+        <h2>Adding a Model</h2>
+        <ol>
+            <li>In the Model Settings window, click the <strong>Add Model</strong> button.</li>
+            <li>The <strong>AddModelDialog</strong> opens, prompting you to select a provider and configure model details.</li>
+            <li>Enter the required information:
+                <ul>
+                    <li><strong>Provider</strong> &mdash; Select from the list of supported providers.</li>
+                    <li><strong>Model Name/ID</strong> &mdash; The specific model identifier (e.g., "gpt-4", "claude-3-opus-20240229").</li>
+                    <li><strong>API Key</strong> &mdash; Your API key for the provider (if required).</li>
+                    <li><strong>API Endpoint</strong> &mdash; The endpoint URL (may be pre-filled for standard providers).</li>
+                    <li><strong>Parameters</strong> &mdash; Optional settings like temperature, max tokens, etc.</li>
+                </ul>
+            </li>
+            <li>Click <strong>Save</strong> to add the model to your configuration.</li>
+        </ol>
+
+        <h2>Testing a Connection</h2>
+        <p>After adding a model, you can test the connection to verify it works:</p>
+        <ol>
+            <li>Select the model from the list in the Model Settings window.</li>
+            <li>Click the <strong>Test Connection</strong> button.</li>
+            <li>The application sends a test request to the provider and displays the result.</li>
+            <li>A successful test confirms the model is ready for use.</li>
+        </ol>
+
+        <h2>Downloading Models</h2>
+        <p>For local providers like <strong>Ollama</strong>, you can download models directly:</p>
+        <ol>
+            <li>Select the Ollama provider in the Model Settings window.</li>
+            <li>Click the <strong>Download Models</strong> button to browse available models.</li>
+            <li>Select a model to download and install locally.</li>
+        </ol>
+
+        <h2>Per-Agent Model Selection</h2>
+        <p>Each agent can be assigned a specific model for its interactions:</p>
+        <ol>
+            <li>Open the <strong>Agent Profile Window</strong> for the agent (right-click &gt; Edit Profile).</li>
+            <li>In the profile settings, find the <strong>Model</strong> dropdown.</li>
+            <li>Select the desired model from your configured models.</li>
+            <li>Save the agent profile to apply the change.</li>
+        </ol>
+        <p>This allows different agents to use different models based on their role and requirements. For example, you might assign a more powerful model to the Judge while using a lighter model for jurors.</p>
+
+        <div class="note">
+            <strong>Note:</strong> Some providers require API keys. Ensure you have valid credentials before testing or using a model. Local providers like Ollama do not require API keys.
+        </div>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

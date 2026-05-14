@@ -1,0 +1,72 @@
+<Window x:Class="Verdict.Views.CaseSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Height="450" Width="400"
+        WindowStartupLocation="CenterOwner" Background="#F0F0F0">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="General Information" FontWeight="Bold" Margin="0,0,0,10"/>
+                
+                <TextBlock Text="Case Name" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.CaseName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Case Number" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.CaseNumber, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Court Name" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.CourtName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+<Separator Margin="0,10"/>
+
+                <TextBlock Text="Legal Framework" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Trial Mode" Margin="0,5,0,2"/>
+                <ComboBox ItemsSource="{Binding CaseModes}" SelectedItem="{Binding CaseFile.Mode}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Case Phase" Margin="0,5,0,2"/>
+                <ComboBox ItemsSource="{Binding TrialPhases}" SelectedItem="{Binding CaseFile.TrialPhase}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Jurisdiction" Margin="0,5,0,2"/>
+                <ComboBox ItemsSource="{Binding JurisdictionTypes}" SelectedItem="{Binding CaseFile.Jurisdiction}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Jurisdiction Specifics (County, District, etc.)" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.JurisdictionSpecifics, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Number of Jurors" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.JurorCount, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+                <Separator Margin="0,10"/>
+
+                <TextBlock Text="Parties &amp; Counsel" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Plaintiffs (one per line)" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.PlaintiffsText, UpdateSourceTrigger=PropertyChanged}" 
+                         AcceptsReturn="True" TextWrapping="Wrap" Height="60" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Plaintiff Attorney" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.PlaintiffAttorney, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Defendants (one per line)" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.DefendantsText, UpdateSourceTrigger=PropertyChanged}" 
+                         AcceptsReturn="True" TextWrapping="Wrap" Height="60" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Defense Attorney" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding CaseFile.DefenseAttorney, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Save" IsDefault="True" Click="Save_Click" Width="75" Margin="0,0,10,0"/>
+            <Button Content="Cancel" IsCancel="True" Click="Cancel_Click" Width="75"/>
+        </StackPanel>
+    </Grid>
+</Window>

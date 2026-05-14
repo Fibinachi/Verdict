@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evidence Management - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        .filetype { display: inline-block; background: #243342; color: #3498DB; padding: 2px 8px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 0.85em; margin: 2px; border: 1px solid #34495E; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Evidence Management</h1>
+
+        <p>Evidence is a core component of any case. Verdict supports submitting documents and images as evidence, with AI-powered analysis to extract insights and assess strength.</p>
+
+        <h2>Submitting Evidence</h2>
+        <p>There are two ways to submit evidence:</p>
+
+        <h3>Method 1: Clerk Seat (Drag and Drop)</h3>
+        <ol>
+            <li>Locate the <strong>Clerk Seat</strong> (highlighted in green) in the courtroom.</li>
+            <li>Drag a supported file from Windows File Explorer onto the clerk seat.</li>
+            <li>The file is automatically processed and added as evidence.</li>
+        </ol>
+
+        <h3>Method 2: ADMIT EVIDENCE Button</h3>
+        <ol>
+            <li>Click the <strong>ADMIT EVIDENCE</strong> button in the courtroom interface.</li>
+            <li>A file dialog opens allowing you to browse and select a file.</li>
+            <li>Select the file and click Open to submit it as evidence.</li>
+        </ol>
+
+        <h2>Supported File Types</h2>
+        <p>Verdict supports the following file formats for evidence submission:</p>
+        <p>
+            <span class="filetype">.PDF</span>
+            <span class="filetype">.TXT</span>
+            <span class="filetype">.DOCX</span>
+            <span class="filetype">.RTF</span>
+            <span class="filetype">.JPG</span>
+            <span class="filetype">.JPEG</span>
+            <span class="filetype">.PNG</span>
+            <span class="filetype">.GIF</span>
+            <span class="filetype">.BMP</span>
+        </p>
+
+        <h2>Media Type Classification</h2>
+        <p>When evidence is submitted, Verdict automatically classifies it into one of two media types:</p>
+        <ul>
+            <li><strong>"Document"</strong> &mdash; For text-based files: PDF, TXT, DOCX, RTF.</li>
+            <li><strong>"Image"</strong> &mdash; For image files: JPG, JPEG, PNG, GIF, BMP.</li>
+        </ul>
+        <p>This classification is stored in the <code>MediaType</code> property of the <code>EvidenceDocument</code> object and affects how the evidence is analyzed and displayed.</p>
+
+        <h2>AI Analysis</h2>
+        <p>When evidence is submitted, Verdict performs an AI-powered analysis that includes:</p>
+        <ul>
+            <li><strong>Summary</strong> &mdash; A concise summary of the evidence content.</li>
+            <li><strong>Key Points</strong> &mdash; Important facts and details extracted from the evidence.</li>
+            <li><strong>Relevance Assessment</strong> &mdash; How relevant the evidence is to the current case.</li>
+            <li><strong>Strength Rating</strong> &mdash; An assessment of how strong or compelling the evidence is.</li>
+            <li><strong>Detailed Analysis</strong> &mdash; A comprehensive analysis stored in the <code>DetailedAnalysis</code> field of the <code>EvidenceDocument</code> for full LLM analysis storage.</li>
+        </ul>
+
+        <div class="note">
+            <strong>Note:</strong> The AI analysis uses the configured LLM provider and model. Ensure your model settings are properly configured for the best analysis results.
+        </div>
+
+        <h2>Evidence Storage</h2>
+        <p>When evidence is submitted, the file is copied to the case's <code>_Assets</code> directory (e.g., <code>MyCase_Assets/</code>) for organized storage alongside the case file.</p>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

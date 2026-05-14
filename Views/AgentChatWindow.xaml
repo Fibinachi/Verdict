@@ -1,0 +1,38 @@
+<Window x:Class="Verdict.Views.AgentChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Chat with Agent" Height="500" Width="600"
+        WindowStartupLocation="CenterOwner" Background="#1B2631">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="HeaderText" Text="AGENT CHAT" Foreground="#3498DB" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+        <Border Grid.Row="1" Background="#0D1117" CornerRadius="5" Padding="10">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="ConversationLog" Foreground="#ECF0F1" TextWrapping="Wrap"/>
+            </ScrollViewer>
+        </Border>
+
+        <StackPanel Grid.Row="2" Margin="0,10">
+            <TextBlock Text="Your Message:" Foreground="#BDC3C7" Margin="0,0,0,5"/>
+            <TextBox x:Name="MessageInput" Height="60" TextWrapping="Wrap" AcceptsReturn="True" Background="#2C3E50" Foreground="White" BorderThickness="0" Padding="5"/>
+        </StackPanel>
+
+        <UniformGrid Grid.Row="3" Columns="2" Margin="0,0,0,5">
+            <Button Content="Send" Click="Send_Click" Margin="0,0,5,0" Background="#2980B9" Foreground="White" Padding="10"/>
+            <Button Content="Wipe Memories" Click="WipeMemories_Click" Margin="5,0,0,0" Background="#E74C3C" Foreground="White"/>
+        </UniformGrid>
+
+        <Button Grid.Row="4" Content="Close" Click="Close_Click" Background="#7F8C8D" Foreground="White" Padding="10"/>
+    </Grid>
+</Window>

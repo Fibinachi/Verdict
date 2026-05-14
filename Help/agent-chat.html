@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Chat - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        .warning { background: #243342; border-left: 4px solid #E74C3C; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .warning strong { color: #E74C3C; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Agent Chat</h1>
+
+        <p>The Agent Chat feature allows you to have LLM-powered conversations with any agent in the courtroom. This is useful for questioning witnesses, discussing strategy with attorneys, or exploring a juror's perspective on the case.</p>
+
+        <h2>Opening Agent Chat</h2>
+        <ol>
+            <li><strong>Right-click</strong> on any occupied agent seat in the courtroom.</li>
+            <li>Select <strong>Chat</strong> from the context menu.</li>
+            <li>The <strong>AgentChatWindow</strong> opens, displaying a conversation interface.</li>
+        </ol>
+
+        <h2>How It Works</h2>
+        <p>When you send a message in the chat window:</p>
+        <ul>
+            <li>The message is sent to the LLM (Language Model) configured for that specific agent.</li>
+            <li>The agent responds using its assigned model and provider (e.g., OpenAI, Anthropic, Google Gemini, Ollama).</li>
+            <li>The agent's profile prompt and memories are included as context for the conversation.</li>
+            <li>The response is displayed in the chat window.</li>
+        </ul>
+
+        <h2>Memory Persistence</h2>
+        <p>Chat conversations are automatically saved as memories:</p>
+        <ul>
+            <li>Each chat message is stored as a <strong>MemoryEntry</strong> object.</li>
+            <li>Memories are tagged with <code>Source = "Chat"</code> to distinguish them from other types of memories (e.g., trial events, background).</li>
+            <li>These memories persist across sessions and are saved in the case file.</li>
+            <li>When you chat with an agent again later, it can recall previous conversations.</li>
+        </ul>
+
+        <h2>Managing Chat Memories</h2>
+        <p>The chat window includes a <strong>Wipe Memories</strong> button that:</p>
+        <ul>
+            <li>Clears only the memories tagged with <code>Source = "Chat"</code> for that agent.</li>
+            <li>Does <strong>not</strong> affect other memories such as trial events or background information.</li>
+            <li>Useful for resetting the agent's conversation history without losing other context.</li>
+        </ul>
+
+        <div class="warning">
+            <strong>Important:</strong> The Wipe Memories action is irreversible. Only chat-sourced memories are removed; trial events and background memories are preserved.
+        </div>
+
+        <h2>Tips for Effective Chat</h2>
+        <ul>
+            <li>Be specific in your questions to get more relevant responses.</li>
+            <li>Use the agent's role as context &mdash; a judge will respond differently than a witness.</li>
+            <li>If an agent seems to forget context, check that their model is properly configured.</li>
+            <li>Use Wipe Memories if the agent's chat history becomes too long or irrelevant.</li>
+        </ul>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

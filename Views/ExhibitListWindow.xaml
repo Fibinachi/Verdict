@@ -1,0 +1,84 @@
+<Window x:Class="Verdict.Views.ExhibitListWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Verdict.Views"
+        mc:Ignorable="d"
+        Title="Exhibit List" Height="500" Width="800"
+        WindowStartupLocation="CenterOwner"
+        Background="#1B2631"
+        Foreground="White">
+    <Window.Resources>
+        <Style TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="#34495E"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+        <Style TargetType="GridViewColumnHeader">
+            <Setter Property="Background" Value="#2C3E50"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#34495E"/>
+            <Setter Property="Padding" Value="6,3"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <ListView x:Name="ExhibitListView" Grid.Row="0"
+                  Background="#1B2631" Foreground="White"
+                  BorderBrush="#34495E" BorderThickness="1"
+                  ItemsSource="{Binding Exhibits}">
+            <ListView.InputBindings>
+                <MouseBinding MouseAction="LeftDoubleClick" Command="{x:Null}"/>
+            </ListView.InputBindings>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <EventSetter Event="MouseDoubleClick" Handler="ExhibitListItem_MouseDoubleClick"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Exhibit #" Width="80" DisplayMemberBinding="{Binding ExhibitNumber}"/>
+                    <GridViewColumn Header="File Name" Width="150" DisplayMemberBinding="{Binding FileName}"/>
+                    <GridViewColumn Header="Summary" Width="200">
+                        <GridViewColumn.DisplayMemberBinding>
+                            <Binding Path="Summary"/>
+                        </GridViewColumn.DisplayMemberBinding>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Clerk Notes" Width="180">
+                        <GridViewColumn.DisplayMemberBinding>
+                            <Binding Path="ClerkNotes"/>
+                        </GridViewColumn.DisplayMemberBinding>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Strength" Width="80">
+                        <GridViewColumn.DisplayMemberBinding>
+                            <Binding Path="EvidenceStrength" StringFormat="{}{0:P0}"/>
+                        </GridViewColumn.DisplayMemberBinding>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Offered By" Width="140" DisplayMemberBinding="{Binding OfferingAttorney}" />
+                    <GridViewColumn Header="Offered Side" Width="120" DisplayMemberBinding="{Binding IsOfferedByPlaintiffSide}"/>
+                    <GridViewColumn Header="Plaintiff #" Width="90" DisplayMemberBinding="{Binding PlaintiffSideExhibitNumber}"/>
+                    <GridViewColumn Header="Defense #" Width="90" DisplayMemberBinding="{Binding DefenseSideExhibitNumber}"/>
+                    <GridViewColumn Header="Admitted" Width="80">
+                        <GridViewColumn.DisplayMemberBinding>
+                            <Binding Path="AdmittedAt" StringFormat="{}{0:g}"/>
+                        </GridViewColumn.DisplayMemberBinding>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        
+        <Button Grid.Row="1" Content="Close" Width="100" Height="30" Margin="0,10,0,0"
+                HorizontalAlignment="Right"
+                Background="#2C3E50" Foreground="White"
+                BorderBrush="#34495E" BorderThickness="1"
+                Click="CloseButton_Click" IsCancel="True"/>
+
+    </Grid>
+</Window>

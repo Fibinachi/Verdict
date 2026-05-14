@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verdict - Help & Documentation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.5em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul { list-style: none; padding: 0; }
+        ul li { margin-bottom: 8px; }
+        ul li a { color: #3498DB; text-decoration: none; font-size: 1.05em; }
+        ul li a:hover { color: #2ECC71; text-decoration: underline; }
+        ul li span { color: #95A5A6; font-size: 0.9em; display: block; margin-left: 20px; }
+        .section { background: #243342; border-radius: 8px; padding: 20px 25px; margin-bottom: 20px; border-left: 4px solid #2ECC71; }
+        .section h2 { margin-top: 0; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        .tag { display: inline-block; background: #2ECC71; color: #1B2631; font-size: 0.7em; padding: 2px 8px; border-radius: 10px; font-weight: bold; margin-left: 8px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Verdict Help</h1>
+        <p>Welcome to the Verdict application help documentation. Verdict is a courtroom simulation and case management tool for Windows, built with .NET 9 and WPF.</p>
+        <p>Use the links below to navigate to specific help topics.</p>
+
+        <div class="section">
+            <h2>Getting Started</h2>
+            <ul>
+                <li><a href="getting-started.html">What is Verdict?</a> <span>Overview, system requirements, build/run instructions, and main window tour.</span></li>
+                <li><a href="case-management.html">Case Management</a> <span>Creating, opening, saving cases (.jur files), recent files, and case settings.</span></li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Working with Agents</h2>
+            <ul>
+                <li><a href="courtroom-layout.html">Courtroom Layout</a> <span>Bench, counsel tables, jury box, observer box, and clerk seat explained.</span></li>
+                <li><a href="agents.html">Agents Overview</a> <span>Adding, editing, saving, and deleting agents in the courtroom.</span></li>
+                <li><a href="agent-chat.html">Agent Chat</a> <span>LLM-powered conversations with agents, memory persistence, and memory management.</span></li>
+                <li><a href="juror-report.html">Juror Report</a> <span>Viewing juror demographics, sentiment, verdict lean, bias, and memories.</span></li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Evidence</h2>
+            <ul>
+                <li><a href="evidence.html">Evidence Management</a> <span>Submitting evidence, supported file types, AI analysis, and photo evidence.</span></li>
+                <li><a href="exhibit-list.html">Exhibit List</a> <span>Viewing all evidence in a table with exhibit numbers, summaries, and strength ratings.</span></li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Trial &amp; Configuration</h2>
+            <ul>
+                <li><a href="trial-stages.html">Trial Stages</a> <span>Stage menu, trial phases, court phases, and dynamic title bar.</span></li>
+                <li><a href="model-config.html">Model Configuration</a> <span>Adding LLM providers, testing connections, downloading models, per-agent selection.</span></li>
+                <li><a href="juror-behavior.html">Juror Behavior</a> <span>Sentiment, verdict lean, bias, memories, decay, and demographic influence.</span></li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Reference</h2>
+            <ul>
+                <li><a href="shortcuts.html">Shortcuts &amp; Interactions</a> <span>Right-click menus, left-click add, podium button, Generate Jury, and more.</span></li>
+                <li><a href="troubleshooting.html">Troubleshooting</a> <span>Common issues: build failures, LLM errors, missing models, juror behavior problems.</span></li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Verdict &mdash; Courtroom Simulation &amp; Case Management &mdash; <a href="index.html" style="color:#3498DB;">Back to Top</a></p>
+        </div>
+    </div>
+</body>
+</html>

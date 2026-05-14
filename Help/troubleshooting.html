@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        pre { background: #243342; color: #ECF0F1; padding: 15px; border-radius: 6px; overflow-x: auto; margin-bottom: 15px; border-left: 3px solid #3498DB; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        .problem { background: #243342; border-left: 4px solid #E74C3C; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        .problem h3 { margin-top: 0; color: #E74C3C; }
+        .solution { background: #243342; border-left: 4px solid #2ECC71; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        .solution h3 { margin-top: 0; color: #2ECC71; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Troubleshooting</h1>
+
+        <p>This page covers common issues you may encounter while using Verdict and their solutions.</p>
+
+        <div class="problem">
+            <h3>Build Fails</h3>
+            <p><strong>Symptoms:</strong> <code>dotnet build</code> returns errors.</p>
+            <p><strong>Possible causes and solutions:</strong></p>
+            <ul>
+                <li><strong>.NET 9 SDK not installed</strong> &mdash; Verify that .NET 9 SDK is installed by running <code>dotnet --version</code>. If not installed, download from <a href="https://dotnet.microsoft.com/download" style="color:#3498DB;">dotnet.microsoft.com</a>.</li>
+                <li><strong>Missing dependencies</strong> &mdash; Run <code>dotnet restore</code> to restore NuGet packages before building.</li>
+                <li><strong>Build artifacts conflict</strong> &mdash; Run <code>dotnet clean</code> followed by <code>dotnet build</code> to start fresh.</li>
+                <li><strong>Syntax errors</strong> &mdash; Check the error output for specific file and line references. Ensure you're using C# 12+ features correctly.</li>
+            </ul>
+        </div>
+
+        <div class="problem">
+            <h3>LLM Not Responding</h3>
+            <p><strong>Symptoms:</strong> Agent Chat, evidence analysis, or other AI features return no response or timeout.</p>
+            <p><strong>Possible causes and solutions:</strong></p>
+            <ul>
+                <li><strong>No model configured</strong> &mdash; Go to Settings &gt; Model Settings and add at least one model.</li>
+                <li><strong>Invalid API key</strong> &mdash; Verify your API key is correct and has not expired. Use the Test Connection button to check.</li>
+                <li><strong>Network issues</strong> &mdash; Ensure you have internet access if using cloud providers (OpenAI, Anthropic, etc.).</li>
+                <li><strong>Rate limiting</strong> &mdash; Some providers impose rate limits. Wait a moment and try again.</li>
+                <li><strong>Model not assigned to agent</strong> &mdash; Check that the agent has a model selected in its profile settings.</li>
+            </ul>
+        </div>
+
+        <div class="problem">
+            <h3>Models Not Appearing</h3>
+            <p><strong>Symptoms:</strong> No models show up in the Model Settings window or agent profile dropdown.</p>
+            <p><strong>Possible causes and solutions:</strong></p>
+            <ul>
+                <li><strong>No models added</strong> &mdash; Click the Add Model button in Model Settings to configure a model.</li>
+                <li><strong>Provider not configured</strong> &mdash; Ensure you've selected a provider and entered all required fields.</li>
+                <li><strong>Ollama not running</strong> &mdash; If using Ollama, ensure the Ollama service is running locally. Run <code>ollama serve</code> in a terminal.</li>
+                <li><strong>Provider discovery failed</strong> &mdash; Check the ProviderDiscoveryService logs for errors.</li>
+            </ul>
+        </div>
+
+        <div class="problem">
+            <h3>Jurors Not Forming Opinions</h3>
+            <p><strong>Symptoms:</strong> Juror sentiment and verdict lean remain at default values and do not change.</p>
+            <p><strong>Possible causes and solutions:</strong></p>
+            <ul>
+                <li><strong>No LLM model configured</strong> &mdash; Juror behavior requires an active LLM model to process trial events and update opinions.</li>
+                <li><strong>No evidence submitted</strong> &mdash; Jurors need evidence and arguments to form opinions. Submit evidence and use the Stage menu to progress through trial phases.</li>
+                <li><strong>Memory decay too aggressive</strong> &mdash; The default decay factor is 0.95. If opinions seem too static, check that trial events are being created properly.</li>
+                <li><strong>Juror not generated properly</strong> &mdash; Try deleting the juror and using Generate Likely Juror or Generate Jury to create a new one.</li>
+            </ul>
+        </div>
+
+        <div class="problem">
+            <h3>Application Crashes</h3>
+            <p><strong>Symptoms:</strong> Verdict closes unexpectedly or becomes unresponsive.</p>
+            <p><strong>Possible causes and solutions:</strong></p>
+            <ul>
+                <li><strong>Insufficient memory</strong> &mdash; Close other applications to free up RAM. Verdict requires at least 4 GB.</li>
+                <li><strong>Corrupted case file</strong> &mdash; Try opening a different case file to isolate the issue. Backup your .jur files regularly.</li>
+                <li><strong>LLM timeout</strong> &mdash; A slow or unresponsive LLM provider can cause the UI to freeze. Check your network connection.</li>
+                <li><strong>Update to latest version</strong> &mdash; Ensure you're running the latest build. Run <code>git pull</code> and rebuild.</li>
+            </ul>
+        </div>
+
+        <div class="problem">
+            <h3>Evidence Not Processing</h3>
+            <p><strong>Symptoms:</strong> Submitted evidence files are not analyzed or do not appear in the Exhibit List.</p>
+            <p><strong>Possible causes and solutions:</strong></p>
+            <ul>
+                <li><strong>Unsupported file type</strong> &mdash; Ensure the file is one of the supported types: PDF, TXT, DOCX, RTF, JPG, JPEG, PNG, GIF, BMP.</li>
+                <li><strong>File is corrupted</strong> &mdash; Try opening the file outside of Verdict to verify it's not damaged.</li>
+                <li><strong>No LLM configured</strong> &mdash; AI analysis requires an active model. Configure a model in Settings &gt; Model Settings.</li>
+                <li><strong>File too large</strong> &mdash; Very large files may take longer to process or exceed provider limits.</li>
+            </ul>
+        </div>
+
+        <div class="note">
+            <strong>Still having issues?</strong> Check the <code>TODO.md</code> file in the project root for known issues and planned improvements. You can also review the test harness in <code>Tests/TestHarness.cs</code> for verification of core components.
+        </div>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

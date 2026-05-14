@@ -1,0 +1,31 @@
+<Window x:Class="Verdict.Views.AddModelDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add AI Model" Height="350" Width="450"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="#F0F0F0">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Select Model Provider" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+        
+        <ListBox x:Name="ProviderList" Grid.Row="1" Margin="0,0,0,10" ItemsSource="{Binding AvailableProviders}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="5">
+                        <TextBlock Text="{Binding ProviderName}" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Description}" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Next >" Click="Next_Click" Width="75" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Content="Cancel" IsCancel="True" Width="75"/>
+        </StackPanel>
+    </Grid>
+</Window>

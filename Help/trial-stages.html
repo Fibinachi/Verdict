@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trial Stages - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        .phase { background: #243342; border-radius: 6px; padding: 12px 15px; margin-bottom: 10px; border-left: 4px solid #3498DB; }
+        .phase h3 { margin-top: 0; color: #2ECC71; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Trial Stages</h1>
+
+        <p>Verdict includes a comprehensive stage management system that allows you to track and control the progress of your case through the legal process.</p>
+
+        <h2>The Stage Menu</h2>
+        <p>The <strong>Stage</strong> menu is located in the main menu bar between the <strong>File</strong> and <strong>Case</strong> menus. It provides two levels of stage control:</p>
+
+        <h2>Trial Phases</h2>
+        <p>The top-level trial phases represent the major stages of a legal proceeding:</p>
+
+        <div class="phase">
+            <h3>Discovery</h3>
+            <p>The pre-trial phase where both parties exchange information, gather evidence, and prepare their cases. During this phase, you can submit evidence, interview witnesses, and build your strategy.</p>
+        </div>
+
+        <div class="phase">
+            <h3>Pretrial</h3>
+            <p>The pretrial phase includes motions, jury selection, and final preparations before the trial begins. Use this phase to finalize your evidence list and configure juror profiles.</p>
+        </div>
+
+        <div class="phase">
+            <h3>Trial</h3>
+            <p>The main trial phase where evidence is presented, witnesses testify, and arguments are made. The trial phase contains several sub-phases (court phases) that represent the progression of the trial itself.</p>
+        </div>
+
+        <h2>Court Phases (Trial Sub-stages)</h2>
+        <p>When the trial phase is active, you can select from the following court phases:</p>
+
+        <div class="phase">
+            <h3>Opening Statements</h3>
+            <p>Both sides present their opening statements to the jury, outlining what they intend to prove during the trial.</p>
+        </div>
+
+        <div class="phase">
+            <h3>Witness Testimony</h3>
+            <p>Witnesses are called to testify and present their accounts of events relevant to the case.</p>
+        </div>
+
+        <div class="phase">
+            <h3>Cross Examination</h3>
+            <p>The opposing side questions witnesses to challenge their testimony and credibility.</p>
+        </div>
+
+        <div class="phase">
+            <h3>Party Statements</h3>
+            <p>The parties themselves (plaintiff/prosecution and defense) may make statements to the court.</p>
+        </div>
+
+        <div class="phase">
+            <h3>Closing Arguments</h3>
+            <p>Both sides present their final summaries and arguments to the jury before deliberation.</p>
+        </div>
+
+        <div class="phase">
+            <h3>Jury Deliberation</h3>
+            <p>The jury retires to deliberate and reach a verdict. Jurors' sentiments and biases influence their final decision.</p>
+        </div>
+
+        <h2>Dynamic Title Bar</h2>
+        <p>The window title updates dynamically to reflect the current case and stage. The format is:</p>
+        <pre><code>VERDICT - Plaintiff v. Defendant - (CASE STAGE)</code></pre>
+        <p>For example: <code>VERDICT - Smith v. Johnson - (Trial - Opening Statements)</code></p>
+        <p>The title bar updates automatically when:</p>
+        <ul>
+            <li>A new case is loaded or created.</li>
+            <li>The trial phase is changed via the Stage menu.</li>
+            <li>The court phase is changed during the trial.</li>
+        </ul>
+
+        <div class="note">
+            <strong>Tip:</strong> Use the Stage menu to track your progress through the case. The current stage is always visible in the window title bar for quick reference.
+        </div>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

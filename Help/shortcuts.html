@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shortcuts & Interactions - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 8px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        .shortcut { background: #243342; border-radius: 6px; padding: 15px; margin-bottom: 12px; border-left: 4px solid #3498DB; }
+        .shortcut h3 { margin-top: 0; color: #2ECC71; }
+        .key { display: inline-block; background: #1B2631; color: #ECF0F1; padding: 2px 8px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 0.85em; border: 1px solid #34495E; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shortcuts &amp; Interactions</h1>
+
+        <p>This page summarizes all the interactive elements and shortcuts available in the Verdict courtroom interface.</p>
+
+        <div class="shortcut">
+            <h3>Right-Click Context Menus</h3>
+            <p>Right-click on any occupied agent seat to open a context menu with the following options:</p>
+            <ul>
+                <li><strong>Edit Profile</strong> &mdash; Opens the Agent Profile window to modify the agent's settings.</li>
+                <li><strong>Generate Likely Juror</strong> &mdash; (Juror seats) Automatically generates a juror with demographic data.</li>
+                <li><strong>Chat</strong> &mdash; Opens the Agent Chat window for LLM-powered conversation.</li>
+                <li><strong>Juror Report</strong> &mdash; (Juror/Alternate seats) Opens the Juror Report with sentiment and verdict analysis.</li>
+                <li><strong>Save as Character .VCS</strong> &mdash; Saves the agent as a reusable character profile file.</li>
+                <li><strong>Save to Casefile</strong> &mdash; Saves the agent's current state to the case file.</li>
+                <li><strong>Delete</strong> &mdash; Removes the agent from the seat.</li>
+            </ul>
+        </div>
+
+        <div class="shortcut">
+            <h3>Left-Click "+" (Add Agent)</h3>
+            <p>Click the <strong>"+"</strong> button on any empty seat to add a new agent. This opens the Agent Profile window where you can configure the agent's name, role, prompt, and model settings.</p>
+        </div>
+
+        <div class="shortcut">
+            <h3>Podium Button</h3>
+            <p>The central <strong>Podium</strong> button at the bottom of the courtroom focuses the input prompt. Click it to quickly access the text input area for entering commands or messages.</p>
+        </div>
+
+        <div class="shortcut">
+            <h3>Stage Menu</h3>
+            <p>The <strong>Stage</strong> menu (located between File and Case in the menu bar) provides trial phase and court phase controls:</p>
+            <ul>
+                <li><strong>Trial Phases:</strong> Discovery, Pretrial, Trial</li>
+                <li><strong>Court Phases:</strong> Opening Statements, Witness Testimony, Cross Examination, Party Statements, Closing Arguments, Jury Deliberation</li>
+            </ul>
+        </div>
+
+        <div class="shortcut">
+            <h3>Generate Jury Button</h3>
+            <p>The <strong>Generate Jury</strong> button populates all empty jury box seats with demographically-generated jurors. Each juror receives a unique profile with age, gender, occupation, education, income, region, and associated biases.</p>
+        </div>
+
+        <div class="shortcut">
+            <h3>Clerk Seat (Evidence Submission)</h3>
+            <p>The <strong>Clerk Seat</strong> (highlighted in green) accepts drag-and-drop file submissions for evidence. You can also use the <strong>ADMIT EVIDENCE</strong> button to open a file dialog.</p>
+        </div>
+
+        <div class="shortcut">
+            <h3>Case Menu</h3>
+            <p>The <strong>Case</strong> menu provides access to:</p>
+            <ul>
+                <li><strong>_Exhibit List</strong> &mdash; Opens the Exhibit List window showing all evidence.</li>
+            </ul>
+        </div>
+
+        <div class="shortcut">
+            <h3>File Menu</h3>
+            <p>The <strong>File</strong> menu provides:</p>
+            <ul>
+                <li>New Case, Open Case, Save, Save As, Recent Files, Case Settings.</li>
+            </ul>
+        </div>
+
+        <div class="shortcut">
+            <h3>Settings Menu</h3>
+            <p>The <strong>Settings</strong> menu provides access to <strong>Model Settings</strong> for configuring LLM providers and models.</p>
+        </div>
+
+        <div class="note">
+            <strong>Tip:</strong> Most interactions in Verdict are mouse-driven. The right-click context menu is the primary way to access agent-specific features.
+        </div>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

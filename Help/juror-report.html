@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juror Report - Verdict Help</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1B2631; color: #ECF0F1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        h1 { color: #3498DB; font-size: 2.2em; margin-bottom: 10px; border-bottom: 2px solid #3498DB; padding-bottom: 10px; }
+        h2 { color: #2ECC71; font-size: 1.5em; margin-top: 30px; margin-bottom: 15px; }
+        h3 { color: #3498DB; font-size: 1.1em; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin-bottom: 12px; padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        code { background: #243342; color: #2ECC71; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+        .note { background: #243342; border-left: 4px solid #F39C12; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; }
+        .note strong { color: #F39C12; }
+        a { color: #3498DB; text-decoration: none; }
+        a:hover { color: #2ECC71; text-decoration: underline; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #34495E; text-align: center; color: #95A5A6; font-size: 0.9em; }
+        .bar-container { background: #243342; border-radius: 6px; height: 20px; margin-bottom: 10px; overflow: hidden; }
+        .bar { height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: bold; color: #1B2631; }
+        .bar-green { background: #2ECC71; }
+        .bar-blue { background: #3498DB; }
+        .bar-red { background: #E74C3C; }
+        .bar-yellow { background: #F1C40F; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Juror Report</h1>
+
+        <p>The Juror Report provides a detailed analysis of any juror or alternate juror in the jury box. It displays demographics, sentiment analysis, verdict lean, bias indicators, and memory history.</p>
+
+        <h2>Opening a Juror Report</h2>
+        <ol>
+            <li><strong>Right-click</strong> on any juror or alternate seat in the jury box.</li>
+            <li>Select <strong>Juror Report</strong> from the context menu.</li>
+            <li>The <strong>JurorReportWindow</strong> opens with detailed information about that juror.</li>
+        </ol>
+
+        <h2>Report Sections</h2>
+
+        <h3>Demographics</h3>
+        <p>Displays the juror's demographic profile including age, gender, occupation, education level, income bracket, and geographic region. These demographics influence the juror's biases and decision-making patterns.</p>
+
+        <h3>Sentiment</h3>
+        <p>Shows the juror's current sentiment toward the case, measured as a percentage from 0% to 100%. Sentiment reflects the juror's overall attitude and is influenced by evidence presented, arguments heard, and the juror's inherent biases.</p>
+        <div class="bar-container">
+            <div class="bar bar-green" style="width: 72%;">72% Positive</div>
+        </div>
+
+        <h3>Verdict Lean</h3>
+        <p>Indicates the juror's tendency toward one side, displayed as a percentage:</p>
+        <ul>
+            <li><strong>0%</strong> &mdash; Strongly favors the Defense</li>
+            <li><strong>50%</strong> &mdash; Neutral / Undecided</li>
+            <li><strong>100%</strong> &mdash; Strongly favors the Plaintiff/Prosecution</li>
+        </ul>
+        <div class="bar-container">
+            <div class="bar bar-blue" style="width: 65%;">65% Plaintiff</div>
+        </div>
+
+        <h3>Bias</h3>
+        <p>A numerical bias score ranging from <strong>-1.0</strong> to <strong>+1.0</strong>:</p>
+        <ul>
+            <li><strong>Negative values</strong> &mdash; Bias toward the Defense</li>
+            <li><strong>Positive values</strong> &mdash; Bias toward the Plaintiff/Prosecution</li>
+            <li><strong>Zero</strong> &mdash; Neutral / No bias</li>
+        </ul>
+
+        <h3>Trial Memories Tab</h3>
+        <p>Lists memories created during the trial process, such as evidence presentations, witness testimony, and attorney arguments. These are tagged with <code>Source = "TrialEvent"</code> and directly influence the juror's evolving opinion.</p>
+
+        <h3>Background Memories Tab</h3>
+        <p>Shows the juror's pre-existing memories and background information that shape their worldview and biases. These are set when the juror is created or configured.</p>
+
+        <h3>Colored Strength Bars</h3>
+        <p>Each memory is displayed with a colored strength bar indicating how strongly that memory influences the juror:</p>
+        <ul>
+            <li><span style="color:#2ECC71;">Green</span> &mdash; Strong influence</li>
+            <li><span style="color:#F1C40F;">Yellow</span> &mdash; Moderate influence</li>
+            <li><span style="color:#E74C3C;">Red</span> &mdash; Weak influence</li>
+        </ul>
+
+        <div class="note">
+            <strong>Tip:</strong> Use the Juror Report to understand how each juror is likely to vote. This can help you tailor your arguments and evidence presentation to sway undecided jurors.
+        </div>
+
+        <div class="footer">
+            <p><a href="index.html">Back to Help Index</a></p>
+        </div>
+    </div>
+</body>
+</html>

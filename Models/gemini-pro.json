@@ -1,0 +1,12 @@
+{
+  "FriendlyName": "Gemini Pro",
+  "Provider": "GoogleGemini",
+  "ModelId": "gemini-pro",
+  "Endpoint": "https://generativelanguage.googleapis.com",
+  "ApiKey": "",
+  "Status": "Ready",
+  "CustomSettings": {
+    "Temperature": "0.7",
+    "MaxTokens": "8192"
+  }
+}
