@@ -1,0 +1,28 @@
+# Build outputs
+bin/
+obj/
+
+# User-specific / editor
+.vscode/
+
+# Local data / model caches (if present)
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Tooling / generated state
+.memory/
+*.log
+
+# These bot/agent directories exist in this repo but should not be pushed
+.continue/
+.kilo/
+.zencoder/
+.zhanlu/
+
+# Optional: keep repo clean from downloaded artifacts
+*.onnx
+*.bin
+*.gguf
+
