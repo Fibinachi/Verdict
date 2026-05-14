@@ -299,3 +299,5 @@ Use the **Stage** menu to switch between trial phases (Discovery, Pretrial, Tria
 ## License
 
 This project is for demonstration and research purposes.
+#   V e r d i c t  
+ 
