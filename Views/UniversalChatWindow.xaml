@@ -1,0 +1,94 @@
+<Window x:Class="Verdict.Views.UniversalChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+Title="Universal Chat &amp; Evidence"
+        WindowStartupLocation="CenterOwner" Background="#1B2631" Foreground="White">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="UNIVERSAL CHAT (Any character) + Testimony Evidence" 
+                   Foreground="#3498DB" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+        <Border Grid.Row="1" Background="#0D1117" CornerRadius="5" Padding="10">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="ConversationLog" Foreground="#ECF0F1" TextWrapping="Wrap"/>
+            </ScrollViewer>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,10,0,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Target (occupied)" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,5" Foreground="#BDC3C7"/>
+            <ComboBox x:Name="TargetAgentCombo" Grid.Row="0" Grid.Column="1" Margin="0,0,0,5" Height="26"/>
+
+            <TextBlock Text="Mode" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,5" Foreground="#BDC3C7"/>
+            <ComboBox x:Name="ModeCombo" Grid.Row="1" Grid.Column="1" Margin="0,0,0,5" Height="26">
+                <ComboBoxItem Content="Chat" IsSelected="True"/>
+                <ComboBoxItem Content="Introduce as Testimony (Evidence)"/>
+            </ComboBox>
+
+            <TextBlock Text="Submitting attorney" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,5" Foreground="#BDC3C7"/>
+            <ComboBox x:Name="AttorneyCombo" Grid.Row="2" Grid.Column="1" Margin="0,0,0,5" Height="26"/>
+
+            <TextBlock Text="Caller side" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#BDC3C7"/>
+            <ComboBox x:Name="CallerSideCombo" Grid.Row="3" Grid.Column="1" Margin="0,0,0,0" Height="26">
+                <ComboBoxItem Content="Plaintiff" IsSelected="True"/>
+                <ComboBoxItem Content="Defense"/>
+            </ComboBox>
+        </Grid>
+
+        <Grid Grid.Row="3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock x:Name="WitnessPromptLabel" Text="Witness name for testimony (can be generated if left blank)" Foreground="#BDC3C7" Margin="0,0,0,6"/>
+
+            <Grid Grid.Row="1" Margin="0,0,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="140"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Witness" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,5" Foreground="#BDC3C7"/>
+                <ComboBox x:Name="WitnessAgentCombo" Grid.Row="0" Grid.Column="1" Margin="0,0,10,5" Height="26"/>
+
+                <Button Grid.Row="0" Grid.Column="2" Content="Clear" Background="#2C3E50" Foreground="White" Height="26" Click="ClearWitness_Click"/>
+
+                <TextBox x:Name="TestimonyTextBox" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,0,10" Background="#2C3E50" Foreground="White" BorderThickness="0" Padding="10" 
+                         AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"/>
+
+                <Grid Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Send" Width="120" Height="32" Margin="0,0,10,0" Background="#E67E22" Foreground="White" FontWeight="Bold" Click="Send_Click"/>
+                        <Button Content="Close" Width="120" Height="32" Background="#7F8C8D" Foreground="White" Click="Close_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

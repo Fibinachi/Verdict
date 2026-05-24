@@ -1,0 +1,17 @@
+TESTIMONY OF FORENSIC ANALYST DR. MARCUS KLINE
+Direct Examination - Prosecution
+
+Q: Dr. Kline, your qualifications?
+A: PhD in Forensic Science, certified by the International Association of Forensic Sciences. 15 years analyzing biological evidence.
+
+Q: What did your analysis reveal?
+A: The DNA profile recovered from the victim's clothing matches the defendant's profile with a combined probability of inclusion of 1 in 10 billion. The statistical significance is overwhelming.
+
+Q: Are there limitations to DNA testing?
+A: All scientific methods have limitations. Contamination, degradation, and statistical interpretation can affect conclusions. However, our protocols follow FDA guidelines and the results are reproducible.
+
+Q: Could someone else's DNA be on the sample?
+A: The profile is so distinct and the mixture so clear that alternative explanations would require assuming contamination at multiple stages of processing, which our chain of custody documentation doesn't support.
+
+Q: What about the blood spatter analysis?
+A: The pattern indicates arterial blood ejected under pressure, consistent with the victim's position and the defendant's proximity. The angle and distance measurements support the prosecution's scenario.

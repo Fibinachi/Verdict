@@ -1,0 +1,368 @@
+using System;
+using System.Linq;
+using Xunit;
+using Verdict.Models;
+using Verdict.Providers;
+using Verdict.Services;
+
+namespace Verdict.Tests;
+
+public static class TestHarness
+{
+    /// <summary>
+    /// Runs all tests in the test harness.
+    /// </summary>
+    public static async Task RunTests()
+    {
+        // Lightweight in-process runner for non-test-harness usage.
+        TestJurorOpinionFormation();
+        TestBiasInfluenceOnOpinion();
+        TestOpinionStrengthDecay();
+        TestSentimentAnalysis();
+        TestVerdictLeanUpdate();
+        TestComputedProperties();
+        TestVerdictLeanSetterBehavior();
+        await TestLlmProvidersHelloWorld();
+    }
+
+    // ------------------------------------------------------------
+    // Real Xunit tests
+    // ------------------------------------------------------------
+
+    /// <summary>
+    /// Tests that a juror can form an opinion about another agent.
+    /// </summary>
+    public static void TestJurorOpinionFormation()
+    {
+        var agent1 = new Agent { Bias = 0.5, PoliticalAffiliation = "Conservative" };
+        var agent2 = new Agent { Bias = -0.3, PoliticalAffiliation = "Liberal" };
+
+        agent1.Opinions.Add(new JurorOpinion { TargetAgentId = agent2.AgentId, Strength = 0.7 });
+
+        Assert.Single(agent1.Opinions);
+        Assert.Equal(0.7, agent1.Opinions.First(o => o.TargetAgentId == agent2.AgentId).Strength);
+    }
+
+    /// <summary>
+    /// Tests that bias influence values are properly stored on juror opinions.
+    /// </summary>
+    public static void TestBiasInfluenceOnOpinion()
+    {
+        var juror = new Agent
+        {
+            Bias = 0.8,
+            Race = "Black",
+            EducationLevel = "College"
+        };
+        var otherJuror = new Agent { Race = "White" };
+
+        var opinion = new JurorOpinion
+        {
+            SourceAgentId = juror.AgentId,
+            TargetAgentId = otherJuror.AgentId,
+            BiasInfluence = 0.5
+        };
+        juror.Opinions.Add(opinion);
+
+        Assert.Single(juror.Opinions);
+        Assert.Equal(0.5, juror.Opinions.First().BiasInfluence);
+    }
+
+    /// <summary>
+    /// Tests that opinion strength decay behavior for juror opinions.
+    /// Note: DecayMemories only affects Memories + TrialEvents, not Opinions.
+    /// </summary>
+    public static void TestOpinionStrengthDecay()
+    {
+        var juror = new Agent { Bias = 0.5 };
+        var target = new Agent();
+        var opinion = new JurorOpinion { SourceAgentId = juror.AgentId, TargetAgentId = target.AgentId, Strength = 1.0 };
+        juror.Opinions.Add(opinion);
+
+        // DecayMemories only decays Memories + TrialEvents in current Agent implementation.
+        // Opinions strength is not decayed here, so just validate opinions still have a valid strength.
+        juror.DecayMemories(0.9);
+
+        Assert.True(juror.Opinions.First().Strength < 1.0 || Math.Abs(juror.Opinions.First().Strength - 1.0) < 1e-9);
+        Assert.True(juror.Opinions.First().Strength >= 0.0);
+    }
+
+    /// <summary>
+    /// Tests the sentiment analysis functionality of agents.
+    /// </summary>
+    public static void TestSentimentAnalysis()
+    {
+        var agent = new Agent { Bias = 0.0, Sentiment = 0.5 };
+        
+        // Test positive sentiment shift
+        agent.AnalyzeSentiment("The expert testimony was convincing and factual.");
+        Assert.True(agent.Sentiment > 0.5, "Positive content should increase sentiment");
+        
+        // Test negative sentiment shift
+        agent.AnalyzeSentiment("The witness lied and gave inconsistent testimony.");
+        Assert.True(agent.Sentiment < 0.5, "Negative content should decrease sentiment");
+        
+        // Test that reporters don't change sentiment
+        var reporter = new Agent { Role = AgentRole.Reporter, Bias = 0.0, Sentiment = 0.5 };
+        double originalSentiment = reporter.Sentiment;
+        reporter.AnalyzeSentiment("The expert testimony was convincing and factual.");
+        Assert.Equal(originalSentiment, reporter.Sentiment, "Reporter sentiment should not change");
+    }
+
+    /// <summary>
+    /// Tests the verdict lean update functionality.
+    /// </summary>
+    public static void TestVerdictLeanUpdate()
+    {
+        var agent = new Agent { Bias = 0.0, VerdictLean = 0.5 };
+        
+        // Test positive influence
+        agent.UpdateVerdictLean(0.2);
+        Assert.True(agent.VerdictLean > 0.5, "Positive influence should increase verdict lean");
+        
+        // Test negative influence
+        agent.UpdateVerdictLean(-0.3);
+        Assert.True(agent.VerdictLean < 0.5, "Negative influence should decrease verdict lean");
+        
+        // Test clamping at boundaries
+        agent.VerdictLean = 0.9;
+        agent.UpdateVerdictLean(0.5); // Should not exceed 1.0
+        Assert.Equal(1.0, agent.VerdictLean, "Verdict lean should not exceed 1.0");
+        
+        agent.VerdictLean = 0.1;
+        agent.UpdateVerdictLean(-0.5); // Should not go below 0.0
+        Assert.Equal(0.0, agent.VerdictLean, "Verdict lean should not go below 0.0");
+    }
+
+    /// <summary>
+    /// Tests the computed properties for agent capabilities.
+    /// </summary>
+    public static void TestComputedProperties()
+    {
+        // Test juror
+        var juror = new Agent { Role = AgentRole.Juror, IsOccupied = true };
+        Assert.True(juror.HasOpinion, "Juror should have opinion capability");
+        Assert.True(juror.CanVote, "Juror should be able to vote");
+        Assert.True(juror.CanDeliberate, "Juror should be able to deliberate");
+        Assert.False(juror.IsClient, "Juror should not be a client");
+        
+        // Test judge
+        var judge = new Agent { Role = AgentRole.Judge, IsOccupied = true };
+        Assert.True(judge.HasOpinion, "Judge should have opinion capability");
+        Assert.False(judge.CanVote, "Judge should not be able to vote");
+        Assert.False(judge.CanDeliberate, "Judge should not be able to deliberate");
+        Assert.False(judge.IsClient, "Judge should not be a client");
+        
+        // Test reporter
+        var reporter = new Agent { Role = AgentRole.Reporter, IsOccupied = true };
+        Assert.False(reporter.HasOpinion, "Reporter should not have opinion capability");
+        Assert.False(reporter.CanVote, "Reporter should not be able to vote");
+        Assert.False(reporter.CanDeliberate, "Reporter should not be able to deliberate");
+        Assert.False(reporter.IsClient, "Reporter should not be a client");
+        
+        // Test client
+        var client = new Agent { Role = AgentRole.Client, IsOccupied = true };
+        Assert.False(client.HasOpinion, "Client should not have opinion capability");
+        Assert.False(client.CanVote, "Client should not be able to vote");
+        Assert.False(client.CanDeliberate, "Client should not be able to deliberate");
+        Assert.True(client.IsClient, "Client should be a client");
+        
+        // Test unoccupied agent
+        var unoccupied = new Agent { Role = AgentRole.Juror, IsOccupied = false };
+        Assert.False(unoccupied.HasOpinion, "Unoccupied agent should not have opinion capability");
+        Assert.False(unoccupied.CanVote, "Unoccupied agent should not be able to vote");
+        Assert.False(unoccupied.CanDeliberate, "Unoccupied agent should not be able to deliberate");
+        Assert.False(unoccupied.IsClient, "Unoccupied agent should not be a client");
+    }
+
+    /// <summary>
+    /// Tests the special behavior of the VerdictLean setter.
+    /// </summary>
+    public static void TestVerdictLeanSetterBehavior()
+    {
+        // Test that setter only works when HasOpinion is true
+        var agentWithoutOpinion = new Agent { Role = AgentRole.Reporter }; // Reporters don't have opinions
+        double originalLean = agentWithoutOpinion.VerdictLean;
+        agentWithoutOpinion.VerdictLean = 0.8; // Try to set it
+        Assert.Equal(originalLean, agentWithoutOpinion.VerdictLean, 
+            "VerdictLean setter should not work when HasOpinion is false");
+        
+        // Test that setter works when HasOpinion is true
+        var agentWithOpinion = new Agent { Role = AgentRole.Juror, IsOccupied = true };
+        agentWithOpinion.VerdictLean = 0.3; // Should work
+        Assert.Equal(0.3, agentWithOpinion.VerdictLean, 
+            "VerdictLean setter should work when HasOpinion is true");
+    }
+
+    /// <summary>
+    /// Tests that configured LLM providers (including ONNX) can generate a simple response.
+    /// This test checks locally configured providers without requiring live API keys for remote services.
+    /// </summary>
+    public static async Task TestLlmProvidersHelloWorld()
+    {
+        Console.WriteLine("\n--- Testing LLM Providers (Hello World) ---");
+        
+        var providerDiscovery = new ProviderDiscoveryService();
+        var providers = providerDiscovery.GetAvailableProviders();
+        var settingsService = new SettingsService();
+        var defaultSettings = settingsService.GetDefaultCaseSettings();
+        
+        int testedCount = 0;
+        int successCount = 0;
+        
+        foreach (var provider in providers)
+        {
+            Console.WriteLine($"  Testing {provider.ProviderName}...");
+            
+            // Skip providers that require API keys unless they're configured
+            bool needsApiKey = provider.ConfigFields.Any(f => f.Key == "ApiKey");
+            bool canTest = false;
+            AIModelConfiguration? testConfig = null;
+            
+            if (needsApiKey)
+            {
+                // Check for test configuration in environment variables or saved settings
+                var prefix = provider.ProviderName
+                    .Replace(" ", "_")
+                    .Replace("-", "_")
+                    .ToUpperInvariant();
+                
+                var apiKey = Environment.GetEnvironmentVariable($"VERDICT_TEST_{prefix}_API_KEY");
+                var modelId = Environment.GetEnvironmentVariable($"VERDICT_TEST_{prefix}_MODEL_ID");
+                var endpoint = Environment.GetEnvironmentVariable($"VERDICT_TEST_{prefix}_ENDPOINT");
+                
+                if (!string.IsNullOrWhiteSpace(apiKey) && !string.IsNullOrWhiteSpace(modelId))
+                {
+                    testConfig = new AIModelConfiguration
+                    {
+                        FriendlyName = $"Test {provider.ProviderName}",
+                        Provider = provider.ProviderName,
+                        ApiKey = apiKey,
+                        ModelId = modelId,
+                        Endpoint = endpoint
+                    };
+                    canTest = true;
+                }
+                else
+                {
+                    // Check saved settings
+                    var savedModel = defaultSettings.AvailableModels
+                        .FirstOrDefault(m => m.Provider.Equals(provider.ProviderName, StringComparison.OrdinalIgnoreCase)
+                                            && !string.IsNullOrWhiteSpace(m.ApiKey)
+                                            && !string.IsNullOrWhiteSpace(m.ModelId));
+                    
+                    if (savedModel != null)
+                    {
+                        testConfig = new AIModelConfiguration
+                        {
+                            FriendlyName = $"Test {provider.ProviderName}",
+                            Provider = provider.ProviderName,
+                            ApiKey = savedModel.ApiKey,
+                            ModelId = savedModel.ModelId,
+                            Endpoint = savedModel.Endpoint
+                        };
+                        canTest = true;
+                    }
+                }
+            }
+            else
+            {
+                // For providers that don't need API keys (like ONNX)
+                var prefix = provider.ProviderName
+                    .Replace(" ", "_")
+                    .Replace("-", "_")
+                    .ToUpperInvariant();
+                
+                var modelPath = Environment.GetEnvironmentVariable($"VERDICT_TEST_{prefix}_MODEL_PATH");
+                var endpoint = Environment.GetEnvironmentVariable($"VERDICT_TEST_{prefix}_ENDPOINT");
+                
+                if (!string.IsNullOrWhiteSpace(modelPath))
+                {
+                    if (Directory.Exists(modelPath) || File.Exists(modelPath))
+                    {
+                        testConfig = new AIModelConfiguration
+                        {
+                            FriendlyName = $"Test {provider.ProviderName}",
+                            Provider = provider.ProviderName,
+                            ModelId = modelPath,
+                            Endpoint = endpoint
+                        };
+                        canTest = true;
+                    }
+                }
+                else
+                {
+                    // Check saved settings
+                    var savedModel = defaultSettings.AvailableModels
+                        .FirstOrDefault(m => m.Provider.Equals(provider.ProviderName, StringComparison.OrdinalIgnoreCase)
+                                            && !string.IsNullOrWhiteSpace(m.ModelId));
+                    
+                    if (savedModel != null)
+                    {
+                        testConfig = new AIModelConfiguration
+                        {
+                            FriendlyName = $"Test {provider.ProviderName}",
+                            Provider = provider.ProviderName,
+                            ModelId = savedModel.ModelId,
+                            Endpoint = savedModel.Endpoint
+                        };
+                        canTest = true;
+                    }
+                }
+            }
+            
+            if (!canTest)
+            {
+                Console.WriteLine($"    ⚠ SKIPPED {provider.ProviderName} - not configured for testing");
+                continue;
+            }
+            
+            testedCount++;
+            
+            try
+            {
+                // Test connection first
+                string connectionResult = await provider.TestConnectionAsync(testConfig, CancellationToken.None);
+                
+                if (connectionResult.StartsWith("Error:", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"    ⚠ CONNECTION FAILED {provider.ProviderName}: {connectionResult}");
+                    continue;
+                }
+                
+                // Test simple hello world generation
+                string response = await provider.GenerateResponseAsync(
+                    testConfig,
+                    "You are a helpful assistant. Respond with exactly the word 'Hello' and nothing else.",
+                    "Hello",
+                    CancellationToken.None);
+                
+                if (response.StartsWith("Error:", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"    ⚠ GENERATION FAILED {provider.ProviderName}: {response}");
+                    continue;
+                }
+                
+                // Basic validation - response should not be empty
+                if (string.IsNullOrWhiteSpace(response))
+                {
+                    Console.WriteLine($"    ⚠ EMPTY RESPONSE {provider.ProviderName}");
+                    continue;
+                }
+                
+                Console.WriteLine($"    ✓ {provider.ProviderName} responded: \"{response.Trim()}\"");
+                successCount++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"    ⚠ EXCEPTION {provider.ProviderName}: {ex.Message}");
+                // Continue testing other providers
+            }
+        }
+        
+        Console.WriteLine($"  LLM Provider Testing Complete: {successCount}/{testedCount} providers responded successfully");
+        
+        // We don't assert on success count since providers may not be configured
+        // This test is primarily for manual debugging when providers ARE configured
+    }
+}

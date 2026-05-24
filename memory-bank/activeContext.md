@@ -18,9 +18,10 @@ Documenting the codebase and creating a comprehensive test harness that tests al
 4. Verify the test harness runs successfully
 
 ## Active Decisions and Considerations
-- The test harness currently tests: Models, TranscriptService, CaseService, CharacterManager, ProviderDiscovery, LLM Providers (logic only), ViewModels, Default Case Settings, and Jury Generation
+- The test harness currently tests: Models, TranscriptService (developmental only), CaseService, CharacterManager, ProviderDiscovery, LLM Providers (logic only), ViewModels, Default Case Settings, and Jury Generation
 - Need to add tests for: EvidenceAnalysisService, DebateService, JuryCalculationService, CaseEntityMapper, AgentAssignmentService, LegalDatabaseService, ReportGenerationService, AgentInteractionService, CourtroomManagerService, Logger, and all remaining model edge cases
 - The test harness runs as a console application (Tests.csproj) referencing the main project
+- **Chat interface separated from transcript services**: ProcessChatInputLine is now the chat entry point, while LoadTranscript and ExtractEntitiesFromTranscriptAsync require ITranscriptService (nullable dependency)
 
 ## Important Patterns and Preferences
 - Tests use Console.WriteLine for progress and throw Exception on failure

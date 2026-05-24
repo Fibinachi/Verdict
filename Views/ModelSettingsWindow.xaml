@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:Verdict.Converters"
         mc:Ignorable="d"
-        Title="LLM Model Configuration" Height="550" Width="650"
+        Title="LLM Model Configuration" Height="700" Width="650"
         WindowStartupLocation="CenterOwner" Background="#F0F0F0">
     <Window.Resources>
         <conv:NullToBoolConverter x:Key="NullToBoolConverter"/>
@@ -14,6 +14,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -67,83 +68,7 @@
                         </Style>
                     </ListBox.ItemContainerStyle>
                 </ListBox>
-        </GroupBox>
-
-        <!-- Bias Settings Section -->
-        <GroupBox Header="Bias Weight Configuration" Grid.Row="1" Margin="0,10,0,10">
-            <Grid Margin="5">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Age:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding AgeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding AgeBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Gender:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding GenderBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding GenderBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Education Level:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding EducationBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding EducationBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Income Level:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding IncomeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding IncomeBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Political Affiliation:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding PoliticalBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding PoliticalBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="Ethnicity:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding EthnicityBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding EthnicityBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="Religion:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="6" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding ReligionBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="6" Grid.Column="2" Text="{Binding ReligionBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <StackPanel Grid.Row="7" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                    <Button Content="Set Defaults" Click="SetBiasDefaults_Click" Width="100" Margin="0,0,10,0"/>
-                    <Button Content="Reset to Defaults" Click="ResetBiasDefaults_Click" Width="120"/>
-                </StackPanel>
-            </Grid>
-        </GroupBox>
-
+            </GroupBox>
 
             <!-- Actions -->
             <StackPanel Grid.Column="1" VerticalAlignment="Top">
@@ -171,7 +96,59 @@
             </StackPanel>
         </Grid>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+        <!-- Bias Settings Section -->
+        <GroupBox Header="Bias Weight Configuration" Grid.Row="2" Margin="0,10,0,10">
+            <Canvas>
+                <Slider x:Name="AgeSlider" Canvas.Left="80" Canvas.Top="5" Width="200"
+                        Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                        Value="{Binding AgeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"/>
+                <TextBlock Text="Age:" Canvas.Left="0" Canvas.Top="10" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding AgeBiasWeight, StringFormat={}{0:F2}}" Canvas.Left="290" Canvas.Top="10" Width="40"/>
+
+                <Slider x:Name="GenderSlider" Canvas.Left="80" Canvas.Top="40" Width="200"
+                        Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                        Value="{Binding GenderBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"/>
+                <TextBlock Text="Gender:" Canvas.Left="0" Canvas.Top="45"/>
+                <TextBlock Text="{Binding GenderBiasWeight, StringFormat={}{0:F2}}" Canvas.Left="290" Canvas.Top="45" Width="40"/>
+
+                <Slider x:Name="EducationSlider" Canvas.Left="80" Canvas.Top="70" Width="200"
+                        Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                        Value="{Binding EducationBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"/>
+                <TextBlock Text="Education Level:" Canvas.Left="0" Canvas.Top="75"/>
+                <TextBlock Text="{Binding EducationBiasWeight, StringFormat={}{0:F2}}" Canvas.Left="290" Canvas.Top="75" Width="40"/>
+
+                <Slider x:Name="IncomeSlider" Canvas.Left="80" Canvas.Top="100" Width="200"
+                        Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                        Value="{Binding IncomeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"/>
+                <TextBlock Text="Income Level:" Canvas.Left="0" Canvas.Top="105"/>
+                <TextBlock Text="{Binding IncomeBiasWeight, StringFormat={}{0:F2}}" Canvas.Left="290" Canvas.Top="105" Width="40"/>
+
+                <Slider x:Name="PoliticalSlider" Canvas.Left="80" Canvas.Top="130" Width="200"
+                        Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                        Value="{Binding PoliticalBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"/>
+                <TextBlock Text="Political Affiliation:" Canvas.Left="0" Canvas.Top="135"/>
+                <TextBlock Text="{Binding PoliticalBiasWeight, StringFormat={}{0:F2}}" Canvas.Left="290" Canvas.Top="135" Width="40"/>
+
+                <Slider x:Name="EthnicitySlider" Canvas.Left="80" Canvas.Top="160" Width="200"
+                        Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                        Value="{Binding EthnicityBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"/>
+                <TextBlock Text="Ethnicity:" Canvas.Left="0" Canvas.Top="165"/>
+                <TextBlock Text="{Binding EthnicityBiasWeight, StringFormat={}{0:F2}}" Canvas.Left="290" Canvas.Top="165" Width="40"/>
+
+                <Slider x:Name="ReligionSlider" Canvas.Left="80" Canvas.Top="190" Width="200"
+                        Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                        Value="{Binding ReligionBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"/>
+                <TextBlock Text="Religion:" Canvas.Left="0" Canvas.Top="195"/>
+                <TextBlock Text="{Binding ReligionBiasWeight, StringFormat={}{0:F2}}" Canvas.Left="290" Canvas.Top="195" Width="40"/>
+
+                <StackPanel Canvas.Left="350" Canvas.Top="5" Width="150">
+                    <Button Content="Set Defaults" Click="SetBiasDefaults_Click" Width="100" Margin="0,0,10,0"/>
+                    <Button Content="Reset to Defaults" Click="ResetBiasDefaults_Click" Width="120"/>
+                </StackPanel>
+            </Canvas>
+        </GroupBox>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button Content="OK" IsDefault="True" Click="Ok_Click" Width="75" Margin="0,0,5,0"/>
             <Button Content="Cancel" IsCancel="True" Width="75"/>
         </StackPanel>

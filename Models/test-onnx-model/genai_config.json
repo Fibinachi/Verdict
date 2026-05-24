@@ -1,0 +1,10 @@
+{
+  "model": {
+    "context_length": 2048,
+    "decoder": {
+      "session_options": {
+        "enable_cpu_mem_arena": false
+      }
+    }
+  }
+}

@@ -417,9 +417,10 @@ Deliver the verdict formally with legal reasoning. Under 50 words. Be authoritat
             : $"You are {agent.Name}, a {agent.Age}-year-old {agent.Occupation} " +
               $"({agent.EducationLevel}, {agent.PoliticalAffiliation}, {agent.ReligiousAffiliation}). " +
               $"Your personal bias leans toward {biasDirection} (bias score: {agent.Bias:+0.00;-0.00;0.00}). " +
-              $"Your current emotional state: {agent.CurrentStatus}. " +
-              "Rephrase the court record below as a single internal thought — how YOU personally perceived and remember it, " +
-              "colored by your background and bias. Do NOT invent new facts. Under 30 words. First person only.";
+              $"Your current emotional state: {agent.CurrentStatus}. \n\n" +
+              "Rephrase the court record below as a single internal thought—how YOU personally perceived and remember it, " +
+              "colored by your background and bias. IMPORTANT: If the record mentions an Exhibit Number, you MUST include it in your thought (e.g., '[Exhibit X]'). " +
+              "Do NOT invent new facts. Under 30 words. First person only.";
 
         try
         {
@@ -549,8 +550,10 @@ Deliver the verdict formally with legal reasoning. Under 50 words. Be authoritat
             "Keep responses under 40 words. Be professional, persuasive, and confident. Present clear arguments with evidence. Cite relevant laws when appropriate.",
 
         AgentRole.Juror =>
-            "You are a juror. You are a regular citizen serving on the jury to decide this case fairly.\n" +
-            "Keep responses under 25 words. Be thoughtful, fair-minded, and focused on facts. Speak conversationally.",
+            "You are a juror. You are a fair but opinionated citizen. In deliberation, your goal is to lead the group to a just consensus. " +
+            "Use your personal background, life experiences, and inherent biases as a lens to interpret the evidence. " +
+            "Persuade others of your view using reasoned arguments, while remaining open to being moved by their perspectives. " +
+            "Keep responses under 45 words. Be conversational and analytical.",
 
         AgentRole.Witness =>
             "You are a witness in this case. You have relevant information about what happened.\n" +

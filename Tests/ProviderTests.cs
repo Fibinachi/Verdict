@@ -52,10 +52,18 @@ public class ProviderTests : BaseTestClass
         Assert(onnxProvider != null, "ProviderDiscoveryService discovers OnnxProvider");
         Assert(onnxProvider is OnnxProvider, "Discovered ONNX provider is OnnxProvider type");
 
-        // Check GetProviderByName works
+        // Check GetProviderByName works (case-insensitive)
         var byName = ProviderDiscoveryService.GetProviderByName("ONNX");
+        var byNameMixedCase = ProviderDiscoveryService.GetProviderByName("onnx");
         Assert(byName != null, "GetProviderByName(\"ONNX\") returns provider");
         Assert(byName is OnnxProvider, "GetProviderByName returns OnnxProvider instance");
+        Assert(byNameMixedCase != null, "GetProviderByName(\"onnx\") returns provider");
+
+        // Check Intel + NVIDIA are discoverable via case-insensitive lookup
+        Assert(ProviderDiscoveryService.GetProviderByName("intel") != null,
+            "GetProviderByName(\"intel\") resolves Intel provider");
+        Assert(ProviderDiscoveryService.GetProviderByName("nvidia") != null,
+            "GetProviderByName(\"nvidia\") resolves NVIDIA provider");
 
         // Check that all providers implement the interface correctly
         foreach (var provider in providers)

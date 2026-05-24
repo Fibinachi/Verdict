@@ -20,23 +20,41 @@ Verdict is a .NET 9 WPF application designed for native Windows deployment. It u
 - **Client Consultation**: Privileged attorney-client conversation window with settlement authority tracking
 - **Juror Report**: Right-click sentiment and memory report for jurors
 - **Model Weights**: Configure bias factor weights (age, gender, education, income, political, ethnicity, religion, experience, legal knowledge, professional background, community ties) via the Model Weights window
-- **Trial Stage Menu**: Top-level Stage menu for trial phase (Discovery, Pretrial, Trial) and court phase selection
-- **Dynamic Title Bar**: Title shows case name, parties, and trial stage (e.g., "VERDICT - Plaintiff v. Defendant - (TRIAL)")
+- **Trial Stage Menu (Experimental)**: Top-level Stage menu for trial phase (Discovery, Pretrial, Trial) and court phase selection. *Note: Current implementation is limited/placeholder and may not fully support all court phases.*
+- **Dynamic Title Bar**: Title shows case name, parties, and trial stage (e.g., "VERDICT - Plaintiff v. Defendant - (TRIAL)").
 - **Multi-Provider Support**: Connect to various LLM providers (OpenAI, Anthropic, Google Gemini, Ollama, DeepSeek, Grok, etc.)
 - **Case File System**: Save/load simulations (.jur files) with full state preservation
 - **Character Profiles**: Save reusable agent configurations as .vcs files
-- **PDF Reports**: Generate PDF case reports via QuestPDF
+- **PDF Reports**: (Implemented via `ReportGenerationService`—see `Help/case-management.html` / Help pages for current workflow)
+
+## Related Research (2025–2026)
+
+The following works are referenced by the simulation’s multi-agent deliberation and diversity modeling approach:
+
+- Devadiga, P., Shetty, O. J., & Agarwal, P. (2025). *SAMVAD: A Multi-Agent System for Simulating Judicial Deliberation Dynamics in India.* arXiv preprint arXiv:2509.03793. https://doi.org/10.48550/arxiv.2509.03793 (Cited by: 2)
+- Grim, P., Singer, D. J., Bramson, A., Holman, B., Jung, J., & Berger, W. J. (2024). *The Epistemic Role of Diversity in Juries: An Agent-Based Model.* Journal of Artificial Societies and Social Simulation, 27(1), 12. https://doi.org/10.18564/jasss.5304 (Cited by: 8)
+- Jiang, C., & Yang, X. (2024). *Agents on the Bench: Large Language Model Based Multi Agent Framework for Trustworthy Digital Justice.* arXiv preprint arXiv:2412.18697. https://doi.org/10.48550/arxiv.2412.18697 (Cited by: 14)
+- Anonymous. (2026). *12 Angry AI Agents: Evaluating Multi-Agent LLM Decision-Making Through Cinematic Jury Deliberation.* arXiv preprint arXiv:2605.01986. https://doi.org/10.48550/arxiv.2605.01986 (Cited by: 1)
+
+
+## Feature Roadmap
+
+- **Full Court Phase Integration**: Moving beyond Deliberation-only logic to implement LLM-driven behaviors for Opening Statements and Witness Testimony.
+- **Advanced Agent Management**: A dedicated repository for building, batch-updating, and loading agent profiles.
+- **Legal Instruction Logic**: Dynamically adjusting juror "Rigidity" and "Hardness" based on specific judicial instructions.
+- **Extended Testing**: Achieving 100% coverage across all 25 business logic services.
+
 - **Dynamic Role Assignment**: Automatically assign agents to recommended roles based on case analysis
 - **Logger**: File-based logging to `VerdictSimulation.log` in the application directory
 
 ## Architecture
 
-```
+```raw
 Verdict/
 ├── Models/           # Data entities (Agent, CaseFile, EvidenceDocument, etc.)
 ├── ViewModels/       # MVVM ViewModels (MainViewModel, CaseSettingsViewModel, ModelSettingsViewModel)
 ├── Views/            # XAML Windows and UserControls
-├── Services/         # Business logic — 17 dedicated services
+├── Services/         # Business logic — 25 dedicated services
 ├── Providers/        # LLM provider implementations
 ├── Resources/        # LegalDatabase.json
 ├── Help/             # HTML help pages
@@ -59,6 +77,11 @@ Verdict/
 | `AgentInteraction` | Agent messages, legal citations, and interaction results |
 | `Charge` / `CauseOfAction` / `Element` | Legal charge modeling |
 | `BiasFactor` | Demographic bias factor with configurable weight |
+| `EvidenceCueProfile` | Structured demographic and political cues extracted from evidence text |
+| `CaseTypeSensitivityMatrix` | Case type-specific predictor multipliers for verdict drift calculation |
+| `JurorOpinion` | Individual juror's verdict lean and confidence score |
+| `DeliberationEntry` | A single statement or exchange made during jury deliberation |
+| `InsuranceAdjusterState` | Estimated plaintiff verdict probability for insurance reserve evaluation |
 
 ### Agent Roles
 
@@ -93,12 +116,20 @@ The application follows a **delegated service pattern** — `MainViewModel` owns
 | `AgentAssignmentService` | `IAgentAssignmentService` | Case analysis, dynamic role assignment, default agent generation |
 | `JuryDemographicsService` | `IJuryDemographicsService` | Generates jury panels based on county/state demographics |
 | `AgentInteractionService` | `IAgentInteractionService` | Manages agent statements, examination, deliberation, court record internalization |
+| `ChatOrchestratorService` | `IChatOrchestratorService` | Coordinates stage-appropriate chat interactions with agents; manages broadcasting |
+| `EvidenceAdmissionService` | `IEvidenceAdmissionService` | Evidence file admission and testimony submission workflows |
+| `DeliberationService` | `IDeliberationService` | Jury deliberation management and verdict calculation |
 | `CharacterManager` | — | Save/load .vcs character profiles |
 | `LegalDatabaseService` | — | Query legal citations (IPC sections, U.S. Federal Law) |
 | `ReportGenerationService` | `IReportGenerationService` | PDF report rendering with QuestPDF |
 | `ProviderDiscoveryService` | — | Discovers installed LLM providers and their metadata |
 | `ModelDownloadService` | — | Downloads ONNX models from HuggingFace for local inference |
 | `Logger` | — | Static file-based logger writing to `VerdictSimulation.log` |
+| `CaseTypeSensitivityService` | — | Case type-specific juror sensitivity modeling for verdict drift |
+| `AgentDemographicsGeneratorService` | `IAgentDemographicsGeneratorService` | Generates demographically-representative agents by role |
+| `EvidenceCueExtractor` | — | Extracts demographic and political cues from evidence text |
+| `InsuranceAdjusterPricingService` | `IInsuranceAdjusterPricingService` | Estimates plaintiff-favorable verdict probability for reserve estimation |
+| `ConversationRestrictionPolicy` | — | Enforces courtroom communication rules based on agent roles and context |
 
 ### Views
 
@@ -107,6 +138,7 @@ The application follows a **delegated service pattern** — `MainViewModel` owns
 | `MainWindow` | Primary courtroom UI |
 | `AgentProfileWindow` | Edit agent demographics, personality, and model settings |
 | `AgentChatWindow` | LLM-powered chat with any agent; memory persistence and wipe |
+| `UniversalChatWindow` | Unified agent communication and testimony admission interface |
 | `CaseSettingsWindow` | Edit case name, parties, jurisdiction, and legal framework |
 | `ModelSettingsWindow` | Manage LLM provider configurations |
 | `ModelWeightsWindow` | Configure bias factor weights for jury modeling |
@@ -247,7 +279,7 @@ dotnet clean
 
 ## Courtroom Layout
 
-```
+```raw
 +--------------------------------------------------+
 |              GALLERY (4 obs + 2 clients)          |
 |  +----+----+----+----+----+----+----+----+----+  |
@@ -294,10 +326,12 @@ public enum CourtPhase
 }
 ```
 
-Use the **Stage** menu to switch between trial phases (Discovery, Pretrial, Trial) and court phases. The current stage is shown in the status bar with a **"→ Next"** button to advance.
+Use the **Stage** menu to switch between trial phases (Discovery, Pretrial, Trial) and select a court phase.
+
+> **Experimental note (court phases):** The stage menu currently routes behavior in only limited/placeholder ways; parts of the pipeline (e.g., evidence admission and juror internalization) are driven by the active **trial phase** and the jury deliberation engine.
+
+
 
 ## License
 
 This project is for demonstration and research purposes.
-#   V e r d i c t  
- 

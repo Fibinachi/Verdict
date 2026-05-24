@@ -1,0 +1,45 @@
+{
+  "Homicide": {
+    "DisgustSensitivity": 1.4,
+    "AngerReactivity": 1.3,
+    "Compassion": 1.1,
+    "SuspicionTendency": 1.0,
+    "NeedForClosure": 1.2,
+    "VictimHistory": 1.5
+  },
+  "SexualAssault": {
+    "DisgustSensitivity": 1.8,
+    "RapeMythAcceptance": 1.6,
+    "Compassion": 1.4,
+    "GenderReligionInteraction": 1.5,
+    "NeedForClosure": 1.2,
+    "VictimHistory": 1.7
+  },
+  "Fraud": {
+    "FinancialLiteracy": 1.8,
+    "DetailOrientation": 1.4,
+    "SuspicionTendency": 1.3,
+    "NeedForCognition": 1.5,
+    "MemoryReliability": 1.2
+  },
+  "ChildAbuse": {
+    "DisgustSensitivity": 2.0,
+    "Compassion": 1.6,
+    "AngerReactivity": 1.5,
+    "VictimHistory": 1.8
+  },
+  "DomesticViolence": {
+    "Compassion": 1.4,
+    "AngerReactivity": 1.3,
+    "VictimHistory": 1.6,
+    "NeedForClosure": 1.2
+  },
+  "PoliceInvolvedShooting": {
+    "SystemJustification": 1.6,
+    "SuspicionTendency": 1.4,
+    "DetailOrientation": 1.3,
+    "NeedForCognition": 1.2
+  },
+  "Other": {}
+}
+

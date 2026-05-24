@@ -8,12 +8,16 @@ using System.Windows.Navigation;
 using Verdict.Models;
 using Verdict.Services;
 
-namespace Verdict.Views;
-
-public partial class ModelDetailsDialog : Window
+namespace Verdict.Views
 {
+    public partial class ModelDetailsDialog : Window
+    {
     private readonly ILLMProviderModule _module;
     public AIModelConfiguration Model => (AIModelConfiguration)DataContext;
+
+    private CancellationTokenSource? _downloadCts;
+    private Task? _downloadTask;
+    private bool _isDownloading;
 
     public ModelDetailsDialog(AIModelConfiguration model, ILLMProviderModule module)
     {
@@ -211,11 +215,21 @@ public partial class ModelDetailsDialog : Window
                 }
             }
 
-            // After selecting a model, start background download for HF/ONNX providers
-            if (!string.IsNullOrWhiteSpace(Model.ModelId) && Model.ModelId.Contains("/") &&
-                (_module.ProviderName == "Hugging Face" || _module.ProviderName == "ONNX"))
+            // After selecting a model:
+            // - For most remote providers, a download may be appropriate.
+            // - For ONNX specifically, we do NOT auto-load/test or auto-init runtime from the selection flow.
+            //   Downloading ONNX files (when applicable) is deferred to the explicit download/test actions.
+            if (!string.IsNullOrWhiteSpace(Model.ModelId) && Model.ModelId.Contains("/"))
             {
-                _ = DownloadSelectedModelAsync();
+                // Start downloading in the background for providers that fetch ONNX/HF model files.
+                // This avoids later runtime init crashes caused by incomplete/missing model artifacts.
+                if (_module.ProviderName == "Hugging Face" || _module.ProviderName == "ONNX")
+                {
+                    _downloadCts?.Cancel();
+                    _downloadCts = new CancellationTokenSource();
+                    _isDownloading = true;
+                    _downloadTask = DownloadSelectedModelAsync(_downloadCts.Token);
+                }
             }
         }
         catch (Exception ex)
@@ -229,46 +243,84 @@ public partial class ModelDetailsDialog : Window
         }
     }
 
-    private async Task DownloadSelectedModelAsync()
+    private async Task DownloadSelectedModelAsync(CancellationToken ct)
     {
-        ShowDownloadProgress("Downloading model...", 0, "Starting...");
-
-        var progress = new Progress<DownloadProgressInfo>(info =>
-        {
-            var percent = info.TotalBytes > 0
-                ? Math.Min(100.0, (double)info.BytesDownloaded / info.TotalBytes * 100)
-                : 0.0;
-            var status = info.FilesCompleted > 0
-                ? $"Downloading {info.CurrentFile} ({info.FilesCompleted}/{info.TotalFiles})"
-                : "Downloading model...";
-            Dispatcher.Invoke(() => ShowDownloadProgress(status, percent, info.CurrentFile));
-        });
+        _isDownloading = true;
 
         try
         {
+            ShowDownloadProgressSafe("Downloading model...", 0, "Starting...");
+
+            var progress = new Progress<DownloadProgressInfo>(info =>
+            {
+                var percent = info.TotalBytes > 0
+                    ? Math.Min(100.0, (double)info.BytesDownloaded / info.TotalBytes * 100)
+                    : 0.0;
+                var status = info.FilesCompleted > 0
+                    ? $"Downloading {info.CurrentFile} ({info.FilesCompleted}/{info.TotalFiles})"
+                    : "Downloading model...";
+
+                DispatcherSafe(() => ShowDownloadProgress(status, percent, info.CurrentFile));
+            });
+
             if (_module is Providers.HuggingFaceModelBase hfBase)
             {
-                await hfBase.DownloadModelAsync(Model, progress);
+                await hfBase.DownloadModelAsync(Model, progress, ct);
             }
 
-            Dispatcher.Invoke(() =>
+            DispatcherSafe(() =>
             {
                 HideDownloadProgress();
-                Model.Status = "Ready - download complete";
+                Model.Status = ModelDownloadStatus.ReadyDownloadComplete;
             });
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore cancels (eg. dialog closed/replaced)
         }
         catch (Exception ex)
         {
-            Dispatcher.Invoke(() =>
+            DispatcherSafe(() =>
             {
                 HideDownloadProgress();
                 ShowError($"Download failed: {ex.Message}");
             });
         }
+        finally
+        {
+            _isDownloading = false;
+        }
+    }
+
+    private void DispatcherSafe(Action action)
+    {
+        try
+        {
+            if (!IsVisible) return;
+            Dispatcher.Invoke(action);
+        }
+        catch
+        {
+            // Window/UI may be closing; ignore to avoid crashes.
+        }
+    }
+
+    private void ShowDownloadProgressSafe(string status, double percent, string currentFile)
+    {
+        try
+        {
+            ShowDownloadProgress(status, percent, currentFile);
+        }
+        catch
+        {
+            // Ignore UI exceptions if window is closing.
+        }
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
+        // Allow closing while the background download continues,
+        // but prevent crashes by ensuring background task doesn't touch UI after the window is closed.
         DialogResult = true;
     }
 
@@ -281,4 +333,5 @@ public partial class ModelDetailsDialog : Window
         });
         e.Handled = true;
     }
+}
 }

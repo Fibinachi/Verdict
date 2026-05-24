@@ -1,0 +1,104 @@
+{
+  "CaseName": "Exxon v. Plaintiffs (Rebranded)",
+  "CaseNumber": "23-CV-0001",
+  "CourtName": "New York State Supreme Court",
+  "Mode": "Civil",
+  "Jurisdiction": "State",
+  "JurisdictionSpecifics": "New York",
+  "JurorCount": 12,
+  "TrialPhase": "Trial",
+  "CurrentDebateStage": "JuryDeliberation",
+  "DeliberationRounds": 20,
+  "GlobalTemperature": 0.7,
+  "GlobalMaxTokens": 4096,
+  "DefaultBiasWeight": 0.0,
+  "EstimatedSettlement": 25000000,
+  "InsuranceReserve": 5000000,
+  "Plaintiffs": ["The Community Plaintiffs"],
+  "Defendants": ["ExxonMobil (Rebranded)"],
+  "PlaintiffAttorney": "Plaintiffs' Counsel",
+  "DefenseAttorney": "Exxon Defense Counsel",
+  "Instructions": {
+    "Text": "You are to decide liability and damages based on the evidence presented. Use common sense and reasonable inferences.",
+    "Standard": "PreponderanceOfEvidence"
+  },
+  "Verdict": {
+    "CausesOfAction": [{"Name": "Environmental Tort (Rebranded)"}],
+    "Liability": false,
+    "Damages": 0
+  },
+  "Evidence": [
+    {
+      "ExhibitNumber": 1,
+      "FileName": "Testimony_Coastal_Scientist_Nguyen.txt",
+      "Summary": "Sampling indicates contamination consistent with industrial activity. The extent of ecological harm supports the plaintiffs' theory of causation and foreseeable risk.",
+      "OfferingAttorney": "Plaintiffs' Counsel",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.70,
+      "EstimatedDamages": 5000000,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Scientist's testimony establishes environmental impact and links it to industrial activity. The expert presents a compelling narrative of causation but acknowledges natural variability in ecosystem recovery."
+    },
+    {
+      "ExhibitNumber": 2,
+      "FileName": "Testimony_Business_Owner_James.txt",
+      "Summary": "After the spill, tourism collapsed. I lost revenue, and my community has suffered ongoing economic damage.",
+      "OfferingAttorney": "Plaintiffs' Counsel",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.60,
+      "EstimatedDamages": 1500000,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Business owner testimony provides human impact perspective. Economic damages are quantifiable but may be influenced by external market factors beyond the spill's impact."
+    },
+    {
+      "ExhibitNumber": 3,
+      "FileName": "Testimony_Documentarian_Pike.txt",
+      "Summary": "Internal reports show warnings about safety and mitigation. The plaintiffs argue the defendant acted with disregard.",
+      "OfferingAttorney": "Plaintiffs' Counsel",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.65,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Documentarian's testimony reveals internal corporate knowledge of risks. Supports plaintiff argument of willful disregard but does not establish direct causation to specific damages."
+    },
+    {
+      "ExhibitNumber": 4,
+      "FileName": "Testimony_Risk_Manager_Shaw.txt",
+      "Summary": "We followed safety protocols and responded appropriately. Other sources could explain the contamination. The plaintiffs' damages estimates are exaggerated.",
+      "OfferingAttorney": "Exxon Defense Counsel",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.65,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Risk manager defends corporate response and protocol adherence. Challenges causation link and damages quantification while acknowledging incident occurred."
+    },
+    {
+      "ExhibitNumber": 5,
+      "FileName": "Testimony_Analyst_Prof_Chen.txt",
+      "Summary": "The data has uncertainties. Correlation does not equal causation. It is possible the harm arises from multiple contributing factors.",
+      "OfferingAttorney": "Exxon Defense Counsel",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.60,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Independent analyst introduces scientific uncertainty and alternative explanations. Undermines plaintiff's causation argument through methodological critique."
+    },
+    {
+      "ExhibitNumber": 6,
+      "FileName": "Testimony_Economist_Dana_Brooks.txt",
+      "Summary": "Economic harm should be modeled with baseline controls. Some claimed losses overlap with normal seasonal fluctuations and unrelated market trends.",
+      "OfferingAttorney": "Exxon Defense Counsel",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.55,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Economist challenges damages quantification by highlighting baseline economic variability. Introduces reasonable doubt about specific damage amounts without disputing environmental harm."
+    }
+  ],
+  "Agents": [],
+  "AvailableModels": [
+    {"FriendlyName": "OpenAI GPT-4o", "Provider": "OpenAI", "ModelId": "gpt-4o"},
+    {"FriendlyName": "Claude 3.5 Sonnet", "Provider": "Anthropic", "ModelId": "claude-3-5-sonnet-20240620"},
+    {"FriendlyName": "Google Gemini 1.5 Pro", "Provider": "Google", "ModelId": "gemini-1.5-pro"}
+  ]
+}

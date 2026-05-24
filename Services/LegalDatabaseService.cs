@@ -15,6 +15,7 @@ public class LegalDatabaseService
     private readonly string _databasePath;
     private List<LegalCitation> _citations = new();
     private bool _isLoaded = false;
+    private readonly object _loadLock = new();
 
     public LegalDatabaseService() : this("Resources/LegalDatabase.json")
     {
@@ -25,51 +26,52 @@ public class LegalDatabaseService
         _databasePath = databasePath;
     }
 
-    /// <summary>
+/// <summary>
     /// Loads the legal database from JSON file.
     /// </summary>
     public void LoadDatabase()
     {
         if (_isLoaded) return;
-
-        try
+        
+        lock (_loadLock)
         {
-            var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _databasePath);
-            if (!File.Exists(fullPath))
+            if (_isLoaded) return;
+            try
             {
-                // Try relative to project directory
-                fullPath = Path.Combine(Directory.GetCurrentDirectory(), _databasePath);
-            }
-
-            if (File.Exists(fullPath))
-            {
-                var json = File.ReadAllText(fullPath);
-                var database = JsonSerializer.Deserialize<LegalDatabaseV2>(json, new JsonSerializerOptions 
-                { 
-                    PropertyNameCaseInsensitive = true 
-                });
-                if (database?.Citations != null)
+                var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _databasePath);
+                if (!File.Exists(fullPath))
                 {
-                    // Convert to LegalCitation format (use existing class)
-                    _citations = database.Citations.Select(c => new LegalCitation
+                    fullPath = Path.Combine(Directory.GetCurrentDirectory(), _databasePath);
+                }
+
+                if (File.Exists(fullPath))
+                {
+                    var json = File.ReadAllText(fullPath);
+                    var database = JsonSerializer.Deserialize<LegalDatabaseV2>(json, new JsonSerializerOptions 
                     {
-                        Code = c.Code,
-                        Section = c.Section,
-                        Description = c.Description,
-                        Jurisdiction = c.Jurisdiction,
-                        FavorsPlaintiff = c.FavorsPlaintiff
-                    }).ToList();
-                    _isLoaded = true;
-                    return;
+                        PropertyNameCaseInsensitive = true 
+                    });
+                    if (database?.Citations != null)
+                    {
+                        _citations = database.Citations.Select(c => new LegalCitation
+                        {
+                            Code = c.Code,
+                            Section = c.Section,
+                            Description = c.Description,
+                            Jurisdiction = c.Jurisdiction,
+                            FavorsPlaintiff = c.FavorsPlaintiff
+                        }).ToList();
+                        _isLoaded = true;
+                        return;
+                    }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading legal database: {ex.Message}");
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading legal database: {ex.Message}");
+            }
         }
 
-        // Load embedded database as fallback (sample citations)
         LoadEmbeddedCitations();
         _isLoaded = true;
     }

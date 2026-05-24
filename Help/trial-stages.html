@@ -54,35 +54,40 @@
         <h2>Court Phases (Trial Sub-stages)</h2>
         <p>When the trial phase is active, you can select from the following court phases:</p>
 
-        <div class="phase">
-            <h3>Opening Statements</h3>
-            <p>Both sides present their opening statements to the jury, outlining what they intend to prove during the trial.</p>
+        <div class="note">
+            <strong>Experimental:</strong> Court phase selection is currently an experimental feature. While the UI lets you pick sub-phases, the underlying simulation may still rely primarily on the jury-deliberation behavior until stage-specific logic is completed.
         </div>
 
-        <div class="phase">
-            <h3>Witness Testimony</h3>
-            <p>Witnesses are called to testify and present their accounts of events relevant to the case.</p>
-        </div>
 
-        <div class="phase">
-            <h3>Cross Examination</h3>
-            <p>The opposing side questions witnesses to challenge their testimony and credibility.</p>
-        </div>
+         <div class="phase">
+             <h3>Opening Statements <em>(Experimental)</em></h3>
+             <p>Both sides present their opening statements to the jury, outlining what they intend to prove during the trial. <em>(Limited implementation)</em></p>
+         </div>
 
-        <div class="phase">
-            <h3>Party Statements</h3>
-            <p>The parties themselves (plaintiff/prosecution and defense) may make statements to the court.</p>
-        </div>
+         <div class="phase">
+             <h3>Witness Testimony <em>(Experimental)</em></h3>
+             <p>Witnesses are called to testify and present their accounts of events relevant to the case. <em>(Limited implementation)</em></p>
+         </div>
 
-        <div class="phase">
-            <h3>Closing Arguments</h3>
-            <p>Both sides present their final summaries and arguments to the jury before deliberation.</p>
-        </div>
+         <div class="phase">
+             <h3>Cross Examination <em>(Experimental)</em></h3>
+             <p>The opposing side questions witnesses to challenge their testimony and credibility. <em>(Limited implementation)</em></p>
+         </div>
 
-        <div class="phase">
-            <h3>Jury Deliberation</h3>
-            <p>The jury retires to deliberate and reach a verdict. Jurors' sentiments and biases influence their final decision.</p>
-        </div>
+         <div class="phase">
+             <h3>Party Statements <em>(Experimental)</em></h3>
+             <p>The parties themselves (plaintiff/prosecution and defense) may make statements to the court. <em>(Limited implementation)</em></p>
+         </div>
+
+         <div class="phase">
+             <h3>Closing Arguments <em>(Experimental)</em></h3>
+             <p>Both sides present their final summaries and arguments to the jury before deliberation. <em>(Limited implementation)</em></p>
+         </div>
+
+         <div class="phase">
+             <h3>Jury Deliberation <em>(Active)</em></h3>
+             <p>The jury retires to deliberate and reach a verdict. Jurors' sentiments and biases influence their final decision. <em>(Fully functional)</em></p>
+         </div>
 
         <h2>Dynamic Title Bar</h2>
         <p>The window title updates dynamically to reflect the current case and stage. The format is:</p>

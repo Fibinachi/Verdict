@@ -63,14 +63,31 @@
         <p>When you launch Verdict, you are presented with the main courtroom window. The layout includes:</p>
         <ul>
             <li><strong>Menu Bar</strong> at the top with File, Case, Stage, Settings, and Help menus.</li>
-            <li><strong>Bench Area</strong> at the front with seats for Judge, Reporter, and Witness.</li>
+            <li><strong>Bench Area</strong> with seats for Judge, Court Reporter, and Witness.</li>
             <li><strong>Counsel Tables</strong> on the left (Defense) and right (Prosecution/Plaintiff).</li>
             <li><strong>Jury Box</strong> with 12 primary seats and 2 alternate seats.</li>
-            <li><strong>Observer Box</strong> with up to 6 seats for gallery observation.</li>
+            <li><strong>Observer Box</strong> for gallery observation.</li>
             <li><strong>Clerk Seat</strong> (highlighted in green) for evidence submission via drag-and-drop.</li>
             <li><strong>Input Prompt</strong> at the bottom with a central Podium button for focus.</li>
-            <li><strong>Dynamic Title Bar</strong> that displays the case name and current stage.</li>
-        </ul>
+        <li><strong>Dynamic Title Bar</strong> that displays the case name and current stage.</li>
+        <li><strong>Stage Menu</strong> (Limited/Experimental) — The menu allows selecting trial phases and court phases, but many court-phase interactions are placeholder/developmental. Only Jury Deliberation is fully functional.</li>
+     </ul>
+
+        <h2>Important: Trial Phase vs. Court Phase</h2>
+        <p>The UI has a stage menu that lets you select a court phase. In the current implementation, stage/court-phase behavior is intentionally limited/placeholder for many phases. The simulation’s AI-driven behavior primarily follows the active <strong>trial phase</strong> and uses the jury deliberation engine for deliberation dynamics.</p>
+
+        <div class="note">
+            <strong>Deliberation modeling citations</strong>
+            <p style="margin-top:8px;">Verdict’s multi-agent deliberation and jury-diversity modeling draw on:</p>
+            <ul>
+                <li>Devadiga, P., Shetty, O. J., &amp; Agarwal, P. (2025) — SAMVAD (arXiv:2509.03793)</li>
+                <li>Grim, P., et al. (2024) — Epistemic role of diversity in juries (JASSS 27(1):12)</li>
+                <li>Jiang, C., &amp; Yang, X. (2024) — Agents on the bench (arXiv:2412.18697)</li>
+                <li>Anonymous (2026) — 12 Angry AI Agents (arXiv:2605.01986)</li>
+            </ul>
+            <p style="margin-top:8px;">These references guide the overall modeling framing; the current app behavior is implemented in code.</p>
+        </div>
+
 
         <div class="footer">
             <p><a href="index.html">Back to Help Index</a></p>
@@ -78,3 +95,4 @@
     </div>
 </body>
 </html>
+

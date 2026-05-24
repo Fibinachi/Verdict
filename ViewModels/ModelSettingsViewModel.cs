@@ -15,7 +15,10 @@ public class ModelSettingsViewModel : ViewModelBase
     private int _globalMaxTokens = 4096;
 
     private static string ModelsFolderPath =>
-        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models");
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Verdict",
+            "Models");
 
     public ObservableCollection<AIModelConfiguration> Models { get; }
     public ObservableCollection<BiasFactor> DefaultBiasFactors { get; } = new();

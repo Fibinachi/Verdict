@@ -1,8 +1,3 @@
-# TODO: Disable debate stage / keep deliberation-only weighting
+# DEPRECATED
 
-- [x] Lock `MainViewModel.CurrentDebateStage` to `CourtPhase.JuryDeliberation`
-- [x] Remove transcript influence and any stage-triggered LLM responses
-- [x] Disable court-phase UI handlers in `MainWindow.xaml.cs` (force deliberation)
-- [ ] Fix build error in `Views/ExhibitListWindow.xaml` by implementing missing `ExhibitListItem_MouseDoubleClick` handler
-- [ ] Re-run `dotnet build`
-
+This list has been moved to the master list in `c:\Users\charlesp\Verdict\TODO.md` under Section 6.

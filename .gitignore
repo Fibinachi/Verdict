@@ -20,6 +20,8 @@ obj/
 .kilo/
 .zencoder/
 .zhanlu/
+.joycode/
+
 
 # Optional: keep repo clean from downloaded artifacts
 *.onnx

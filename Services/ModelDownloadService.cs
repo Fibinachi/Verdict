@@ -57,9 +57,17 @@ namespace Verdict.Services
 
         // Required files for OnnxRuntimeGenAI compatibility
         private static readonly string[] RequiredExtensions = { ".onnx", ".json", ".txt" };
-        
+
         // Files that indicate a model is compatible with OnnxRuntimeGenAI
         private const string GenaiConfigFile = "genai_config.json";
+
+        // Written only after a successful download+commit.
+        // This prevents partial/incomplete downloads from being treated as usable.
+        private const string DownloadCompleteMarkerFile = "download_complete.ok";
+
+        // Prevent empty/partial ONNX files from being treated as valid.
+        // (1KB is arbitrary but filters out the known "empty file" repro case.)
+        private const long MinOnnxFileSizeBytes = 1024;
 
         /// <summary>
         /// Searches HuggingFace for ONNX models suitable for local LLM inference.
@@ -208,9 +216,6 @@ namespace Verdict.Services
             if (modelInfo.FileList.Count == 0)
                 throw new Exception($"No downloadable files found for model {modelId}");
 
-            // Create destination directory
-            Directory.CreateDirectory(destinationDir);
-
             // Ensure LFS files are included - many ONNX repos store .onnx in LFS
             var lfsFiles = new[] { "model.onnx", "model.safetensors", "model.onnx.data" };
             foreach (var lfsFile in lfsFiles)
@@ -225,85 +230,167 @@ namespace Verdict.Services
                 TotalFiles = modelInfo.FileList.Count
             };
 
+            // Atomic-ish commit:
+            // - download into a temp directory
+            // - only after success: replace destinationDir contents + write marker
+            var tempDir = destinationDir + ".tmp_" + Guid.NewGuid().ToString("N");
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, true); } catch { /* ignore */ }
+            }
+            Directory.CreateDirectory(tempDir);
+
             long totalBytesDownloaded = 0;
             var failedFiles = new List<string>();
 
-            for (int i = 0; i < modelInfo.FileList.Count; i++)
+            try
             {
-                ct.ThrowIfCancellationRequested();
+                for (int i = 0; i < modelInfo.FileList.Count; i++)
+                {
+                    ct.ThrowIfCancellationRequested();
 
-                var filename = modelInfo.FileList[i];
-                var fileUrl = $"https://huggingface.co/{modelId}/resolve/main/{filename}";
-                var destPath = Path.Combine(destinationDir, filename);
+                    var filename = modelInfo.FileList[i];
+                    var fileUrl = $"https://huggingface.co/{modelId}/resolve/main/{filename}";
+                    var destPath = Path.Combine(tempDir, filename);
 
-                var destDir = Path.GetDirectoryName(destPath);
-                if (!string.IsNullOrEmpty(destDir))
-                    Directory.CreateDirectory(destDir);
+                    var destDir = Path.GetDirectoryName(destPath);
+                    if (!string.IsNullOrEmpty(destDir))
+                        Directory.CreateDirectory(destDir);
 
-                progress.CurrentFile = filename;
-                progress.FilesCompleted = i;
+                    progress.CurrentFile = filename;
+                    progress.FilesCompleted = i;
+                    onProgress?.Invoke(progress);
+
+                    try
+                    {
+                        using var response = await _downloadClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+                        response.EnsureSuccessStatusCode();
+
+                        var totalBytes = response.Content.Headers.ContentLength ?? -1;
+
+                        await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
+                        await using var fileStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+
+                        var buffer = new byte[8192];
+                        long fileBytesDownloaded = 0;
+                        int bytesRead;
+
+                        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, bytesRead, ct);
+                            fileBytesDownloaded += bytesRead;
+                            totalBytesDownloaded += bytesRead;
+
+                            progress.BytesDownloaded = totalBytesDownloaded;
+                            progress.TotalBytes = totalBytes > 0
+                                ? totalBytesDownloaded + (modelInfo.FileList.Count - i - 1) * totalBytes
+                                : 0;
+                            onProgress?.Invoke(progress);
+                        }
+
+                        await fileStream.FlushAsync(ct);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Warning: Failed to download {filename}: {ex.Message}");
+                        failedFiles.Add(filename);
+
+                        if (File.Exists(destPath))
+                        {
+                            try { File.Delete(destPath); } catch { }
+                        }
+                    }
+                }
+
+                var criticalExtensions = new[] { ".onnx", ".safetensors" };
+                var criticalFailed = failedFiles
+                    .Where(f => criticalExtensions.Any(ext => f.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+
+                if (criticalFailed.Count > 0)
+                    throw new Exception($"Failed to download critical model files: {string.Join(", ", criticalFailed)}");
+
+                // Ensure genai_config.json exists with required fields in the temp directory
+                var genaiConfigPath = Path.Combine(tempDir, GenaiConfigFile);
+                var needsUpdate = false;
+
+                if (File.Exists(genaiConfigPath))
+                {
+                    try
+                    {
+                        var existingConfig = File.ReadAllText(genaiConfigPath);
+                        using var doc = JsonDocument.Parse(existingConfig);
+                        var root = doc.RootElement;
+
+                        bool hasContextLength = root.TryGetProperty("context_length", out _) ||
+                                               (root.TryGetProperty("model", out var modelEl) &&
+                                                modelEl.TryGetProperty("context_length", out _));
+
+                        if (!hasContextLength)
+                            needsUpdate = true;
+                    }
+                    catch
+                    {
+                        needsUpdate = true;
+                    }
+                }
+                else
+                {
+                    needsUpdate = true;
+                }
+
+                if (needsUpdate)
+                {
+                    var defaultConfig = new
+                    {
+                        model = new
+                        {
+                            context_length = 2048,
+                            decoder = new
+                            {
+                                session_options = new
+                                {
+                                    enable_cpu_mem_arena = false
+                                }
+                            }
+                        }
+                    };
+                    var configJson = System.Text.Json.JsonSerializer.Serialize(
+                        defaultConfig,
+                        new JsonSerializerOptions { WriteIndented = true }
+                    );
+                    await File.WriteAllTextAsync(genaiConfigPath, configJson, ct);
+                }
+
+                // Validate tempDir looks usable before committing
+                if (!IsValidModelDirectory(tempDir))
+                    throw new Exception($"Downloaded files are not valid/complete for {modelId}.");
+
+                // Commit:
+                // - remove old destination
+                // - move tempDir into destinationDir path
+                if (Directory.Exists(destinationDir))
+                {
+                    try { Directory.Delete(destinationDir, true); } catch { /* ignore */ }
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(destinationDir)!);
+                Directory.Move(tempDir, destinationDir);
+
+                // Finally write marker (only after commit + validation)
+                var markerPath = Path.Combine(destinationDir, DownloadCompleteMarkerFile);
+                await File.WriteAllTextAsync(markerPath, DateTime.UtcNow.ToString("O"), ct);
+
+                progress.FilesCompleted = modelInfo.FileList.Count;
+                progress.CurrentFile = "Complete";
                 onProgress?.Invoke(progress);
-
-                try
-                {
-                    using var response = await _downloadClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead, ct);
-                    response.EnsureSuccessStatusCode();
-
-                    var totalBytes = response.Content.Headers.ContentLength ?? -1;
-
-                    await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
-                    await using var fileStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
-
-                    var buffer = new byte[8192];
-                    long fileBytesDownloaded = 0;
-                    int bytesRead;
-
-                    while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
-                    {
-                        await fileStream.WriteAsync(buffer, 0, bytesRead, ct);
-                        fileBytesDownloaded += bytesRead;
-                        totalBytesDownloaded += bytesRead;
-
-                        progress.BytesDownloaded = totalBytesDownloaded;
-                        progress.TotalBytes = totalBytes > 0 ? totalBytesDownloaded + (modelInfo.FileList.Count - i - 1) * totalBytes : 0;
-                        onProgress?.Invoke(progress);
-                    }
-
-                    await fileStream.FlushAsync(ct);
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Warning: Failed to download {filename}: {ex.Message}");
-                    failedFiles.Add(filename);
-
-                    if (File.Exists(destPath))
-                    {
-                        try { File.Delete(destPath); } catch { }
-                    }
-                }
             }
-
-            var criticalExtensions = new[] { ".onnx", ".safetensors" };
-            var criticalFailed = failedFiles.Where(f => criticalExtensions.Any(ext => f.EndsWith(ext, StringComparison.OrdinalIgnoreCase))).ToList();
-            if (criticalFailed.Count > 0)
-                throw new Exception($"Failed to download critical model files: {string.Join(", ", criticalFailed)}");
-
-            var genaiConfigPath = Path.Combine(destinationDir, GenaiConfigFile);
-            if (!File.Exists(genaiConfigPath))
+            catch
             {
-                var defaultConfig = new
-                {
-                    model_type = "onnx",
-                    architectures = new[] { "OnnxModel" },
-                    max_position_embeddings = 2048
-                };
-                var configJson = System.Text.Json.JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
-                await File.WriteAllTextAsync(genaiConfigPath, configJson, ct);
+                // Cleanup temp dir
+                try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch { }
+                throw;
             }
-
-            progress.FilesCompleted = modelInfo.FileList.Count;
-            progress.CurrentFile = "Complete";
-            onProgress?.Invoke(progress);
         }
 
         /// <summary>
@@ -312,11 +399,77 @@ namespace Verdict.Services
         public static bool IsValidModelDirectory(string directoryPath)
         {
             if (!Directory.Exists(directoryPath)) return false;
-            
-            var hasOnnxFile = Directory.GetFiles(directoryPath, "*.onnx", SearchOption.TopDirectoryOnly).Length > 0;
-            var hasGenaiConfig = File.Exists(Path.Combine(directoryPath, GenaiConfigFile));
-            
-            return hasOnnxFile && hasGenaiConfig;
+
+            // Must have a completion marker to prevent partial/incomplete reuse.
+            var markerPath = Path.Combine(directoryPath, DownloadCompleteMarkerFile);
+            if (!File.Exists(markerPath))
+                return false;
+
+            // genai_config.json must exist and be parseable.
+            // (OnnxProvider later may rewrite fields, but validation must be strict here.)
+            var genaiConfigCandidates = new List<string>();
+
+            var rootGenai = Path.Combine(directoryPath, GenaiConfigFile);
+            if (File.Exists(rootGenai)) genaiConfigCandidates.Add(rootGenai);
+
+            genaiConfigCandidates.AddRange(
+                Directory.GetFiles(directoryPath, GenaiConfigFile, SearchOption.AllDirectories)
+            );
+
+            genaiConfigCandidates = genaiConfigCandidates.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (genaiConfigCandidates.Count == 0)
+                return false;
+
+            bool hasRequiredGenaiConfig = false;
+            foreach (var candidate in genaiConfigCandidates)
+            {
+                try
+                {
+                    var existingConfig = File.ReadAllText(candidate);
+                    if (string.IsNullOrWhiteSpace(existingConfig))
+                        continue;
+
+                    using var doc = JsonDocument.Parse(existingConfig);
+                    var root = doc.RootElement;
+
+                    bool hasContextLength = root.TryGetProperty("context_length", out _) ||
+                                             (root.TryGetProperty("model", out var modelEl) &&
+                                              modelEl.TryGetProperty("context_length", out _));
+
+                    if (hasContextLength)
+                    {
+                        hasRequiredGenaiConfig = true;
+                        break;
+                    }
+                }
+                catch
+                {
+                    // try other candidates
+                }
+            }
+
+            if (!hasRequiredGenaiConfig)
+                return false;
+
+            // At least one non-empty .onnx file
+            var onnxFiles = Directory.GetFiles(directoryPath, "*.onnx", SearchOption.AllDirectories);
+            if (onnxFiles.Length == 0)
+                return false;
+
+            var hasSaneOnnx = onnxFiles.Any(f =>
+            {
+                try
+                {
+                    var info = new FileInfo(f);
+                    return info.Length >= MinOnnxFileSizeBytes;
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+
+            return hasSaneOnnx;
         }
 
         /// <summary>

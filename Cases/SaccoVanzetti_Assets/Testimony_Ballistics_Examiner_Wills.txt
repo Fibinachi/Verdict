@@ -1,0 +1,17 @@
+TESTIMONY OF BALLISTICS EXAMINER DR. WILLS
+Direct Examination - Prosecution
+
+Q: Dr. Wills, your analysis of the evidence?
+A: I examined bullet fragments recovered from the scene and compared them to the weapons registered to the defendants.
+
+Q: What were your findings?
+A: The rifling patterns on the recovered fragments match the markings on Sacco's rifle. The lead composition is consistent with ammunition of that era. The probability of a random match is approximately 1 in 10,000.
+
+Q: Are there standard error margins?
+A: Yes, ballistic matching has an estimated error rate of 2-5% depending on fragment quality. However, the combination of rifling match and composition consistency strengthens the identification.
+
+Q: Could another rifle produce the same results?
+A: It's theoretically possible but extremely unlikely. The specific combination of wear patterns on Sacco's rifle creates a unique signature that would require an identical rifle with identical wear to match.
+
+Q: Did you test Vanzetti's weapon?
+A: Vanzetti's shotgun showed different characteristics and wasn't a match for the fragments recovered.

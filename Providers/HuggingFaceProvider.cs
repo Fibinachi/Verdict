@@ -16,6 +16,10 @@ namespace Verdict.Providers;
 
 public class HuggingFaceProvider : HuggingFaceModelBase
 {
+    // Cache weights to avoid reloading from disk on every prompt
+    private static readonly Dictionary<string, LLamaWeights> _modelCache = new();
+    private static readonly SemaphoreSlim _loadLock = new(1, 1);
+
     public override string ProviderName => "Hugging Face";
     public override string Description => "Download and run GGUF models from HuggingFace locally using LLamaSharp. No API key needed.";
     public override string DefaultFriendlyName => "HF TinyLlama (CPU)";
@@ -275,7 +279,18 @@ public class HuggingFaceProvider : HuggingFaceModelBase
                 Threads = Environment.ProcessorCount
             };
 
-            using var model = LLamaWeights.LoadFromFile(modelParams);
+            LLamaWeights? model = null;
+            await _loadLock.WaitAsync(ct);
+            try
+            {
+                if (!_modelCache.TryGetValue(modelPath, out model))
+                {
+                    model = LLamaWeights.LoadFromFile(modelParams);
+                    _modelCache[modelPath] = model;
+                }
+            }
+            finally { _loadLock.Release(); }
+
             using var context = model.CreateContext(modelParams);
             var executor = new InteractiveExecutor(context);
 

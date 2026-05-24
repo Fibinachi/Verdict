@@ -1,0 +1,102 @@
+{
+  "CaseName": "The People v. OJ (Rebranded)",
+  "CaseNumber": "23-CR-0001",
+  "CourtName": "Los Angeles County Superior Court",
+  "Mode": "Criminal",
+  "Jurisdiction": "State",
+  "JurisdictionSpecifics": "California",
+  "JurorCount": 12,
+  "TrialPhase": "Trial",
+  "CurrentDebateStage": "JuryDeliberation",
+  "DeliberationRounds": 20,
+  "GlobalTemperature": 0.7,
+  "GlobalMaxTokens": 4096,
+  "DefaultBiasWeight": 0.0,
+  "Plaintiffs": ["The People"],
+  "Defendants": ["OJ (Rebranded Defendant)"],
+  "PlaintiffAttorney": "Prosecution",
+  "DefenseAttorney": "Defense",
+  "Instructions": {
+    "Text": "You are to decide guilt beyond a reasonable doubt based on the evidence presented. Do not speculate. If the evidence leaves you with reasonable doubt, acquit.",
+    "Standard": "BeyondReasonableDoubt"
+  },
+  "Verdict": {
+    "Charges": [{"Name": "Serious Felony (Rebranded)"}],
+    "Convicted": false,
+    "Fine": 0
+  },
+  "Evidence": [
+    {
+      "ExhibitNumber": 1,
+      "FileName": "Testimony_Detective_Rowan.txt",
+      "Summary": "I reviewed the incident timeline and documented inconsistencies. The prosecution presented forensic indicators that strongly connect the defendant to the events. I believe the defendant's explanation does not match the physical timeline.",
+      "OfferingAttorney": "Prosecution",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.65,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Detective Rowan's testimony focuses on timeline inconsistencies and positions the defendant as central to the incident. The witness presents a narrative of certainty but relies on circumstantial connections rather than direct observation."
+    },
+    {
+      "ExhibitNumber": 2,
+      "FileName": "Testimony_Forensic_Analyst_Kline.txt",
+      "Summary": "The forensic comparison showed matches consistent with the defendant. While no test is perfect, the pattern of results supports the prosecution's theory. I did not find alternative sources that convincingly explain the match.",
+      "OfferingAttorney": "Prosecution",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.75,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Forensic evidence provides strong scientific support for the prosecution's case. However, the analyst acknowledges limitations in testing methods and does not rule out alternative explanations."
+    },
+    {
+      "ExhibitNumber": 3,
+      "FileName": "Testimony_Eyewitness_Maya_Stone.txt",
+      "Summary": "I saw a struggle and later identified the defendant. I understand memories can be imperfect, but my account is based on what I observed during the incident.",
+      "OfferingAttorney": "Prosecution",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.55,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Eyewitness testimony introduces human factor uncertainty. The witness acknowledges memory fallibility but maintains confidence in identification. Cross-racial identification concerns may be relevant."
+    },
+    {
+      "ExhibitNumber": 4,
+      "FileName": "Testimony_Defense_Expert_Ortiz.txt",
+      "Summary": "The forensic methods have known limitations. Contamination and statistical interpretation can affect conclusions. There are plausible alternative explanations consistent with the defense position.",
+      "OfferingAttorney": "Defense",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.60,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Defense expert challenges scientific certainty by highlighting methodological limitations. Introduces reasonable doubt about forensic conclusions without disputing results entirely."
+    },
+    {
+      "ExhibitNumber": 5,
+      "FileName": "Testimony_Officer_Blake.txt",
+      "Summary": "My observations show gaps in the timeline. Evidence handling procedures raise questions. I cannot rule out mistakes or mislabeling.",
+      "OfferingAttorney": "Defense",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.50,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Officer's testimony emphasizes procedural concerns and timeline uncertainties. Positions doubt around evidence integrity rather than substantive content."
+    },
+    {
+      "ExhibitNumber": 6,
+      "FileName": "Testimony_Character_Witness_Park.txt",
+      "Summary": "I know the defendant as a person of character and community ties. I believe they are being treated unfairly.",
+      "OfferingAttorney": "Defense",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.40,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Character evidence provides contextual support for defense narrative. May be viewed as irrelevant by some jurors or given less weight than evidential testimony."
+    }
+  ],
+  "Agents": [],
+  "AvailableModels": [
+    {"FriendlyName": "OpenAI GPT-4o", "Provider": "OpenAI", "ModelId": "gpt-4o"},
+    {"FriendlyName": "Claude 3.5 Sonnet", "Provider": "Anthropic", "ModelId": "claude-3-5-sonnet-20240620"},
+    {"FriendlyName": "Google Gemini 1.5 Pro", "Provider": "Google", "ModelId": "gemini-1.5-pro"}
+  ]
+}

@@ -9,5 +9,11 @@ public enum AgentRole
     AlternateJuror,
     Lawyer,
     Client,
+
+    // Stakeholder/observer roles (configurable symbolic players)
+    InsuranceAdjuster,
+    SupervisingProsecutor,
+    LitigationManager,
+
     Observer
 }

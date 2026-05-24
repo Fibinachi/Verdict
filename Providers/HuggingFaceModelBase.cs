@@ -172,13 +172,20 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
 
         if (Directory.Exists(modelDir))
         {
-            foreach (var pattern in ModelFilePatterns)
+            // Only treat models as downloaded if they pass the provider's "valid/complete" checks.
+            // For ONNX providers this is enforced via download_complete.ok + strict genai_config validation.
+            if (ModelDownloadService.IsValidModelDirectory(modelDir))
             {
-                if (Directory.GetFiles(modelDir, pattern, SearchOption.TopDirectoryOnly).Length > 0)
+                progress?.Report(new DownloadProgressInfo
                 {
-                    progress?.Report(new DownloadProgressInfo { ModelId = modelId, TotalFiles = 1, FilesCompleted = 1, TotalBytes = 1, BytesDownloaded = 1, CurrentFile = "Already downloaded" });
-                    return;
-                }
+                    ModelId = modelId,
+                    TotalFiles = 1,
+                    FilesCompleted = 1,
+                    TotalBytes = 1,
+                    BytesDownloaded = 1,
+                    CurrentFile = "Already downloaded"
+                });
+                return;
             }
         }
 

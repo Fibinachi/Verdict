@@ -49,12 +49,14 @@ public class CourtroomManagerService : ICourtroomManagerService
         judgeArea.Add(WitnessBox());
 
         // 12 Jurors in 3x4 formation (3 rows of 4 jurors each)
+        // These are meant to be visible “juror cards”, so mark them occupied.
         for (int i = 1; i <= 12; i++)
-            jurors.Add(new Agent { Role = AgentRole.Juror, Name = $"Juror {i}" });
+            jurors.Add(new Agent { Role = AgentRole.Juror, Name = $"Juror {i}", IsOccupied = true });
         
         // Add 2 alternate jurors to gallery (to be displayed in 2x3 layout under gallery)
-        gallery.Add(new Agent { Role = AgentRole.AlternateJuror, Name = "Alt Juror 1" });
-        gallery.Add(new Agent { Role = AgentRole.AlternateJuror, Name = "Alt Juror 2" });
+        gallery.Add(new Agent { Role = AgentRole.AlternateJuror, Name = "Alt Juror 1", IsOccupied = true });
+        gallery.Add(new Agent { Role = AgentRole.AlternateJuror, Name = "Alt Juror 2", IsOccupied = true });
+
 
         // Counsel tables: load lawyer names from case data, or use defaults
         string defenseLawyerName = "Danny Defense";
@@ -82,16 +84,45 @@ public class CourtroomManagerService : ICourtroomManagerService
         var defenseAttorneyName = defenseLawyerName;
         var plaintiffAttorneyName = plaintiffLawyerName;
 
+        // Stakeholder observers (config-driven symbolic players)
+        // For criminal trials, we do NOT want insurance/coverage-style stakeholders.
+        // Everything else can remain.
+        var isCriminal = caseData?.Mode == CaseMode.Criminal;
+
+        if (!isCriminal)
+        {
+            gallery.Add(new Agent
+            {
+                Role = AgentRole.InsuranceAdjuster,
+                Name = "GEICO - Claims Adjuster",
+                ObserverType = "InsuranceAdjuster",
+                ConnectedAttorneyName = defenseAttorneyName,
+                CanCommunicateWithJury = false,
+                IsExposurePlanner = true
+            });
+        }
+
         gallery.Add(new Agent
         {
-            Role = AgentRole.Observer,
-            Name = "GEICO - Claims Adjuster",
-            ObserverType = "InsuranceAdjuster",
+            Role = AgentRole.SupervisingProsecutor,
+            Name = "Supervising Prosecutor",
+            ObserverType = "SupervisingProsecutor",
+            ConnectedAttorneyName = plaintiffAttorneyName,
+            CanCommunicateWithJury = false,
+            IsExposurePlanner = false
+        });
+
+        gallery.Add(new Agent
+        {
+            Role = AgentRole.LitigationManager,
+            Name = "+ Litigation Manager",
+            ObserverType = "LitigationManager",
             ConnectedAttorneyName = defenseAttorneyName,
             CanCommunicateWithJury = false,
             IsExposurePlanner = true
         });
 
+        // Legacy generic observer slots kept for backward compatibility
         gallery.Add(new Agent
         {
             Role = AgentRole.Observer,
@@ -146,10 +177,11 @@ public class CourtroomManagerService : ICourtroomManagerService
     {
         foreach (var agent in allAgents)
         {
+            var shouldHaveOpinion = agent.Role == AgentRole.Juror || agent.Role == AgentRole.AlternateJuror || agent.Role == AgentRole.Judge;
+            if (shouldHaveOpinion)
+                agent.VerdictLean = 0.5;
             agent.IsOccupied = false;
             agent.Memories.Clear();
-            if (agent.HasOpinion && agent.Role != AgentRole.Reporter)
-                agent.VerdictLean = 0.5;
         }
     }
 

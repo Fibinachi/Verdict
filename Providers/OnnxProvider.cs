@@ -49,7 +49,10 @@ public class OnnxProvider : HuggingFaceModelBase
 
     protected override string CacheFileName => "onnx_model_cache.json";
     protected override string DefaultModelsRoot =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Verdict", "Models");
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Verdict",
+            "Models");
     protected override string[] SearchQueries => ["onnx instruct"];
     protected override string[] ModelFilePatterns => ["*.onnx", "*.json"];
 
@@ -88,6 +91,26 @@ public class OnnxProvider : HuggingFaceModelBase
                 await _downloadService.DownloadModelAsync(modelId, modelDir, null);
             }
 
+            // Resolve usable directory by checking strict validity (download_complete marker + genai_config + non-empty .onnx)
+            // Prefer model root; only use /onnx when it is the valid one.
+            string onnxSubdir = Path.Combine(modelDir, "onnx");
+
+            bool rootValid = ModelDownloadService.IsValidModelDirectory(modelDir);
+            bool onnxValid = Directory.Exists(onnxSubdir) && ModelDownloadService.IsValidModelDirectory(onnxSubdir);
+
+            if (onnxValid && !rootValid)
+                return onnxSubdir;
+
+            if (rootValid)
+                return modelDir;
+
+            // If neither is strictly valid, fall back to previous behavior (for error messages / further handling)
+            // based on where genai_config.json lives.
+            var rootGenaiConfig = Path.Combine(modelDir, "genai_config.json");
+            var onnxGenaiConfig = Path.Combine(onnxSubdir, "genai_config.json");
+            if (!File.Exists(rootGenaiConfig) && File.Exists(onnxGenaiConfig))
+                return onnxSubdir;
+
             return modelDir;
         }
 
@@ -95,7 +118,7 @@ public class OnnxProvider : HuggingFaceModelBase
         if (File.Exists(modelId))
         {
             // If it's a file path, get the directory containing the model
-            string modelDir = Path.GetDirectoryName(modelId);
+            string? modelDir = Path.GetDirectoryName(modelId);
             if (string.IsNullOrEmpty(modelDir))
                 return modelId;
 
@@ -109,6 +132,18 @@ public class OnnxProvider : HuggingFaceModelBase
         // If it's a directory path, use it directly
         if (Directory.Exists(modelId))
         {
+            // Prefer the provided directory (genai_config.json is expected at/under the model root).
+            // Only fall back to /onnx when config is located only there.
+            string onnxSubdir = Path.Combine(modelId, "onnx");
+            if (Directory.Exists(onnxSubdir) && ModelDownloadService.IsValidModelDirectory(onnxSubdir))
+            {
+                var rootGenaiConfig = Path.Combine(modelId, "genai_config.json");
+                var onnxGenaiConfig = Path.Combine(onnxSubdir, "genai_config.json");
+
+                if (!File.Exists(rootGenaiConfig) && File.Exists(onnxGenaiConfig))
+                    return onnxSubdir;
+            }
+
             return modelId;
         }
 
@@ -145,6 +180,58 @@ public class OnnxProvider : HuggingFaceModelBase
 
         if (!Directory.Exists(modelPath))
             throw new DirectoryNotFoundException($"Model directory not found: {modelPath}");
+
+        // Ensure genai_config.json exists with required fields
+        var genaiConfigPath = Path.Combine(modelPath, "genai_config.json");
+        var needsUpdate = false;
+
+        // Check if genai_config.json exists and has required fields
+        if (File.Exists(genaiConfigPath))
+        {
+            try
+            {
+                var existingConfig = File.ReadAllText(genaiConfigPath);
+                using var doc = JsonDocument.Parse(existingConfig);
+                var root = doc.RootElement;
+
+                // Check for context_length at root level or inside model
+                bool hasContextLength = root.TryGetProperty("context_length", out _) ||
+                                       (root.TryGetProperty("model", out var modelEl) &&
+                                        modelEl.TryGetProperty("context_length", out _));
+
+                if (!hasContextLength)
+                    needsUpdate = true;
+            }
+            catch
+            {
+                needsUpdate = true;
+            }
+        }
+        else
+        {
+            needsUpdate = true;
+        }
+
+        if (needsUpdate)
+        {
+            var defaultConfig = new
+            {
+                model = new
+                {
+                    type = "llama",
+                    context_length = 2048,
+                    decoder = new
+                    {
+                        session_options = new
+                        {
+                            enable_cpu_mem_arena = false
+                        }
+                    }
+                }
+            };
+            var configJson = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(genaiConfigPath, configJson, ct);
+        }
 
         using var model = new Model(modelPath);
         using var tokenizer = new Tokenizer(model);
@@ -206,23 +293,60 @@ public class OnnxProvider : HuggingFaceModelBase
             Log($"Testing ONNX model at: {modelPath}");
 
             // Check for required files
-            var onnxFiles = Directory.GetFiles(modelPath, "*.onnx", SearchOption.TopDirectoryOnly);
+            var onnxFiles = Directory.GetFiles(modelPath, "*.onnx", SearchOption.AllDirectories);
             if (onnxFiles.Length == 0)
                 return $"Error: No .onnx files found in model directory: {modelPath}";
 
-            var genaiConfigPath = Path.Combine(modelPath, "genai_config.json");
-            if (!File.Exists(genaiConfigPath))
-            {
-                Log("No genai_config.json found, creating default one");
-                var defaultConfig = new
-                {
-                    model_type = "onnx",
-                    architectures = new[] { "OnnxModel" },
-                    max_position_embeddings = 2048
-                };
-                var configJson = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
-                await File.WriteAllTextAsync(genaiConfigPath, configJson, ct);
-            }
+var genaiConfigPath = Path.Combine(modelPath, "genai_config.json");
+              var needsUpdate = false;
+
+              // Check if genai_config.json exists and has required fields
+              if (File.Exists(genaiConfigPath))
+              {
+                  try
+                  {
+                      var existingConfig = File.ReadAllText(genaiConfigPath);
+                      using var doc = JsonDocument.Parse(existingConfig);
+                      var root = doc.RootElement;
+
+                      // Check for context_length at root level or inside model
+                      bool hasContextLength = root.TryGetProperty("context_length", out _) ||
+                                             (root.TryGetProperty("model", out var modelEl) &&
+                                              modelEl.TryGetProperty("context_length", out _));
+
+                      if (!hasContextLength)
+                          needsUpdate = true;
+                  }
+                  catch
+                  {
+                      needsUpdate = true;
+                  }
+              }
+              else
+              {
+                  needsUpdate = true;
+              }
+
+              if (needsUpdate)
+              {
+                  var defaultConfig = new
+                  {
+                      model = new
+                      {
+                          type = "llama",
+                          context_length = 2048,
+                          decoder = new
+                          {
+                              session_options = new
+                              {
+                                  enable_cpu_mem_arena = false
+                              }
+                          }
+                      }
+                  };
+                  var configJson = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
+                  await File.WriteAllTextAsync(genaiConfigPath, configJson, ct);
+              }
 
             // Try to load the model
             Log("Attempting to load ONNX model...");
@@ -234,11 +358,11 @@ public class OnnxProvider : HuggingFaceModelBase
             using var tokenizer = new Tokenizer(model);
             Log("Tokenizer created successfully");
 
-            // Try to generate a response
-            Log("Attempting to generate response...");
-            using var generatorParams = new GeneratorParams(model);
-            generatorParams.SetSearchOption("max_length", 50);
-            generatorParams.SetSearchOption("temperature", 0.1);
+             // Try to generate a response
+             Log("Attempting to generate response...");
+             using var generatorParams = new GeneratorParams(model);
+             generatorParams.SetSearchOption("max_length", 50);
+             generatorParams.SetSearchOption("temperature", 0.1);
 
             using var generator = new Generator(model, generatorParams);
             var sequences = tokenizer.Encode("Say exactly the word 'Connected' and nothing else.");
@@ -268,6 +392,13 @@ public class OnnxProvider : HuggingFaceModelBase
         catch (FileNotFoundException ex) when (ex.Message.Contains("OnnxRuntime"))
         {
             return $"Error: ONNX Runtime binary not found ({ex.Message}). Ensure the native runtime package is installed.";
+        }
+        catch (AccessViolationException ex)
+        {
+            // Some native init failures can manifest as AV; treat as a clean error so the UI doesn't crash.
+            Log($"AccessViolation during ONNX init: {ex.Message}");
+            Log($"Stack trace: {ex.StackTrace}");
+            return $"Error testing connection: ONNX runtime failed to initialize (native crash). {ex.Message}";
         }
         catch (Exception ex)
         {

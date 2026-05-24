@@ -28,6 +28,18 @@
 
         <p>Agents are the characters that populate your courtroom. Each agent has a role (Judge, Juror, Attorney, Witness, etc.), a profile with prompts and memories, and can be assigned to a specific seat in the courtroom layout.</p>
 
+        <div class="note">
+    <strong>Research context (citations)</strong>
+    <p style="margin-top:8px;">Verdict’s multi-agent deliberation and jury-diversity concepts are inspired by the following works:</p>
+    <ul>
+        <li>Devadiga, P., Shetty, O. J., &amp; Agarwal, P. (2025). <em>SAMVAD: A Multi-Agent System for Simulating Judicial Deliberation Dynamics in India.</em> arXiv:2509.03793.</li>
+        <li>Grim, P., et al. (2024). <em>The Epistemic Role of Diversity in Juries: An Agent-Based Model.</em> JASSS 27(1), 12.</li>
+        <li>Jiang, C., &amp; Yang, X. (2024). <em>Agents on the Bench: Large Language Model Based Multi Agent Framework for Trustworthy Digital Justice.</em> arXiv:2412.18697.</li>
+        <li>Anonymous (2026). <em>12 Angry AI Agents: Evaluating Multi-Agent LLM Decision-Making Through Cinematic Jury Deliberation.</em> arXiv:2605.01986.</li>
+    </ul>
+    <p style="margin-top:8px;">These citations describe the general modeling inspiration; specific quantitative parameters in the app are implemented in code.</p>
+</div>
+
         <h2>Adding Agents</h2>
         <p>To add an agent to an empty seat:</p>
         <ol>
@@ -64,13 +76,14 @@
             <li>The agent is removed from the seat. Note that this does not delete saved character files.</li>
         </ol>
 
-        <h2>Other Context Menu Options</h2>
-        <ul>
-            <li><strong>Chat</strong> &mdash; Opens the Agent Chat window for LLM-powered conversation with the agent.</li>
-            <li><strong>Juror Report</strong> &mdash; (Juror seats only) Opens the Juror Report window showing sentiment, verdict lean, and memories.</li>
-            <li><strong>Generate Likely Juror</strong> &mdash; (Juror seats only) Automatically generates a juror profile with demographic data.</li>
-            <li><strong>Save to Casefile</strong> &mdash; Saves the agent's current state into the case file.</li>
-        </ul>
+         <h2>Other Context Menu Options</h2>
+         <ul>
+             <li><strong>Chat</strong> &mdash; Opens the Agent Chat window for LLM-powered conversation with the agent (conversation memory is persisted, and there is a "Wipe Memories" action). <em>(Experimental feature)</em></li>
+             <li><strong>Juror Report</strong> &mdash; (Juror seats only) Opens the Juror Report window showing sentiment, verdict lean, and a memory summary. <em>(Experimental feature)</em></li>
+             <li><strong>Generate Likely Juror</strong> &mdash; (Juror seats only) Generates a juror profile with demographic data (including knowledge-domain defaults). <em>(Experimental feature)</em></li>
+             <li><strong>Save to Casefile</strong> &mdash; Persists the agent's current state into the case file (.jur).</li>
+         </ul>
+
 
         <h2>Agent Roles</h2>
         <p>Available agent roles include: Judge, Juror, Attorney (Prosecution/Plaintiff), Attorney (Defense), Witness, Court Reporter, Clerk, Observer, and Client. Each role has specific behaviors and interactions within the simulation.</p>

@@ -1,0 +1,77 @@
+{
+  "Beta0": 0.02,
+  "Beta1": 1.0,
+  "Gamma1": 1.25,
+  "Theta0": 0.0,
+  "Theta1": 5.0,
+
+  "Alpha": {
+    "intercept": 0.0,
+    "pol_id": 0.9,
+    "conserv_relig": 0.35,
+    "education_years": -0.12,
+    "age_years": 0.15,
+    "female_juror": 0.08,
+    "income_band": -0.10
+  },
+
+  "Eta": {
+    "intercept": 0.0,
+    "RWA": 0.55,
+    "SDO": 0.45,
+    "punitiveness": 0.25,
+    "conserv_relig": 0.25,
+    "pol_strength": 0.25,
+    "primary_history": 0.10,
+    "online_partisan": 0.08,
+    "income_band": 0.10,
+    "job_security": 0.06,
+    "home_own": 0.05
+  },
+
+  "Zeta": {
+    "intercept": 0.0,
+    "RWA": 0.25,
+    "SDO": 0.20,
+    "conserv_relig": 0.25,
+    "pol_strength": 0.20,
+    "primary_history": 0.10,
+    "activism": 0.08,
+    "online_partisan": 0.08,
+    "trade_school": 0.03,
+    "hbcu": 0.03,
+    "blue_collar": 0.04,
+    "diyer": 0.02,
+    "income_band": 0.05
+  },
+
+  "Chi": {
+    "intercept": 0.0,
+    "education_years": 0.25,
+    "elite_private": 0.08,
+    "state_flagship": 0.05,
+    "trade_school": 0.03,
+    "hbcu": 0.02,
+    "blue_collar": 0.01,
+    "diyer": 0.01,
+    "age": 0.02,
+    "certainty": 0.03,
+    "narrative_coherence": 0.0,
+    "social_consensus": 0.0,
+    "anchoring": 0.0,
+    "hindsight": 0.0
+  },
+
+  "Rho": {
+    "intercept": 0.0,
+    "RWA": 0.20,
+    "SDO": 0.12,
+    "conserv_relig": 0.18,
+    "pol_id": 0.10,
+    "pol_strength": 0.12,
+    "sm_polar": 0.06,
+    "blue_collar": 0.02,
+    "diyer": 0.01
+  }
+}
+

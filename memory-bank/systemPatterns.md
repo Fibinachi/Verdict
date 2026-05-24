@@ -18,7 +18,7 @@ Views (XAML) → ViewModels → Services → Models
 | Service | Interface | Responsibility |
 |---------|-----------|----------------|
 | `CaseService` | `ICaseService` | Save/load .jur case files; generate PDF reports |
-| `TranscriptService` | `ITranscriptService` | Load/parse transcript files; LLM entity extraction |
+| `TranscriptService` | `ITranscriptService?` | DEVELOPMENTAL: Load/parse transcript files; LLM entity extraction (nullable dependency - not customer-facing) |
 | `SettingsService` | `ISettingsService` | Default case settings persistence |
 | `CourtroomManagerService` | `ICourtroomManagerService` | Courtroom initialization, slot occupancy, agent reset |
 | `EvidenceAnalysisService` | `IEvidenceAnalysisService` | Evidence strength assessment, damage estimation, exposure calculation |
@@ -59,9 +59,9 @@ Gallery (ObservableCollection<Agent>):
 ```
 
 ### Data Flow
-1. **Transcript Processing**: TranscriptService.LoadTranscript → MainViewModel.ProcessTranscriptLine → DebateService.CalculateInfluence → JuryCalculationService.ApplyTranscriptInfluence
-2. **Evidence Admission**: MainViewModel.AddEvidence → EvidenceAnalysisService.AssessStrength → EvidenceAnalysisService.CalculateExposure → JuryCalculationService.ApplyEvidenceInfluence
-3. **Entity Extraction**: TranscriptService.ExtractEntitiesAsync → CaseEntityMapper.MapToCaseFile
+1. **Evidence Admission**: MainViewModel.AddEvidence → EvidenceAnalysisService.AssessStrength → EvidenceAnalysisService.CalculateExposure → JuryCalculationService.ApplyEvidenceInfluence
+2. **Chat Input**: MainViewModel.ProcessChatInputLine → BroadcastEvent → TriggerAgentResponses (separated from transcript processing)
+3. **Entity Extraction**: TranscriptService.ExtractEntitiesAsync → CaseEntityMapper.MapToCaseFile (DEVELOPMENTAL, requires ITranscriptService)
 4. **Case Persistence**: CaseService.SaveCase/LoadCase (JSON serialization) + asset folder for agent prompts/memories
 5. **Jury Generation**: JuryDemographicsService.GenerateJuryPanel → populates Jurors collection
 6. **Role Assignment**: AgentAssignmentService.AnalyzeCase → ApplyAssignmentPlan → GenerateDefaultAgents

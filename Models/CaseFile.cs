@@ -177,18 +177,23 @@ namespace Verdict.Models
 
         public List<BiasFactor> DefaultBiasFactors { get; set; } = new()
         {
-            new BiasFactor { Name = "Age", Weight = 0.55 },
-            new BiasFactor { Name = "Gender", Weight = 0.45 },
-            new BiasFactor { Name = "Education Level", Weight = 0.80 },
-            new BiasFactor { Name = "Income Level", Weight = 0.50 },
-            new BiasFactor { Name = "Political Affiliation", Weight = 0.90 },
-            new BiasFactor { Name = "Ethnicity", Weight = 0.60 },
-            new BiasFactor { Name = "Religion", Weight = 0.40 },
-            new BiasFactor { Name = "Juror Experience", Weight = 0.70 },
-            new BiasFactor { Name = "Legal Knowledge", Weight = 0.75 },
-            new BiasFactor { Name = "Professional Background", Weight = 0.55 },
-            new BiasFactor { Name = "Community Ties", Weight = 0.65 },
-            new BiasFactor { Name = "Communication Style", Weight = 0.35 },
+            // Default weights act as a simple, normalized prior that the toy juror model
+            // can “start from” before evidence internalization.
+            //
+            // Calibration reference (reported): Moller, E. (1996). Trends in Civil Jury Verdicts Since 1985.
+            // NOTE: The implementation currently stores these as heuristic priors.
+            new BiasFactor { Name = "Age", Weight = 0.52 },
+            new BiasFactor { Name = "Gender", Weight = 0.44 },
+            new BiasFactor { Name = "Education Level", Weight = 0.78 },
+            new BiasFactor { Name = "Income Level", Weight = 0.48 },
+            new BiasFactor { Name = "Political Affiliation", Weight = 0.88 },
+            new BiasFactor { Name = "Ethnicity", Weight = 0.58 },
+            new BiasFactor { Name = "Religion", Weight = 0.39 },
+            new BiasFactor { Name = "Juror Experience", Weight = 0.68 },
+            new BiasFactor { Name = "Legal Knowledge", Weight = 0.73 },
+            new BiasFactor { Name = "Professional Background", Weight = 0.54 },
+            new BiasFactor { Name = "Community Ties", Weight = 0.63 },
+            new BiasFactor { Name = "Communication Style", Weight = 0.34 },
         };
 
         public List<Agent> Agents { get; set; } = new();

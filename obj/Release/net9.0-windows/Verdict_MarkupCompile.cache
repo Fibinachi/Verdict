@@ -10,11 +10,11 @@ none
 false
 TRACE;RELEASE;NET;NET9_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 C:\Users\charlesp\Verdict\App.xaml
-14-1115482965
+16-189791089
 
-781785974092
+112-1868433128
 234911242542
-MainWindow.xaml;Views\AddModelDialog.xaml;Views\AgentChatWindow.xaml;Views\AgentProfileWindow.xaml;Views\CaseSettingsWindow.xaml;Views\ClientConversationWindow.xaml;Views\CounselDiscussionWindow.xaml;Views\ExhibitListWindow.xaml;Views\JurorConversationWindow.xaml;Views\JurorReportWindow.xaml;Views\ModelDetailsDialog.xaml;Views\ModelSelectionDialog.xaml;Views\ModelSettingsWindow.xaml;Views\ModelWeightsWindow.xaml;
+MainWindow.xaml;Views\AddModelDialog.xaml;Views\AgentChatWindow.xaml;Views\AgentProfileWindow.xaml;Views\CaseSettingsWindow.xaml;Views\ClientConversationWindow.xaml;Views\CounselDiscussionWindow.xaml;Views\ExhibitListWindow.xaml;Views\JurorConversationWindow.xaml;Views\JurorReportWindow.xaml;Views\ModelDetailsDialog.xaml;Views\ModelSelectionDialog.xaml;Views\ModelSettingsWindow.xaml;Views\ModelWeightsWindow.xaml;Views\TextEvidenceDialog.xaml;Views\UniversalChatWindow.xaml;
 
 False
 

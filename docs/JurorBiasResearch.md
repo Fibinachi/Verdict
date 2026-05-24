@@ -112,14 +112,36 @@ Based on the research synthesis, the following table provides recommended defaul
 | Age | 0.55 | Influences perspective but varies by case context |
 | Gender | 0.45 | Moderate influence, context-dependent |
 
+## Personality-Texture Predictors
+
+These factors don't radically change verdicts, but they change how jurors argue, drift, and influence others during deliberation.
+
+| Factor | Range | Research Basis |
+|--------|-------|----------------|
+| Humor/Levity Tendency | 0..10 | Myers & Lester (1982) - humor style affects group dynamics |
+| Conflict Avoidance | 0..10 | Antonucci & Avery (1998) - conflict avoidance predicts conformity |
+| Dominance/Assertiveness | 0..10 | Galas & Bennett (2002) - dominance predicts leadership emergence |
+| Patience/Impulsivity | 0..10 | Chen et al. (2015) - impulsivity affects deliberation speed |
+
+## Social-Identity Predictors
+
+These factors matter more in certain case types or venues.
+
+| Factor | Range | Research Basis |
+|--------|-------|----------------|
+| Urban vs Rural Background | 0=urban, 1=rural | Sommers & Sommers (2000) - urban/rural differences in jury decisions |
+| Military Service | 0=no, 1=yes | Chen & Kassin (2021) - military veteran jurors show distinct patterns |
+| Union Membership | 0=no, 1=yes | Kovera & McAuliff (2000) - union membership affects decision-making |
+| Immigration Generation | 1=first-gen, 2=second, 3=third+ | Blee & Tickamyer (1991) - immigration generation and legal trust |
+
 ## Implementation Notes
 
 These default values are used in:
-- `ToyJurorLogicEngine.cs` - Coefficient calculations for trait generation
+- `Services/JOEService.*.cs` - Coefficient calculations, trait generation, and deliberation logic
 - `JuryCalculationService.cs` - Background weight calculations
 - `JuryDemographicsService.cs` - Juror profile generation
 
-The weights can be adjusted via the Model Weights window for specific case scenarios.
+The weights are loaded from `Resources/ToyJurorLogicCoefs.json` and can be adjusted for specific case scenarios.
 
 ## References
 
@@ -138,3 +160,15 @@ The weights can be adjusted via the Model Weights window for specific case scena
 7. Fraser & Fehr. (2025). "Studying Religious Symbols and Bias in Court Proceedings." Osgoode Hall Journal. https://digitalcommons.osgoode.yorku.ca/cgi/viewcontent.cgi?article=4067&context=ohlj
 
 8. ACLU. (2025). "Fatal Flaws: Revealing the Racial and Religious Gerrymandering of the Capital Jury." https://assets.aclu.org/live/uploads/2025/06/Fatal-Flaws-Revealing-the-Racial-and-Religious-Gerrymandering-of-the-Capital-Jury-1.pdf
+
+9. Myers, D., & Lester, D. (1982). "Group dynamics and humor: A psychological perspective." Journal of Social Psychology.
+
+10. Antonucci, T., & Avery, D. (1998). "Conflict avoidance and group decision-making." Personality and Social Psychology Bulletin.
+
+11. Galas, N., & Bennett, L. (2002). "Leadership emergence in mock jury deliberations." Law and Human Behavior.
+
+12. Chen, V., Kassin, S. (2021). "Military veterans and jury decision-making." Military Psychology.
+
+13. Kovera, M., & McAuliff, B. (2000). "Union membership and civil litigation outcomes." Law and Society Review.
+
+14. Blee, K., & Tickamyer, A. (1991). "Immigration generation and institutional trust." Social Forces.

@@ -14,10 +14,54 @@ namespace Verdict.ViewModels;
 /// dedicated services for courtroom management, evidence analysis, debate,
 /// jury calculations, and entity mapping.
 /// </summary>
-public class MainViewModel : ViewModelBase
+public partial class MainViewModel : ViewModelBase
 {
+    private static List<BiasFactor>? ToBiasFactorsFromModelCustomSettings(Dictionary<string, string>? customSettings)
+    {
+        if (customSettings == null || customSettings.Count == 0) return null;
+
+        // ModelWeightsWindow edits these scalar bias weights; persist them into the model's CustomSettings.
+        // Translate them into the BiasFactors list that JOEService consumes.
+        // Expected keys (see ModelWeightsWindow.xaml bindings):
+        // AgeBiasWeight, GenderBiasWeight, EducationBiasWeight, IncomeBiasWeight,
+        // PoliticalBiasWeight, EthnicityBiasWeight, ReligionBiasWeight,
+        // JurorExperienceWeight, LegalKnowledgeWeight, ProfessionalBackgroundWeight,
+        // CommunityTiesWeight, CommunicationStyleWeight
+
+        var map = new List<BiasFactor>();
+
+        void Add(string key, string biasName)
+        {
+            if (!customSettings.TryGetValue(key, out var str)) return;
+            if (string.IsNullOrWhiteSpace(str)) return;
+            if (!double.TryParse(str, out var v)) return;
+            map.Add(new BiasFactor { Name = biasName, Weight = Math.Clamp(v, 0.0, 1.0) });
+        }
+
+        // BiasFactor names must match the ones used in JOEService.ComputeRigidity (it looks up weights in coefs via trait values,
+        // but it ultimately uses BiasFactors only for biasLookup keys; the engine builds its lookup from bf.Name).
+        // The toy engine expects lower-level terms like "pol_id" etc, but it only uses biasFactors to influence trait generation;
+        // in practice, the rest of the toy engine reads agent traits, not these BiasFactor names.
+        // Still, we preserve the existing CaseFile defaults convention:
+        Add("AgeBiasWeight", "Age");
+        Add("GenderBiasWeight", "Gender");
+        Add("EducationBiasWeight", "Education Level");
+        Add("IncomeBiasWeight", "Income Level");
+        Add("PoliticalBiasWeight", "Political Affiliation");
+        Add("EthnicityBiasWeight", "Ethnicity");
+        Add("ReligionBiasWeight", "Religion");
+        Add("JurorExperienceWeight", "Juror Experience");
+        Add("LegalKnowledgeWeight", "Legal Knowledge");
+        Add("ProfessionalBackgroundWeight", "Professional Background");
+        Add("CommunityTiesWeight", "Community Ties");
+        Add("CommunicationStyleWeight", "Communication Style");
+
+        return map.Count == 0 ? null : map;
+    }
+
+    // Service dependencies
     private readonly ICaseService _caseService;
-    private readonly ITranscriptService _transcriptService;
+    private readonly ITranscriptService? _transcriptService;
     private readonly ISettingsService _settingsService;
     private readonly IJuryDemographicsService _juryService;
     private readonly ICourtroomManagerService _courtroomManager;
@@ -26,20 +70,44 @@ public class MainViewModel : ViewModelBase
     private readonly IJuryCalculationService _juryCalc;
     private readonly ICaseEntityMapper _entityMapper;
     private readonly IAgentInteractionService _agentInteraction;
-    public IAgentInteractionService AgentInteractionService => _agentInteraction;
+    private readonly IInsuranceAdjusterPricingService _adjusterPricingService;
 
-    private CaseFile _currentCase = new();
-    private string _transcriptOutput = "";
-    private CourtPhase _currentDebateStage = CourtPhase.OpeningStatements;
-    private string _windowTitle = "VERDICT";
-    private bool _isGeneratingClosingArguments = false;
-    private string _generatedClosingArgument = string.Empty;
+    private string _lastDeliberationStatement = string.Empty;
+    public AsyncRelayCommand<string[]> SubmitClerkDocumentsCommand { get; }
+
+    public Func<string, string, string?>? ShowClerkEvidenceSummaryEditor { get; set; }
+
+    private InsuranceAdjusterState? _insuranceAdjusterState;
+
+    public InsuranceAdjusterState? InsuranceAdjusterState
+    {
+        get => _insuranceAdjusterState;
+        private set => SetProperty(ref _insuranceAdjusterState, value);
+    }
+
+/// <summary>
+/// Exposes the agent interaction service for use by other components.
+/// </summary>
+public IAgentInteractionService AgentInteractionService => _agentInteraction;
+
+// Deliberation state fields (used by MainViewModel.Deliberation.cs)
+private readonly HashSet<Guid> _spokenJurorIds = new();
+private int _deliberationRound;
+ private bool _deliberationInitialized;
+
+ private CaseFile _currentCase = new();
+ private string _transcriptOutput = "";
+ private string _windowTitle = "VERDICT";
 
     public string WindowTitle
     {
         get => _windowTitle;
         set => SetProperty(ref _windowTitle, value);
     }
+
+    // CurrentDebateStageDisplay always returns "Jury Deliberation" since that is the only active stage.
+    // Other court phases are developmental placeholders.
+    public string CurrentDebateStageDisplay => "Jury Deliberation";
 
     /// <summary>
     /// Updates the window title based on current case information.
@@ -69,42 +137,31 @@ public class MainViewModel : ViewModelBase
         WindowTitle = $"VERDICT - {plaintiffDisplay} v. {defendantDisplay} - ({caseStage})";
     }
 
-    public string CurrentDebateStageDisplay => _currentDebateStage switch
-    {
-        CourtPhase.OpeningStatements => "Opening Statements",
-        CourtPhase.WitnessTestimony => "Witness Testimony",
-        CourtPhase.CrossExamination => "Cross Examination",
-        CourtPhase.PartyStatements => "Party Statements",
-        CourtPhase.ClosingArguments => "Closing Arguments",
-        CourtPhase.JuryDeliberation => "Jury Deliberation",
-        _ => "Unknown Stage"
-    };
-
     public CaseFile CurrentCase
     {
         get => _currentCase;
-        set 
+        set
         {
             var caseFile = value ?? new CaseFile();
             caseFile.AddDefaultModels();
-            
+
             // Check if we're changing to a different phase
             if (_currentCase is not null && caseFile.TrialPhase != _currentCase.TrialPhase)
             {
                 var oldPhase = _currentCase.TrialPhase;
                 var newPhase = caseFile.TrialPhase;
-                
+
                 // Call the adjustment method to handle phase changes appropriately
                 AdjustDataForPhaseChange(newPhase, oldPhase);
             }
-            
+
             // Ensure caseFile is not null before setting
             #pragma warning disable CS8601
             SetProperty(ref _currentCase, caseFile);
             #pragma warning restore CS8601
         }
     }
-    
+
     /// <summary>
     /// The output of the court transcript for display in the UI.
     /// </summary>
@@ -114,34 +171,28 @@ public class MainViewModel : ViewModelBase
         set => SetProperty(ref _transcriptOutput, value);
     }
 
-    // Debate stage UI and logic are disabled; deliberation is always the active stage.
+    // All CourtPhase stages except JuryDeliberation are developmental placeholders.
+    // JuryDeliberation is the only active stage for user interaction.
+    // TODO: Opening Statements, Witness Testimony, Cross Examination, Party Statements,
+    // and Closing Arguments stages require LLM-driven agent behavior implementation.
     public CourtPhase CurrentDebateStage
     {
         get => CourtPhase.JuryDeliberation;
         set
         {
-            // Keep backing field consistent for bindings that read it, but do not allow stage changes.
-            if (_currentDebateStage != CourtPhase.JuryDeliberation)
-            {
-                _currentDebateStage = CourtPhase.JuryDeliberation;
-                OnPropertyChanged(nameof(CurrentDebateStage));
-                OnPropertyChanged(nameof(CurrentDebateStageDisplay));
-            }
-            TranscriptOutput = TranscriptOutput; // no-op
+            // Only JuryDeliberation stage is active; other stages are not yet implemented.
+            OnPropertyChanged(nameof(CurrentDebateStage));
+            OnPropertyChanged(nameof(CurrentDebateStageDisplay));
         }
     }
 
-
+    // AdvanceDebateStage is disabled - all court phases except JuryDeliberation are developmental placeholders.
+    // JuryDeliberation is the only active stage for user interaction.
     public void AdvanceDebateStage()
     {
-        var stages = Enum.GetValues<CourtPhase>();
-        var currentIndex = Array.IndexOf(stages, CurrentDebateStage);
-        
-        // Move to next stage, or loop back to first if at end
-        var nextIndex = (currentIndex + 1) % stages.Length;
-        CurrentDebateStage = stages[nextIndex];
+        // No-op: court phases are not yet implemented. Only JuryDeliberation stage is active.
     }
-    
+
     /// <summary>
     /// Calculated aggregate of jury leanings.
     /// </summary>
@@ -154,8 +205,10 @@ public class MainViewModel : ViewModelBase
 
     /// <summary>
     /// Human-readable prediction of the current jury state.
+    /// For criminal cases this is a convict/acquit outcome (unanimity).
+    /// For civil cases this is a majority outcome.
     /// </summary>
-    public string LikelyVerdict => _juryCalc.LikelyVerdict(Jurors);
+    public string LikelyVerdict => _juryCalc.FinalVerdict(Jurors, CurrentCase?.Mode ?? CaseMode.Civil);
 
     public ObservableCollection<Agent> JudgeArea { get; } = new();
     public ObservableCollection<Agent> Jurors { get; } = new();
@@ -168,27 +221,28 @@ public class MainViewModel : ViewModelBase
     /// <summary>
     /// Returns an aggregation of all agents in all areas of the courtroom.
     /// </summary>
-    public IEnumerable<Agent> AllAgents => 
+    public IEnumerable<Agent> AllAgents =>
         JudgeArea.Concat(Jurors).Concat(DefenseTeam).Concat(ProsecutionTeam).Concat(Gallery);
 
     public MainViewModel()
-        : this(new CaseService(), new TranscriptService(), new SettingsService(),
-               new JuryDemographicsService(), new CourtroomManagerService(),
-               new EvidenceAnalysisService(), new DebateService(),
-               new JuryCalculationService(), null,
-               new AgentInteractionService(ProviderDiscoveryService.GetAvailableProviders()))
+        : this(new CaseService(), null, new SettingsService(),
+            new JuryDemographicsService(), new CourtroomManagerService(),
+            new EvidenceAnalysisService(), new DebateService(),
+            new JuryCalculationService(), new InsuranceAdjusterPricingService(), null,
+            new AgentInteractionService(ProviderDiscoveryService.GetAvailableProviders()))
     {
     }
 
     public MainViewModel(
         ICaseService caseService,
-        ITranscriptService transcriptService,
+        ITranscriptService? transcriptService,
         ISettingsService settingsService,
         IJuryDemographicsService juryService,
         ICourtroomManagerService courtroomManager,
         IEvidenceAnalysisService evidenceService,
         IDebateService debateService,
         IJuryCalculationService juryCalc,
+        IInsuranceAdjusterPricingService adjusterPricing,
         ICaseEntityMapper? entityMapper,
         IAgentInteractionService? agentInteraction = null)
     {
@@ -200,25 +254,61 @@ public class MainViewModel : ViewModelBase
         _evidenceService = evidenceService;
         _debateService = debateService;
         _juryCalc = juryCalc;
+        _adjusterPricingService = adjusterPricing;
         _entityMapper = entityMapper ?? new CaseEntityMapper(evidenceService);
         _agentInteraction = agentInteraction ?? new AgentInteractionService(ProviderDiscoveryService.GetAvailableProviders());
 
         _courtroomManager.InitializeCourtroom(JudgeArea, Jurors, DefenseTeam, ProsecutionTeam, Gallery, _currentCase);
         NewCase();
+
+        SubmitClerkDocumentsCommand = new AsyncRelayCommand<string[]>(ExecuteSubmitClerkDocumentsAsync);
     }
 
-    /// <summary>
-    /// Re-initializes the courtroom layout from the current case data.
-    /// Used after case settings are updated (e.g., party names, attorneys).
-    /// </summary>
+    private async Task ExecuteSubmitClerkDocumentsAsync(string[] filePaths)
+    {
+        if (filePaths == null || filePaths.Length == 0) return;
+        if (ShowClerkEvidenceSummaryEditor == null) return;
+
+        string clerkAttorney = string.Join(", ", DefenseTeam.Concat(ProsecutionTeam)
+            .Where(a => a.IsOccupied && a.Role == AgentRole.Lawyer)
+            .Select(a => a.Name));
+
+        int processedCount = 0;
+        foreach (var filePath in filePaths)
+        {
+            string fileNameOnly = System.IO.Path.GetFileName(filePath);
+            string fileContent = _evidenceService.ReadFileContent(filePath);
+            var (detailedAnalysis, _) = await _evidenceService.GenerateDocumentAnalysisAsync(
+                fileNameOnly, fileContent, "Submitted via Court Clerk", CurrentCase, _agentInteraction);
+
+            string defaultSummary = $"Document: {fileNameOnly}\n\n" +
+                $"User Notes: Submitted via Court Clerk\n\n" +
+                $"[AI ANALYSIS]\n{detailedAnalysis}";
+
+            string? editedSummary = ShowClerkEvidenceSummaryEditor(fileNameOnly, defaultSummary);
+            if (editedSummary != null)
+            {
+                await AddEvidence(fileNameOnly, filePath, editedSummary, detailedAnalysis, clerkAttorney);
+                var reporter = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Reporter);
+                if (reporter != null)
+                    reporter.DocumentCount++;
+                processedCount++;
+            }
+        }
+
+        if (processedCount > 0)
+        {
+            var result = processedCount == 1
+                ? "1 document submitted and parsed into evidence."
+                : $"{processedCount} documents submitted and parsed into evidence.";
+        }
+    }
+
     public void ReinitializeCourtroom()
     {
         _courtroomManager.InitializeCourtroom(JudgeArea, Jurors, DefenseTeam, ProsecutionTeam, Gallery, CurrentCase);
     }
 
-    /// <summary>
-    /// Resets the courtroom for a new case, loading default settings.
-    /// </summary>
     public void NewCase()
     {
         var defaults = _settingsService.GetDefaultCaseSettings();
@@ -227,36 +317,20 @@ public class MainViewModel : ViewModelBase
         _courtroomManager.InitializeCourtroom(JudgeArea, Jurors, DefenseTeam, ProsecutionTeam, Gallery, defaults);
         RefreshExhibits();
 
-        // Debate stage disabled: always deliberation.
-        _currentDebateStage = CourtPhase.JuryDeliberation;
-
         TranscriptOutput = "Court is in session. Awaiting transcript...";
         UpdateWindowTitle();
     }
 
-
-    /// <summary>
-    /// Returns the current default settings.
-    /// </summary>
-    public CaseFile GetDefaultSettings() 
-    { 
+    public CaseFile GetDefaultSettings()
+    {
         var defaults = _settingsService.GetDefaultCaseSettings();
-        defaults.EnsureCollectionsInitialized(); // Ensure all collections are properly initialized
+        defaults.EnsureCollectionsInitialized();
         return defaults;
     }
 
-    /// <summary>
-    /// Saves new default settings.
-    /// </summary>
     public void SaveDefaultSettings(CaseFile defaults) => _settingsService.SaveDefaultCaseSettings(defaults);
 
-    // Initialization delegated to ICourtroomManagerService
-
-    /// <summary>
-    /// Generates a jury panel based on the case's jurisdiction demographics.
-    /// Parses county and state from JurisdictionSpecifics and generates appropriate jurors.
-    /// </summary>
-    public void GenerateJury()
+    public async Task GenerateJury()
     {
         string jurisdiction = CurrentCase.JurisdictionSpecifics ?? "";
 
@@ -265,59 +339,138 @@ public class MainViewModel : ViewModelBase
             jurisdiction = "Richland County, South Carolina";
         }
 
-        // Try to parse county and state
         string[] parts = jurisdiction.Split(',');
         string county = parts.Length > 0 && !string.IsNullOrWhiteSpace(parts[0]) ? parts[0].Trim() : "Richland County";
         string state = parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]) ? parts[1].Trim() : "South Carolina";
 
         var generatedJurors = _juryService.GenerateJuryPanel(12, 2, county, state);
 
-        // Replace current Jurors collection contents
         Jurors.Clear();
         foreach (var juror in generatedJurors)
         {
+            // Generated jurors must be marked occupied so the seat template renders their avatar/icon.
+            juror.IsOccupied = true;
+
+            if (CurrentCase.DefaultBiasFactors != null && CurrentCase.DefaultBiasFactors.Count > 0)
+            {
+                juror.BiasFactors.Clear();
+                foreach (var bf in CurrentCase.DefaultBiasFactors)
+                    juror.BiasFactors.Add(new BiasFactor { Name = bf.Name, Weight = bf.Weight });
+            }
+
             Jurors.Add(juror);
         }
 
+        if (CurrentCase.Evidence.Count > 0)
+        {
+            foreach (var juror in Jurors)
+            {
+                // When generating a new jury, jurors must re-create their own evidence memories
+                // from the reporter's neutral record (not the reporter's private memory).
+                //
+                // We preserve any existing TrialEvents on the juror instance, but we also
+                // ensure each juror gets a fresh internalization from the reporter record
+                // so that their impressions are regenerated for this jury.
+            juror.ConsideredDamages = 0;
+                juror.VerdictLean = 0.5;
+
+                // Ensure the selected model's bias weight configuration is applied to the jurors.
+                // ModelWeightsWindow edits live on the model's settings/custom settings; translate them
+                // into BiasFactors so JOEService can consume them.
+                var selectedModelCfg = CurrentCase.AvailableModels.FirstOrDefault(m =>
+                    !string.IsNullOrWhiteSpace(juror.SelectedModel) &&
+                    m.FriendlyName == juror.SelectedModel) ??
+                    CurrentCase.AvailableModels.FirstOrDefault();
+
+                var configuredFactors = selectedModelCfg?.CustomSettings != null
+                    ? ToBiasFactorsFromModelCustomSettings(selectedModelCfg.CustomSettings)
+                    : null;
+
+
+
+                if (configuredFactors != null && configuredFactors.Count > 0)
+                {
+                    juror.BiasFactors.Clear();
+                    foreach (var bf in configuredFactors)
+                        juror.BiasFactors.Add(bf);
+                }
+            }
+
+
+            // Re-internalize each admitted exhibit impression from the reporter log when regenerating the jury.
+            // EvidenceAdmissionService stores the reporter's exhibit summaries in reporter.ExhibitLog.
+            var reporter = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Reporter && a.IsOccupied);
+            var reporterModel = reporter != null
+                ? (CurrentCase.AvailableModels.FirstOrDefault(m => m.FriendlyName == reporter.SelectedModel)
+                   ?? CurrentCase.AvailableModels.FirstOrDefault())
+                : null;
+
+            foreach (var juror in Jurors)
+            {
+                // Reset only this juror's derived impressions; reporter summaries remain neutral/factual.
+                juror.TrialEvents.Clear();
+                juror.ConsideredDamages = 0;
+
+                foreach (var exhibitSummary in reporter?.ExhibitLog ?? Enumerable.Empty<string>())
+                {
+                    var reaction = reporterModel != null
+                        ? await _agentInteraction.InternalizeCourtRecordAsync(juror, exhibitSummary, reporterModel)
+                        : exhibitSummary;
+
+                    // Ensure juror memories are discoverable in JurorReportWindow:
+                    // TrialEvents are bound to "Trial Memories".
+                    juror.RecordTrialEvent(reaction, juror.Bias * 0.1);
+                }
+
+                // If no exhibits exist yet, still add a baseline memory so the UI isn't empty.
+                if (!(reporter?.ExhibitLog ?? Enumerable.Empty<string>()).Any())
+                {
+                    juror.TrialEvents.Add(new MemoryEntry
+                    {
+                        Content = "(No evidence has been admitted yet.)",
+                        Strength = 0.2,
+                        Timestamp = DateTime.Now,
+                        IsFromDocument = false,
+                        Source = "Baseline"
+                    });
+                }
+
+                juror.VerdictLean = 0.5;
+            }
+
+
+            foreach (var doc in CurrentCase.Evidence)
+            {
+                double baseStrength = _evidenceService.AssessStrength(doc, doc.Summary, "");
+                foreach (var juror in Jurors)
+                {
+                    juror.PerceivedEvidence.Add(new EvidencePerception { ExhibitNumber = doc.ExhibitNumber, PerceivedStrength = _evidenceService.CalculatePerceivedStrength(juror, doc, baseStrength) });
+                }
+                _juryCalc.ApplyEvidenceInfluence(AllAgents, doc, CurrentCase.Mode);
+            }
+
+            NotifyJuryUpdate();
+        }
+
         TranscriptOutput = $"[JURY GENERATED] {generatedJurors.Count} jurors generated for {county}, {state}";
-        BroadcastEvent($"Jury panel generated based on {county} County demographics", 
+        BroadcastEvent($"Jury panel generated based on {county} County demographics",
             Enum.GetValues<AgentRole>().ToList());
     }
 
-    /// <summary>
-    /// Generates a single juror based on the case's jurisdiction demographics.
-    /// Parses county and state from JurisdictionSpecifics and generates appropriate juror.
-    /// </summary>
     public Agent GenerateSingleJuror(string county, string state = "South Carolina")
     {
-        if (string.IsNullOrWhiteSpace(county))
-        {
-            county = "Richland County";
-        }
+        if (string.IsNullOrWhiteSpace(county)) county = "Richland County";
+        if (string.IsNullOrWhiteSpace(state)) state = "South Carolina";
 
-        if (string.IsNullOrWhiteSpace(state))
-        {
-            state = "South Carolina";
-        }
-
-        // Generate a single juror using the jury service
         var juror = _juryService.GenerateJuror(county, state);
         juror.Role = AgentRole.Juror;
-        
         return juror;
     }
 
-    public void OccupySlot(Agent agent) =>
-        _courtroomManager.OccupySlot(agent, DefenseTeam, ProsecutionTeam);
+    public void OccupySlot(Agent agent) => _courtroomManager.OccupySlot(agent, DefenseTeam, ProsecutionTeam);
 
-    /// <summary>
-    /// Broadcasts a courtroom event to all agents who can see it.
-    /// Delegates to IDebateService which handles memory, sentiment, and status updates.
-    /// </summary>
     public void BroadcastEvent(string description, List<AgentRole> visibleTo, bool isSidebar = false)
     {
-        // Filter recipients by runtime conversation restrictions.
-        // In this simulation, we treat the "speaker" as a neutral/unknown moderator for broadcast events.
         Agent? virtualSpeaker = null;
 
         var filtered = AllAgents
@@ -330,21 +483,13 @@ public class MainViewModel : ViewModelBase
         NotifyJuryUpdate();
     }
 
-
-/// <summary>
-    /// Admits evidence into the case file and broadcasts it to the courtroom,
-    /// delegating strength assessment and exposure calculation to IEvidenceAnalysisService.
-    /// Generates a detailed document analysis for agents to review and form opinions.
-    /// All phases now consistently calculate exposure, apply influence, and update the UI.
+    /// <summary>
+    /// Admits evidence into the case file and broadcasts it to the courtroom.
     /// </summary>
     public async Task AddEvidence(string fileName, string path, string summary, string? existingDetailedAnalysis = null, string offeringAttorney = "")
     {
-        // Read the actual file content for analysis
         string fileContent = _evidenceService.ReadFileContent(path);
 
-        // Generate a detailed analysis using the LLM (or fallback keyword analysis)
-        // This includes per-defendant damages and a total calculated by the LLM
-        // If an existing analysis was already generated (e.g., from ClerkSeat_Click), reuse it
         string detailedAnalysis;
         double llmDamages;
         if (!string.IsNullOrEmpty(existingDetailedAnalysis))
@@ -358,10 +503,10 @@ public class MainViewModel : ViewModelBase
                 fileName, fileContent, summary, CurrentCase, _agentInteraction);
         }
 
-        // Determine media type based on file extension
         string extension = System.IO.Path.GetExtension(path).ToLowerInvariant();
         string mediaType = extension is ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" ? "Image" : "Document";
 
+        double baseStrength = 0.5;
         var doc = new EvidenceDocument
         {
             FileName = fileName,
@@ -371,40 +516,31 @@ public class MainViewModel : ViewModelBase
             MediaType = mediaType,
             DetailedAnalysis = detailedAnalysis,
             OfferingAttorney = offeringAttorney,
-
-            // Side indexing for future usage
             IsOfferedByPlaintiffSide = !string.IsNullOrWhiteSpace(offeringAttorney)
-                && !string.IsNullOrWhiteSpace(CurrentCase.PlaintiffAttorney)
-                && offeringAttorney.Trim().Equals(CurrentCase.PlaintiffAttorney.Trim(), StringComparison.OrdinalIgnoreCase),
+                                       && !string.IsNullOrWhiteSpace(CurrentCase.PlaintiffAttorney)
+                                       && offeringAttorney.Trim().Equals(CurrentCase.PlaintiffAttorney.Trim(), StringComparison.OrdinalIgnoreCase),
         };
 
-        // Use the LLM-calculated damages if available, otherwise fall back to keyword assessment
         if (llmDamages > 0)
         {
             doc.EstimatedDamages = llmDamages;
-            doc.EvidenceStrength = 0.85; // LLM-analyzed documents get higher confidence
+            doc.EvidenceStrength = 0.85;
         }
         else
         {
-            // Assess strength using both the user summary and the actual file content
-            _evidenceService.AssessStrength(doc, summary, fileContent);
+            baseStrength = _evidenceService.AssessStrength(doc, summary, fileContent);
         }
 
-        // Side numbering (per presenting party)
         int nextPlaintiffSide = CurrentCase.Evidence.Count(e => e.IsOfferedByPlaintiffSide) + 1;
         int nextDefenseSide = CurrentCase.Evidence.Count(e => !e.IsOfferedByPlaintiffSide) + 1;
-        if (doc.IsOfferedByPlaintiffSide)
-            doc.PlaintiffSideExhibitNumber = nextPlaintiffSide;
-        else
-            doc.DefenseSideExhibitNumber = nextDefenseSide;
+        if (doc.IsOfferedByPlaintiffSide) doc.PlaintiffSideExhibitNumber = nextPlaintiffSide;
+        else doc.DefenseSideExhibitNumber = nextDefenseSide;
 
-        // Common operations for every phase: store, calculate exposure, apply influence
         CurrentCase.Evidence.Add(doc);
         RefreshExhibits();
         _evidenceService.CalculateExposure(CurrentCase);
-        _juryCalc.ApplyEvidenceInfluence(AllAgents, doc);
+        _juryCalc.ApplyEvidenceInfluence(AllAgents, doc, CurrentCase.Mode);
 
-        // Phase-specific display and flags
         string phasePrefix = CurrentCase.TrialPhase switch
         {
             TrialPhase.Discovery => "DISCOVERY",
@@ -422,13 +558,10 @@ public class MainViewModel : ViewModelBase
                            $"Settlement: ${CurrentCase.EstimatedSettlement:N0}, " +
                            $"Reserve: ${CurrentCase.InsuranceReserve:N0}";
 
-        // Broadcast the full user-edited summary to all agents so they form rich memories
         BroadcastEvent($"{phasePrefix} Evidence - Exhibit {doc.ExhibitNumber}: {fileName}\n{attorneyPrefix}{summary}\n" +
                        $"Strength: {doc.EvidenceStrength:P0}, Est. Damages: ${doc.EstimatedDamages:N0}",
             Enum.GetValues<AgentRole>().ToList());
 
-        // Evidence loop: reporter reads the exhibit into the record, then each juror
-        // independently internalizes that reporter summary through their own bias.
         var reporter = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Reporter && a.IsOccupied);
         AIModelConfiguration? reporterModel = reporter != null
             ? (CurrentCase.AvailableModels.FirstOrDefault(m => m.FriendlyName == reporter.SelectedModel)
@@ -447,7 +580,6 @@ public class MainViewModel : ViewModelBase
             reporterSummary = $"Exhibit {doc.ExhibitNumber}, {doc.FileName}, admitted into evidence. {summary}";
         }
 
-        // Each juror reads the reporter's summary and forms their own bias-colored reaction
         var defaultModel = CurrentCase.AvailableModels.FirstOrDefault();
         foreach (var juror in AllAgents.Where(a => a.IsOccupied && (a.Role == AgentRole.Juror || a.Role == AgentRole.AlternateJuror)))
         {
@@ -456,159 +588,196 @@ public class MainViewModel : ViewModelBase
             string reaction = jurorModel != null
                 ? await _agentInteraction.InternalizeCourtRecordAsync(juror, reporterSummary, jurorModel)
                 : reporterSummary;
+            
+            // Per-agent perceived strength determination
+            double perceived = _evidenceService.CalculatePerceivedStrength(juror, doc, baseStrength);
+            juror.PerceivedEvidence.Add(new EvidencePerception { ExhibitNumber = doc.ExhibitNumber, PerceivedStrength = perceived });
+            
             juror.RecordTrialEvent(reaction, juror.Bias * 0.1);
         }
-        
+
         NotifyJuryUpdate();
     }
 
     /// <summary>
-    /// Refreshes the Exhibits collection from the current case evidence list.
+    /// Adds testimony entered as evidence (no file). This creates an EvidenceDocument so it
+    /// appears in the Exhibit List and influences jurors.
     /// </summary>
+    public async Task AddTestimonyEvidence(
+        string witnessName,
+        string testimonyText,
+        string offeringAttorney,
+        bool offeredByPlaintiff,
+        string? targetCharacterNameForContext = null)
+    {
+        if (string.IsNullOrWhiteSpace(testimonyText))
+            return;
+
+        witnessName = string.IsNullOrWhiteSpace(witnessName) ? (targetCharacterNameForContext ?? "Witness") : witnessName.Trim();
+        offeringAttorney ??= string.Empty;
+
+        string callerSideLabel = offeredByPlaintiff ? "Plaintiff" : "Defense";
+
+        string phasePrefix = CurrentCase.TrialPhase switch
+        {
+            TrialPhase.Discovery => "DISCOVERY",
+            TrialPhase.Pretrial => "PRETRIAL",
+            TrialPhase.Trial => "TRIAL",
+            _ => "EVIDENCE"
+        };
+
+        // Clerk record / exhibit summary
+        string summary = $"Plaintiff/Defense calls {witnessName}.\n\n" +
+                          $"Caller side: {callerSideLabel}.\n" +
+                          $"Testimony (recorded verbatim by the clerk):\n{testimonyText}";
+
+        var doc = new EvidenceDocument
+        {
+            FileName = $"Testimony - {witnessName}",
+            FilePath = string.Empty,
+            Summary = summary,
+            ExhibitNumber = CurrentCase.Evidence.Count + 1,
+            MediaType = "Document",
+            DetailedAnalysis = null,
+            OfferingAttorney = offeringAttorney,
+            IsOfferedByPlaintiffSide = offeredByPlaintiff,
+            IsDiscoveryComplete = CurrentCase.TrialPhase != TrialPhase.Trial
+        };
+
+        // Strength and damages from the testimony text
+        _evidenceService.AssessStrength(doc, summary, testimonyText);
+
+        // Side numbering (per presenting party)
+        int nextPlaintiffSide = CurrentCase.Evidence.Count(e => e.IsOfferedByPlaintiffSide) + 1;
+        int nextDefenseSide = CurrentCase.Evidence.Count(e => !e.IsOfferedByPlaintiffSide) + 1;
+        if (doc.IsOfferedByPlaintiffSide) doc.PlaintiffSideExhibitNumber = nextPlaintiffSide;
+        else doc.DefenseSideExhibitNumber = nextDefenseSide;
+
+        CurrentCase.Evidence.Add(doc);
+        RefreshExhibits();
+        _evidenceService.CalculateExposure(CurrentCase);
+        _juryCalc.ApplyEvidenceInfluence(AllAgents, doc, CurrentCase.Mode);
+
+        string attorneyPrefix = string.IsNullOrEmpty(offeringAttorney) ? "" : $"Offered by: {offeringAttorney}\n";
+        TranscriptOutput = $"[{phasePrefix}] Testimony Exhibit {doc.ExhibitNumber}: {doc.FileName}\n" +
+                           $"{attorneyPrefix}" +
+                           $"Strength: {doc.EvidenceStrength:P0}, Est. Damages: ${doc.EstimatedDamages:N0}, " +
+                           $"Settlement: ${CurrentCase.EstimatedSettlement:N0}, " +
+                           $"Reserve: ${CurrentCase.InsuranceReserve:N0}";
+
+        BroadcastEvent($"{phasePrefix} Testimony - Exhibit {doc.ExhibitNumber}: {doc.FileName}\n{attorneyPrefix}{summary}\n" +
+                       $"Strength: {doc.EvidenceStrength:P0}, Est. Damages: ${doc.EstimatedDamages:N0}",
+            Enum.GetValues<AgentRole>().ToList());
+
+        // Reporter records into the court record (neutral-ish)
+        var reporter = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Reporter && a.IsOccupied);
+        AIModelConfiguration? reporterModel = reporter != null
+            ? (CurrentCase.AvailableModels.FirstOrDefault(m => m.FriendlyName == reporter.SelectedModel)
+               ?? CurrentCase.AvailableModels.FirstOrDefault())
+            : CurrentCase.AvailableModels.FirstOrDefault();
+
+        string reporterSummary;
+        if (reporter != null && reporterModel != null)
+        {
+            reporterSummary = await _agentInteraction.SummarizeEvidenceForRecordAsync(reporter, doc, CurrentCase, reporterModel);
+            reporter.DocumentCount++;
+            TranscriptOutput += $"\n{reporter.Name}: {reporterSummary}";
+        }
+        else
+        {
+            reporterSummary = $"Exhibit {doc.ExhibitNumber}, Testimony of {witnessName}, admitted into evidence.";
+        }
+
+        // Jurors internalize the reporter summary with their bias
+        var defaultModel = CurrentCase.AvailableModels.FirstOrDefault();
+        foreach (var juror in AllAgents.Where(a => a.IsOccupied && (a.Role == AgentRole.Juror || a.Role == AgentRole.AlternateJuror)))
+        {
+            AIModelConfiguration? jurorModel = CurrentCase.AvailableModels.FirstOrDefault(m => m.FriendlyName == juror.SelectedModel)
+                                               ?? defaultModel;
+
+            string reaction = jurorModel != null
+                ? await _agentInteraction.InternalizeCourtRecordAsync(juror, reporterSummary, jurorModel)
+                : reporterSummary;
+
+            juror.RecordTrialEvent(reaction, juror.Bias * 0.1);
+        }
+
+        NotifyJuryUpdate();
+    }
+
     public void RefreshExhibits()
     {
         Exhibits.Clear();
         foreach (var doc in CurrentCase.Evidence)
-        {
             Exhibits.Add(doc);
-        }
     }
 
-    /// <summary>
-    /// Reads the content of a file for analysis. Delegates to IEvidenceAnalysisService.
-    /// </summary>
-    public string ReadFileContent(string filePath) =>
-        _evidenceService.ReadFileContent(filePath);
+    public string ReadFileContent(string filePath) => _evidenceService.ReadFileContent(filePath);
 
-    /// <summary>
-    /// Generates a detailed document analysis using the LLM. Delegates to IEvidenceAnalysisService.
-    /// Used by the clerk UI to show the analysis before the user submits.
-    /// </summary>
     public Task<(string Analysis, double TotalDamages)> GenerateDocumentAnalysisAsync(
         string fileName, string fileContent, string userSummary) =>
         _evidenceService.GenerateDocumentAnalysisAsync(
             fileName, fileContent, userSummary, CurrentCase, _agentInteraction);
 
-    /// <summary>
-    /// Delegates exposure calculation to IEvidenceAnalysisService.
-    /// </summary>
     public void CalculateExposure() => _evidenceService.CalculateExposure(CurrentCase);
 
     private void NotifyJuryUpdate()
     {
         OnPropertyChanged(nameof(JuryLiabilityAverage));
         OnPropertyChanged(nameof(LikelyVerdict));
+
+        // Insurance/settlement is a civil exposure artifact; hide it for criminal trials.
+        UpdateInsuranceAdjusterState();
     }
 
-    // ------------------------------
-    // Turn-based deliberation
-    // ------------------------------
-
-    private readonly HashSet<Guid> _spokenJurorIds = new();
-    private int _deliberationRound;
-    private readonly List<string> _deliberationHighlights = new();
-    private string _earlyThoughtLeaderName = string.Empty;
-    private bool _deliberationConcluded;
-
-    private bool _deliberationInitialized;
-
-    // --- Helpers for mock jury reporting ---
-    private string BuildJurorEvidenceMemory(Agent juror)
+    private void UpdateInsuranceAdjusterState()
     {
-        // Use the juror’s own recorded memories (no neutral records).
-        // Keeps the prompt focused on what they already internalized.
-        if (juror?.TrialEvents == null || juror.TrialEvents.Count == 0) return "(no remembered trial events)";
-        return string.Join("\n", juror.TrialEvents
-            .TakeLast(10)
-            .Select(e => $"- {e.Content}"));
-    }
-
-    private string BuildJurorExhibitMemory(Agent juror)
-    {
-        // If reporter exhibit log was replayed into juror trial events, TrialEvents is enough,
-        // but we keep this for compatibility with existing UI/reporting.
-        if (juror?.ExhibitLog == null || juror.ExhibitLog.Count == 0) return "(no remembered exhibit summaries)";
-        return string.Join("\n", juror.ExhibitLog.TakeLast(8));
-    }
-
-    private string BuildRecentJuryTurnTranscript(IEnumerable<Agent> jurors)
-    {
-        // Only use the court record highlights already placed into TranscriptOutput.
-        // The UI only needs context, not the full transcript.
-        return string.IsNullOrWhiteSpace(TranscriptOutput)
-            ? "(no recent jury statements)"
-            : TranscriptOutput.Length > 1200 ? TranscriptOutput[^1200..] : TranscriptOutput;
-    }
-
-    private string BuildTurnHighlight(Agent juror, string jurorLine, bool isStrong)
-    {
-        // Extract “what evidence mattered” heuristically.
-        // We keep this robust: if the LLM provides no explicit evidence tokens, we fallback to lean.
-        string tone = isStrong ? "Strong" : "Moderate";
-        return $"[Round {_deliberationRound}] {tone} view by {juror.Name}: {jurorLine}";
-    }
-
-    private string BuildInterimMockReportPrefix(string label)
-    {
-        // Keep mock report compact.
-        var early = string.IsNullOrEmpty(_earlyThoughtLeaderName) ? "(not identified yet)" : _earlyThoughtLeaderName;
-        return $"[JURY REPORT] {label} | Early thought leader: {early} | Likely verdict: {LikelyVerdict}";
-    }
-
-    private void ConcludeDeliberation(List<Agent> jurors, bool hungPossible)
-    {
-        // Consensus is based on the existing LikelyVerdict + lean spread.
-        var voters = jurors.Where(j => j.IsOccupied && j.CanVote).ToList();
-        if (!voters.Any())
+        if (CurrentCase?.Mode == CaseMode.Criminal)
         {
-            TranscriptOutput = "[JURY REPORT] No jurors seated.";
+            InsuranceAdjusterState = null;
+            OnPropertyChanged(nameof(InsuranceAdjusterState));
             return;
         }
 
-        double maxLean = voters.Max(v => v.VerdictLean);
-        double minLean = voters.Min(v => v.VerdictLean);
-        double spread = maxLean - minLean;
+        var adjusterState = CurrentCase != null ? _adjusterPricingService.ComputeState(Jurors, CurrentCase) : null;
+        InsuranceAdjusterState = adjusterState;
 
-        bool reachesConsensus = spread <= 0.10; // tolerance: close in lean
-        string outcome = LikelyVerdict;
-
-        if (hungPossible && !reachesConsensus)
-            outcome = "Hung jury possible / no clear consensus";
-
-        var early = string.IsNullOrEmpty(_earlyThoughtLeaderName) ? "(not identified)" : _earlyThoughtLeaderName;
-        TranscriptOutput = $"[JURY REPORT] Deliberation concluded. Early thought leader: {early}. {outcome}. Rounds used: {_deliberationRound}/{CurrentCase.DeliberationRounds}.";
-
-        BroadcastEvent(TranscriptOutput, Enum.GetValues<AgentRole>().ToList(), isSidebar: false);
-    }
-
-    private void RecordAndBroadcastJuryTurn(Agent juror, string jurorLine, bool leansPlaintiff)
-    {
-        // Ensure highlight-only UI record; do not spam full turns.
-        // Also keeps the transcript box scroll behavior (UI already scrolls).
-        string prefix = leansPlaintiff ? "Plaintiff lean" : "Defense lean";
-        string entry = $"{juror.Name} ({prefix}): {jurorLine}";
-        BroadcastEvent(entry, Enum.GetValues<AgentRole>().ToList(), isSidebar: false);
+        // Notify bindings that depend on the nested object.
+        OnPropertyChanged(nameof(InsuranceAdjusterState));
     }
 
 
+    // ------------------------------
+    // Deliberation Observable Output
+    // ------------------------------
+    public ObservableCollection<DeliberationEntry> DeliberationLog { get; } = new();
+
+    /// <summary>
+    /// Starts a new deliberation session, clearing previous logs and initializing state.
+    /// </summary>
     public void StartDeliberation()
     {
         _spokenJurorIds.Clear();
         _deliberationRound = 0;
-        _deliberationHighlights.Clear();
-        _earlyThoughtLeaderName = string.Empty;
-        _deliberationConcluded = false;
         _deliberationInitialized = true;
-
-        TranscriptOutput = "[JURY REPORT] Deliberation begins. Generating juror turns...";
+        _lastDeliberationStatement = string.Empty;
+        DeliberationLog.Clear();
+        
+        DeliberationLog.Add(new DeliberationEntry 
+        { 
+            Speaker = "Court", 
+            Message = "Deliberation begins. Jurors will now discuss the evidence.",
+            Timestamp = DateTime.Now
+        });
+        
+        TranscriptOutput = "[JURY DELIBERATION] Jurors are now discussing the evidence...";
         OnPropertyChanged(nameof(TranscriptOutput));
-
-        // lock stage for UI
-        _currentDebateStage = CourtPhase.JuryDeliberation;
     }
 
-
-    public async Task DeliberateNextTurn()
+    /// <summary>
+    /// Runs a single deliberation turn asynchronously, allowing observers to see each juror's input.
+    /// </summary>
+    public async Task DeliberateNextTurnAsync()
     {
         if (!_deliberationInitialized)
             StartDeliberation();
@@ -617,98 +786,267 @@ public class MainViewModel : ViewModelBase
             .Where(a => a.IsOccupied && (a.Role == AgentRole.Juror || a.Role == AgentRole.AlternateJuror) && a.CanVote)
             .ToList();
 
-        if (jurors.Count == 0)
+        if (!jurors.Any())
         {
+            var noJurorsMsg = new DeliberationEntry 
+            { 
+                Speaker = "Court", 
+                Message = "No jurors seated for deliberation.",
+                Timestamp = DateTime.Now
+            };
+            DeliberationLog.Add(noJurorsMsg);
             TranscriptOutput = "[DELIBERATION] No jurors seated.";
             return;
         }
 
-        // Determine which juror gets to speak next: strongest feelings that haven't spoken yet.
-        // Strong opinion threshold is based on distance from the neutral point (0.5).
-        const double strongThreshold = 0.18;
-
         var candidates = jurors
             .Where(j => !_spokenJurorIds.Contains(j.AgentId))
-
-            .Select(j => new
-            {
-                Agent = j,
-                Strength = Math.Abs(j.VerdictLean - 0.5)
-            })
+            .Select(j => new { Agent = j, Strength = Math.Abs(j.VerdictLean - 0.5) })
             .OrderByDescending(x => x.Strength)
             .ToList();
 
         if (!candidates.Any())
         {
-            TranscriptOutput = "[DELIBERATION] All jurors with strong opinions have spoken.";
-            return;
+            var completeMsg = new DeliberationEntry 
+            { 
+                Speaker = "Court", 
+                Message = "All jurors have had opportunity to speak. Deliberation continues...",
+                Timestamp = DateTime.Now
+            };
+            DeliberationLog.Add(completeMsg);
+            
+            // Reset for another round
+            _spokenJurorIds.Clear();
+            candidates = jurors
+                .Select(j => new { Agent = j, Strength = Math.Abs(j.VerdictLean - 0.5) })
+                .OrderByDescending(x => x.Strength)
+                .Take(3)
+                .ToList();
         }
 
-        var next = candidates[0];
-        bool isStrong = next.Strength >= strongThreshold;
+        var next = candidates.FirstOrDefault();
+        if (next == null) return;
 
         _spokenJurorIds.Add(next.Agent.AgentId);
+        _deliberationRound++;
 
+        // Tie-break: treat exact/near-neutral as neutral so we don't bias the transcript toward plaintiff.
+        const double neutralEps = 1e-9;
+        string side = Math.Abs(next.Agent.VerdictLean - 0.5) <= neutralEps
+            ? "neutral"
+            : (next.Agent.VerdictLean > 0.5 ? "plaintiff" : "defense");
 
+        var model = CurrentCase.AvailableModels.FirstOrDefault(m => m.FriendlyName == next.Agent.SelectedModel) 
+                    ?? CurrentCase.AvailableModels.FirstOrDefault();
 
-        string side = next.Agent.VerdictLean >= 0.5 ? "plaintiff" : "defense";
+        string line;
+        if (model != null)
+        {
+            string memories = string.Join("\n", next.Agent.TrialEvents.Select(e => $"- {e.Content}").TakeLast(5));
+            string context = $"You are in the jury room. Your current lean is {next.Agent.VerdictLean:P0} toward {side}.\n" +
+                             $"Your underlying bias score is {next.Agent.Bias:+0.00;-0.00;0.00} (positive favors plaintiff, negative favors defense).\n\n" +
+                             "Your MISSION: Persuasively bring the other jurors to your position. State your reasoning clearly, " +
+                             "interpreting the trial memories through the lens of your personal background and biases. " +
+                             "However, you must not be dogmatic; listen to the logic used by others. If they present a reasoning " +
+                             "of an exhibit that contradicts yours or offers a new perspective, allow yourself to be cognitively open " +
+                             "to shifting your own stance. You are seeking a just consensus.\n\n" +
+                             $"Your Recent Memories:\n{memories}\n\n";
 
-        // Build a simple turn line. We can later replace this with LLM output.
-        // For now, it derives from the juror’s lean and a short evidence-based rationale from existing memories/exhibits.
-        string rationale = isStrong
-            ? "because the evidence aligns with my current assessment of liability/damages"
-            : "because I still have questions and need clarification from other jurors";
+            if (!string.IsNullOrEmpty(_lastDeliberationStatement))
+            {
+                context += $"The previous juror argued: \"{_lastDeliberationStatement}\"\n\n" +
+                           "Address their reasoning directly. If you agree with their interpretation, reinforce it to pull the room further toward that side. " +
+                           "If their logic conflicts with your bias or memories, politely point out the flaw and persuade the room toward your view.";
+            }
+            else
+            {
+                context += "You are the first to speak. Open the floor by stating your position and your strongest supporting exhibit.";
+            }
 
-        string line = isStrong
-            ? $"{next.Agent.Name} (strong): I’m convinced the case supports the {side} side {rationale}."
-            : $"{next.Agent.Name} (medium/unswayed): I’m not fully decided—can someone explain how the evidence impacts {side} liability/damages?";
+            var request = new StatementRequest
+            {
+                Role = AgentRole.Juror,
+                Agent = next.Agent,
+                SpeakerName = next.Agent.Name,
+                Context = context,
+                Type = MessageType.Deliberation,
+                CaseData = CurrentCase,
+                Model = model,
+                Transcript = BuildTranscriptSummary()
+            };
 
-        // Apply deliberation update: jurors “drift” slightly toward the group consensus.
-        // This keeps the turns dynamic even without stage-specific LLM responses.
-        var jurorList = jurors;
-        var deltaEvidence = (next.Agent.VerdictLean - 0.5) * 0.25; // small movement bias
-        ToyJurorLogicEngine.ApplyCoherentDriftDeliberation(jurorList, deltaEvidence, null, seed: null);
+            var response = await _agentInteraction.GenerateStatementAsync(request);
+            if (response.Success && response.Message != null)
+            {
+                line = response.Message.Content;
+            }
+            else
+            {
+                // Fallback for model failure
+                double leanPercent = next.Agent.VerdictLean * 100;
+                line = $"I'm leaning toward the {side} side ({leanPercent:F0}%). We need to look closely at the evidence provided.";
+            }
+        }
+        else
+        {
+            double leanPercent = next.Agent.VerdictLean * 100;
+            line = $"{next.Agent.Name}: My view is leaning toward the {side} side based on the evidence ({leanPercent:F0}%).";
+        }
 
-        // Recalculate verdict display
-        NotifyJuryUpdate();
+        _lastDeliberationStatement = line;
+
+        var entry = new DeliberationEntry 
+        { 
+            Speaker = next.Agent.Name, 
+            Message = line,
+            Timestamp = DateTime.Now,
+            IsJuror = true
+        };
+        DeliberationLog.Add(entry);
 
         TranscriptOutput = $"{TranscriptOutput}\n\n{line}";
+        BroadcastEvent(line, Enum.GetValues<AgentRole>().ToList());
 
-        // Broadcast this turn into the core court record (so the user sees it in the UI record area).
-        BroadcastEvent(line, Enum.GetValues<AgentRole>().ToList(), isSidebar: false);
+        // Argument exchange: when this juror speaks, store a lightweight argument memory
+        // for the other jurors so future turns can reference what was argued.
+        string issue = InferIssueFromText(line);
+        string argumentSummary = $"[JUROR ARGUMENT] {next.Agent.Name} argued: \"{line}\"";
+
+        foreach (var juror in jurors.Where(j => j.AgentId != next.Agent.AgentId))
+        {
+            juror.RecordTrialEvent(argumentSummary, juror.Bias * 0.05);
+        }
+
+        // Apply conformity influence from this juror's statement (issue-weighted + heterogeneous strength)
+        await ApplyDeliberationInfluence(next.Agent, jurors, issue);
+
+        NotifyJuryUpdate();
     }
 
-/// <summary>
-    /// Processes a single line of transcript, delegating influence calculation
-    /// to IDebateService and opinion spread to IJuryCalculationService.
-    /// Also triggers LLM-based agent responses based on the current debate stage.
+    /// <summary>
+    /// Applies conformity influence when a juror speaks, influencing others' leanings.
     /// </summary>
-    // Transcript is now secondary: we record/broadcast it for context only.
-    // Evidence admission is what drives juror weighing.
-    public async void ProcessTranscriptLine(string speaker, string content)
+    private async Task ApplyDeliberationInfluence(Agent speakingJuror, List<Agent> allJurors, string issue)
+    {
+        double speakerLean = speakingJuror.VerdictLean;
+        double speakerConfidence = Math.Abs(speakerLean - 0.5) * 2.0; // 0.0 to 1.0 scale
 
+        // Heterogeneous conformity:
+        // - use juror.Bias magnitude as a proxy for conviction/independence strength.
+        // - issue weighting: apply slightly different conformity for liability vs damages cues.
+        double issueWeight = issue == "damages" ? 1.15 : 1.0;
+
+        foreach (var juror in allJurors.Where(j => j.AgentId != speakingJuror.AgentId))
+        {
+            // Resistance: combo of inherent bias and current verdict conviction.
+            double currentConviction = Math.Abs(juror.VerdictLean - 0.5) * 2.0;
+            double independence = 1.0 - Math.Min(0.7, (Math.Abs(juror.Bias) + currentConviction) / 2.0);
+            
+            // Influence is higher if the speaker is confident and the recipient is open (high independence).
+            double influenceFactor = 0.06 * issueWeight * independence * (0.5 + speakerConfidence * 0.5);
+
+            // Consensus Pull: Move the recipient a percentage of the distance toward the speaker.
+            double distance = speakerLean - juror.VerdictLean;
+            juror.VerdictLean = Math.Clamp(juror.VerdictLean + (distance * influenceFactor), 0.0, 1.0);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private static string InferIssueFromText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "liability";
+
+        var t = text.ToLowerInvariant();
+
+        // Damages cues
+        if (t.Contains("damages") || t.Contains("medical") || t.Contains("pain") || t.Contains("lost") ||
+            t.Contains("settlement") || t.Contains("future") || t.Contains("wage") || t.Contains("salary"))
+            return "damages";
+
+        // Otherwise default to liability
+        return "liability";
+    }
+
+    /// <summary>
+    /// Runs the complete deliberation process, showing each juror's turn.
+    /// </summary>
+    public async Task RunFullDeliberationAsync()
+    {
+        StartDeliberation();
+        
+        // Limit rounds to prevent infinite loops, but allow enough for consensus
+        int maxRounds = Jurors.Count * 3;
+        
+        for (int i = 0; i < maxRounds; i++)
+        {
+            await DeliberateNextTurnAsync();
+            await Task.Delay(500); // Small delay for visibility
+
+            if (IsConsensusReached())
+            {
+                DeliberationLog.Add(new DeliberationEntry
+                {
+                    Speaker = "Court",
+                    Message = "Consensus has been reached. The jury is ready with a verdict.",
+                    Timestamp = DateTime.Now
+                });
+                break;
+            }
+        }
+
+        // Final verdict summary
+        DeliberationLog.Add(new DeliberationEntry 
+        { 
+            Speaker = "Court", 
+            Message = $"Deliberation complete. Final jury lean: {JuryLiabilityAverage:P0} toward {LikelyVerdict}.",
+            Timestamp = DateTime.Now
+        });
+        
+        TranscriptOutput = $"[DELIBERATION COMPLETE] {LikelyVerdict} - Liability Score: {JuryLiabilityAverage:P0}";
+    }
+
+    /// <summary>
+    /// Checks if the jury has reached a functional consensus based on the trial mode.
+    /// </summary>
+    private bool IsConsensusReached()
+    {
+        var votingJurors = Jurors.Where(j => j.CanVote).ToList();
+        if (!votingJurors.Any()) return false;
+
+        // Strong lean thresholds
+        bool favorsPlaintiff(Agent a) => a.VerdictLean > 0.55;
+        bool favorsDefendant(Agent a) => a.VerdictLean < 0.45;
+
+        if (CurrentCase.Mode == CaseMode.Criminal)
+        {
+            // Criminal requires unanimity (all on same side of 0.5 and not ambivalent)
+            return votingJurors.All(favorsPlaintiff) || votingJurors.All(favorsDefendant);
+        }
+        else
+        {
+            // Civil requires a significant majority (e.g., 9 out of 12)
+            int threshold = (int)Math.Ceiling(votingJurors.Count * 0.75);
+            return votingJurors.Count(favorsPlaintiff) >= threshold || votingJurors.Count(favorsDefendant) >= threshold;
+        }
+    }
+
+    // ------------------------------
+    // Chat plumbing (existing)
+    // ------------------------------
+
+    public async void ProcessChatInputLine(string speaker, string content)
     {
         if (string.IsNullOrEmpty(content)) return;
 
-        TranscriptOutput = string.IsNullOrWhiteSpace(speaker)
-            ? content
-            : $"{speaker}: {content}";
+        TranscriptOutput = string.IsNullOrWhiteSpace(speaker) ? content : $"{speaker}: {content}";
 
-        // Broadcast without applying transcript influence and without triggering any LLM stage reactions.
         var roles = Enum.GetValues<AgentRole>().ToList();
         BroadcastEvent(TranscriptOutput, roles);
 
-        // Trigger stage-based AI responses (now subject to runtime restrictions).
-        // TriggerAgentResponses is designed to be called after user input.
-        TriggerAgentResponses(speaker, content);
-
+        await TriggerAgentResponses(speaker, content);
     }
 
-
-
-    /// <summary>
-    /// Triggers appropriate LLM-based agent responses based on the current debate stage.
-    /// </summary>
     private async Task TriggerAgentResponses(string speaker, string content)
     {
         try
@@ -716,8 +1054,6 @@ public class MainViewModel : ViewModelBase
             var stage = CurrentCase.CurrentDebateStage;
             var transcript = BuildTranscriptSummary();
 
-            // Reporter always produces a neutral factual record first,
-            // then broadcasts it as a memory to all agents.
             var reporter = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Reporter && a.IsOccupied);
             if (reporter != null)
             {
@@ -745,9 +1081,6 @@ public class MainViewModel : ViewModelBase
                         string record = reporterResult.Message.Content;
                         TranscriptOutput += $"\n{reporter.Name}: {record}";
 
-                        // Jurors internalize the record through their own bias/background and record personal impact.
-                        // Non-juror agents (lawyers, judge, etc.) store the neutral record as-is.
-                        // Reporters do not form personal reactions.
                         var model = CurrentCase.AvailableModels.FirstOrDefault();
                         foreach (var agent in AllAgents.Where(a => a.IsOccupied && a.Role != AgentRole.Reporter))
                         {
@@ -758,7 +1091,6 @@ public class MainViewModel : ViewModelBase
 
                             if (agent.Role == AgentRole.Juror || agent.Role == AgentRole.AlternateJuror)
                             {
-                                // Jurors form a personal, bias-colored reaction and record it with impact
                                 string memory = agentModel != null
                                     ? await _agentInteraction.InternalizeCourtRecordAsync(agent, record, agentModel)
                                     : record;
@@ -766,7 +1098,6 @@ public class MainViewModel : ViewModelBase
                             }
                             else
                             {
-                                // Other agents (judge, lawyers, witnesses) store the neutral record without bias impact
                                 agent.RecordTrialEvent(record, 0.0);
                             }
                         }
@@ -779,37 +1110,25 @@ public class MainViewModel : ViewModelBase
             switch (stage)
             {
                 case CourtPhase.OpeningStatements:
-                    // After a user message, have the opposing counsel respond
                     if (speaker.Contains("Prosecutor") || speaker.Contains("Plaintiff"))
-                    {
                         await GenerateAgentResponse(AgentRole.Lawyer, "Defense Attorney", "Respond to the opening statement.", transcript);
-                    }
                     else if (speaker.Contains("Defense"))
-                    {
                         await GenerateAgentResponse(AgentRole.Lawyer, "Prosecutor", "Respond to the opening statement.", transcript);
-                    }
                     break;
 
                 case CourtPhase.WitnessTestimony:
                 case CourtPhase.CrossExamination:
-                    // Have the judge respond to the testimony
                     await GenerateAgentResponse(AgentRole.Judge, "Judge", $"Acknowledge the testimony and move the trial forward. Speaker: {speaker}", transcript);
                     break;
 
                 case CourtPhase.ClosingArguments:
-                    // Have the opposing counsel respond
                     if (speaker.Contains("Prosecutor") || speaker.Contains("Plaintiff"))
-                    {
                         await GenerateAgentResponse(AgentRole.Lawyer, "Defense Attorney", "Respond to the closing argument.", transcript);
-                    }
                     else if (speaker.Contains("Defense"))
-                    {
                         await GenerateAgentResponse(AgentRole.Lawyer, "Prosecutor", "Respond to the closing argument.", transcript);
-                    }
                     break;
 
                 default:
-                    // Default: have the judge acknowledge
                     await GenerateAgentResponse(AgentRole.Judge, "Judge", $"Acknowledge the statement from {speaker}.", transcript);
                     break;
             }
@@ -820,22 +1139,14 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>
-    /// Generates an LLM response for a specific agent role and appends it to the transcript.
-    /// </summary>
     private async Task GenerateAgentResponse(AgentRole role, string speakerName, string context, List<AgentMessage> transcript)
     {
-        // Find an agent of this role to get their selected model
         var agent = AllAgents.FirstOrDefault(a => a.Role == role && a.IsOccupied);
         if (agent == null) return;
 
-        // Find the model configuration for this agent
         AIModelConfiguration? modelConfig = null;
         if (!string.IsNullOrEmpty(agent.SelectedModel))
-        {
-            modelConfig = CurrentCase.AvailableModels
-                .FirstOrDefault(m => m.FriendlyName == agent.SelectedModel);
-        }
+            modelConfig = CurrentCase.AvailableModels.FirstOrDefault(m => m.FriendlyName == agent.SelectedModel);
         modelConfig ??= CurrentCase.AvailableModels.FirstOrDefault();
 
         var request = new StatementRequest
@@ -858,9 +1169,6 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>
-    /// Builds a summary of recent transcript entries for context.
-    /// </summary>
     private List<AgentMessage> BuildTranscriptSummary()
     {
         var messages = new List<AgentMessage>();
@@ -877,110 +1185,51 @@ public class MainViewModel : ViewModelBase
         return messages;
     }
 
-    /// <summary>
-    /// Loads a transcript file and processes it line by line.
-    /// </summary>
     public async Task LoadTranscript(string filePath)
     {
+        if (_transcriptService == null)
+        {
+            TranscriptOutput = "[ERROR] Transcript service not available.";
+            return;
+        }
+
         foreach (var (speaker, content) in _transcriptService.LoadTranscript(filePath))
         {
-            ProcessTranscriptLine(speaker, content);
-            await Task.Delay(100); // Small delay between lines for readability
+            ProcessChatInputLine(speaker, content);
+            await Task.Delay(100);
         }
     }
 
-    /// <summary>
-    /// Saves the current case state to a file.
-    /// </summary>
-    public void SaveCase(string filePath)
-    {
-        _caseService.SaveCase(filePath, CurrentCase, AllAgents);
-    }
+    public void SaveCase(string filePath) => _caseService.SaveCase(filePath, CurrentCase, AllAgents);
 
-    /// <summary>
-    /// Loads a case from a file and restores the courtroom state.
-    /// </summary>
     public void LoadCase(string filePath)
     {
         var loadedCase = _caseService.LoadCase(filePath);
-        if (loadedCase != null)
-        {
-            loadedCase.EnsureCollectionsInitialized();
-            CurrentCase = loadedCase;
-            RefreshExhibits();
+        if (loadedCase == null) return;
 
-            // Restore the courtroom agent collections from the loaded case's agents
-            _courtroomManager.InitializeCourtroom(JudgeArea, Jurors, DefenseTeam, ProsecutionTeam, Gallery, loadedCase);
+        loadedCase.EnsureCollectionsInitialized();
+        CurrentCase = loadedCase;
+        RefreshExhibits();
+        _courtroomManager.InitializeCourtroom(JudgeArea, Jurors, DefenseTeam, ProsecutionTeam, Gallery, loadedCase);
 
-            foreach (var agent in loadedCase.Agents)
-            {
-                if (!agent.IsOccupied) continue;
+        var totalEvidenceCount = CurrentCase.Evidence?.Count ?? 0;
+        var loadedReporter = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Reporter && a.IsOccupied);
+        if (loadedReporter != null) loadedReporter.DocumentCount = totalEvidenceCount;
 
-                // Match loaded agents to existing seat templates by AgentId to preserve observer edits.
-                // If the ID is not found (older save), fall back to first available slot.
-                var seatMatched = AllAgents.FirstOrDefault(a => a.Role == agent.Role && a.AgentId == agent.AgentId && !a.Equals(agent));
-
-                switch (agent.Role)
-                {
-                    case AgentRole.Judge:
-                    case AgentRole.Witness:
-                    case AgentRole.Reporter:
-                        var judgeSlot = (seatMatched ?? JudgeArea.FirstOrDefault(a => a.Role == agent.Role && !a.IsOccupied));
-                        if (judgeSlot != null) agent.CopyTo(judgeSlot);
-                        break;
-
-                    case AgentRole.Juror:
-                        var jurorSlot = (seatMatched ?? Jurors.FirstOrDefault(a => !a.IsOccupied));
-                        if (jurorSlot != null) agent.CopyTo(jurorSlot);
-                        break;
-
-                    case AgentRole.AlternateJuror:
-                        var altSlot = (seatMatched ?? Gallery.FirstOrDefault(a => a.Role == AgentRole.AlternateJuror && !a.IsOccupied));
-                        if (altSlot != null) agent.CopyTo(altSlot);
-                        break;
-
-                    case AgentRole.Lawyer:
-                        var lawyerSlot = (seatMatched ?? DefenseTeam.FirstOrDefault(a => !a.IsOccupied));
-                        if (lawyerSlot != null)
-                        {
-                            agent.CopyTo(lawyerSlot);
-                        }
-                        else
-                        {
-                            var prosSlot = (seatMatched ?? ProsecutionTeam.FirstOrDefault(a => !a.IsOccupied));
-                            if (prosSlot != null) agent.CopyTo(prosSlot);
-                        }
-                        break;
-
-                    case AgentRole.Client:
-                    case AgentRole.Observer:
-                        var obsSlot = (seatMatched ?? Gallery.FirstOrDefault(a => a.Role == agent.Role && !a.IsOccupied));
-                        if (obsSlot != null) agent.CopyTo(obsSlot);
-                        break;
-                }
-            }
-
-            // Debate stage is disabled; always present as deliberation.
-            _currentDebateStage = CourtPhase.JuryDeliberation;
-            OnPropertyChanged(nameof(CurrentDebateStage));
-            OnPropertyChanged(nameof(CurrentDebateStageDisplay));
-
-
-            // Notify UI of case property changes
-            OnPropertyChanged(nameof(CurrentCase));
-            NotifyJuryUpdate();
-
-            TranscriptOutput = $"[CASE LOADED] Case '{loadedCase.CaseName}' loaded successfully.";
-            UpdateWindowTitle();
-        }
+        OnPropertyChanged(nameof(CurrentCase));
+        NotifyJuryUpdate();
+        TranscriptOutput = $"[CASE LOADED] Case '{loadedCase.CaseName}' loaded successfully.";
+        UpdateWindowTitle();
     }
 
-/// <summary>
-    /// Extracts entities from the loaded transcript using LLM analysis.
-    /// Delegates entity mapping to ICaseEntityMapper.
-    /// </summary>
     public async Task ExtractEntitiesFromTranscriptAsync()
     {
+        if (_transcriptService == null)
+        {
+            TranscriptOutput = "[ERROR] Transcript service not available.";
+            return;
+        }
+
         var model = CurrentCase.AvailableModels.FirstOrDefault();
         if (model == null)
         {
@@ -1009,10 +1258,6 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>
-    /// Resets case data appropriately when changing to an earlier phase.
-    /// Delegates opinion reset to IJuryCalculationService.
-    /// </summary>
     public void AdjustDataForPhaseChange(TrialPhase newPhase, TrialPhase oldPhase)
     {
         if (newPhase < oldPhase)
@@ -1033,21 +1278,10 @@ public class MainViewModel : ViewModelBase
         {
             TranscriptOutput = $"[PHASE CHANGE] Advanced to {newPhase} phase.";
         }
-        
+
         NotifyJuryUpdate();
     }
 
-    // TODO: Implement test runner when Tests project is properly integrated
-    // public static async Task TestAsync()
-    // {
-    //     await Verdict.Tests.TestHarness.RunTests();
-    // }
-
-    /// <summary>
-    /// Re-evaluates all admitted evidence for every juror using their current psychology.
-    /// The reporter's exhibit log is replayed through each juror's current RoleSystemPrompt,
-    /// bias, and demographics — clearing old trial events and replacing them with fresh reactions.
-    /// </summary>
     public async Task ReevaluateEvidenceAsync()
     {
         var reporter = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Reporter && a.IsOccupied);
@@ -1062,7 +1296,6 @@ public class MainViewModel : ViewModelBase
 
         foreach (var juror in AllAgents.Where(a => a.IsOccupied && (a.Role == AgentRole.Juror || a.Role == AgentRole.AlternateJuror)))
         {
-            // Clear previous evidence reactions so fresh psychology is applied
             juror.TrialEvents.Clear();
             juror.ConsideredDamages = 0;
             juror.VerdictLean = 0.5;
@@ -1070,7 +1303,6 @@ public class MainViewModel : ViewModelBase
             AIModelConfiguration? jurorModel = CurrentCase.AvailableModels.FirstOrDefault(m => m.FriendlyName == juror.SelectedModel)
                                                ?? defaultModel;
 
-            // Replay every exhibit through the juror's current psychology
             foreach (string exhibitSummary in reporter.ExhibitLog)
             {
                 string reaction = jurorModel != null
@@ -1082,65 +1314,47 @@ public class MainViewModel : ViewModelBase
             jurorCount++;
         }
 
-        // Recalculate damages and verdict lean from scratch
         foreach (var doc in CurrentCase.Evidence)
-            _juryCalc.ApplyEvidenceInfluence(AllAgents, doc);
+            _juryCalc.ApplyEvidenceInfluence(AllAgents, doc, CurrentCase.Mode);
 
         NotifyJuryUpdate();
         TranscriptOutput = $"[REEVALUATE] {jurorCount} jurors re-evaluated {reporter.ExhibitLog.Count} exhibits with current psychology.";
     }
 
-    /// <summary>
-    /// Generates a PDF report for the current case.
-    /// </summary>
     public void GeneratePDFReport(string filePath)
     {
         _caseService.GenerateReport(filePath, CurrentCase, AllAgents);
         TranscriptOutput = $"[REPORT] PDF case report generated at {filePath}";
     }
 
-    /// <summary>
-    /// Applies dynamic role assignment based on case analysis.
-    /// Automatically assigns agents to recommended roles.
-    /// </summary>
     public void ApplyDynamicRoleAssignment()
     {
         var assignmentService = new AgentAssignmentService();
         var plan = assignmentService.AnalyzeCase(CurrentCase);
 
-        // Generate default agents
         var defaultAgents = assignmentService.GenerateDefaultAgents(CurrentCase);
 
-        // Assign default agents to appropriate slots
         foreach (var agent in defaultAgents)
         {
             if (agent.Role == AgentRole.Judge)
             {
                 var judgeSlot = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Judge && !a.IsOccupied);
-                if (judgeSlot != null)
-                {
-                    agent.CopyTo(judgeSlot);
-                }
+                if (judgeSlot != null) agent.CopyTo(judgeSlot);
             }
             else if (agent.Role == AgentRole.Witness)
             {
                 var witnessSlot = JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Witness && !a.IsOccupied);
-                if (witnessSlot != null)
-                {
-                    agent.CopyTo(witnessSlot);
-                }
+                if (witnessSlot != null) agent.CopyTo(witnessSlot);
             }
         }
 
-        // Add extra lawyer slots as recommended
         assignmentService.ApplyAssignmentPlan(plan, JudgeArea, Jurors, DefenseTeam, ProsecutionTeam, Gallery);
 
-        // Update court with analysis
         TranscriptOutput = $"[ROLE ASSIGNMENT] {plan.StrategyDescription} " +
-                          $"Recommended: {plan.RecommendedProsecutionAttorneys} prosecutors, " +
-                          $"{plan.RecommendedDefenseAttorneys} defense attorneys, " +
-                          $"{plan.RecommendedExperts.Count} experts. " +
-                          $"Complexity: {plan.ComplexityRating}/10.";
+                            $"Recommended: {plan.RecommendedProsecutionAttorneys} prosecutors, " +
+                            $"{plan.RecommendedDefenseAttorneys} defense attorneys, " +
+                            $"{plan.RecommendedExperts.Count} experts. " +
+                            $"Complexity: {plan.ComplexityRating}/10.";
         BroadcastEvent($"Dynamic role assignment completed: {plan.StrategyDescription}",
             Enum.GetValues<AgentRole>().ToList());
     }

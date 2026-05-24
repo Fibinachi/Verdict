@@ -10,6 +10,7 @@ using Verdict.Views;
 
 namespace Verdict;
 
+
 public partial class MainWindow : Window
 {
     private MainViewModel _viewModel;
@@ -20,8 +21,41 @@ public partial class MainWindow : Window
         InitializeComponent();
         _viewModel = new MainViewModel();
         this.DataContext = _viewModel;
+        _viewModel.ShowClerkEvidenceSummaryEditor = (fileName, initialSummary) => ShowClerkEvidenceSummaryEditor(fileName, initialSummary);
         PopulateRecentFilesMenu();
     }
+
+    private async System.Threading.Tasks.Task LoadBuiltInScenarioAsync(BuiltInCaseScenarios.BuiltInScenario scenario)
+    {
+        _viewModel.NewCase();
+
+        _viewModel.CurrentCase = BuiltInCaseScenarios.BuildScenarioCaseFile(scenario);
+        _viewModel.CurrentCase.EnsureCollectionsInitialized();
+
+        _viewModel.ReinitializeCourtroom();
+        _viewModel.TranscriptOutput = "[DEFAULT CASE] Loading scenario evidence...";
+
+        await BuiltInCaseScenarios.PreloadEvidenceAsync(_viewModel, scenario);
+
+        await _viewModel.GenerateJury();
+        _viewModel.ReinitializeCourtroom();
+        _viewModel.UpdateWindowTitle();
+
+        MessageBox.Show($"Loaded default scenario: {BuiltInCaseScenarios.ScenarioDisplayName(scenario)}");
+    }
+
+    private async void DefaultCase_OJ_Click(object sender, RoutedEventArgs e)
+        => await LoadBuiltInScenarioAsync(BuiltInCaseScenarios.BuiltInScenario.RebrandedOJTrial);
+
+    private async void DefaultCase_SaccoVanzetti_Click(object sender, RoutedEventArgs e)
+        => await LoadBuiltInScenarioAsync(BuiltInCaseScenarios.BuiltInScenario.RebrandedSaccoVanzetti);
+
+    private async void DefaultCase_Exxon_Click(object sender, RoutedEventArgs e)
+        => await LoadBuiltInScenarioAsync(BuiltInCaseScenarios.BuiltInScenario.RebrandedExxonTrial);
+
+    private async void DefaultCase_AppleRiver_Click(object sender, RoutedEventArgs e)
+        => await LoadBuiltInScenarioAsync(BuiltInCaseScenarios.BuiltInScenario.RebrandedAppleRiver);
+
 
     private void ChatInput_KeyDown(object sender, KeyEventArgs e)
     {
@@ -31,7 +65,7 @@ public partial class MainWindow : Window
             string content = ChatInput.Text.Trim();
             if (!string.IsNullOrEmpty(content))
             {
-                _viewModel.ProcessTranscriptLine("Attorney/Moderator", content);
+                _viewModel.ProcessChatInputLine("Attorney/Moderator", content);
                 ChatInput.Clear();
             }
         }
@@ -43,7 +77,7 @@ public partial class MainWindow : Window
         string content = ChatInput.Text.Trim();
         if (!string.IsNullOrEmpty(content))
         {
-            _viewModel.ProcessTranscriptLine("Attorney/Moderator", content);
+            _viewModel.ProcessChatInputLine("Attorney/Moderator", content);
             ChatInput.Clear();
         }
     }
@@ -56,7 +90,20 @@ private void Podium_Click(object sender, RoutedEventArgs e)
     private async void AdvanceStage_Click(object sender, RoutedEventArgs e)
     {
         // Turn-based deliberation step (repurposed button)
-        await _viewModel.DeliberateNextTurn();
+        await _viewModel.DeliberateNextTurnAsync();
+    }
+    
+    private async void StartDeliberation_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show("Start jury deliberation? This will run multiple turns with jurors discussing the evidence.", 
+            "Start Deliberation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        
+        if (result == MessageBoxResult.Yes)
+        {
+            await _viewModel.RunFullDeliberationAsync();
+            MessageBox.Show($"Deliberation complete. Final verdict: {_viewModel.LikelyVerdict}", "Deliberation Complete", 
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 
 
@@ -362,7 +409,7 @@ private void Podium_Click(object sender, RoutedEventArgs e)
         }
     }
 
-    private async void ClerkSeat_Click(object sender, RoutedEventArgs e)
+private async void ClerkSeat_Click(object sender, RoutedEventArgs e)
     {
         var openFileDialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -372,94 +419,54 @@ private void Podium_Click(object sender, RoutedEventArgs e)
 
         if (openFileDialog.ShowDialog() == true)
         {
-            string clerkAttorney = PickAttorney();
-            int processedCount = 0;
-            foreach (var fileName in openFileDialog.FileNames)
-            {
-                string filePath = fileName;
-                string fileNameOnly = System.IO.Path.GetFileName(fileName);
-
-                // Read the file content and generate the AI analysis FIRST
-                string fileContent = _viewModel.ReadFileContent(filePath);
-                var (detailedAnalysis, _) = await _viewModel.GenerateDocumentAnalysisAsync(
-                    fileNameOnly, fileContent, "Submitted via Court Clerk");
-
-                // Default summary text for the dialog
-                string defaultSummary = $"Document: {fileNameOnly}\n\n" +
-                    $"User Notes: Submitted via Court Clerk\n\n" +
-                    $"[AI ANALYSIS]\n{detailedAnalysis}";
-
-                // Show dialog to edit the summary (now pre-filled with AI analysis)
-                var editSummaryDialog = new Window
-                {
-                    Title = $"Review & Edit - {fileNameOnly}",
-                    Width = 650,
-                    Height = 500,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this,
-                    ResizeMode = ResizeMode.CanResize
-                };
-
-                // Create UI elements
-                var instructionLabel = new Label
-                {
-                    Content = "Edit the summary below. This will be broadcast to all agents as their memory of the document:",
-                    Margin = new Thickness(10),
-                    FontWeight = FontWeights.SemiBold
-                };
-                var textBox = new TextBox
-                {
-                    Text = defaultSummary,
-                    AcceptsReturn = true,
-                    TextWrapping = TextWrapping.Wrap,
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    Margin = new Thickness(10),
-                    Height = 300
-                };
-                
-                var buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(10) };
-                var okButton = new Button { Content = "Submit to Agents", Margin = new Thickness(5), Width = 120, Height = 30, Background = System.Windows.Media.Brushes.DarkGreen, Foreground = System.Windows.Media.Brushes.White, FontWeight = FontWeights.Bold };
-                var cancelButton = new Button { Content = "Cancel", Margin = new Thickness(5), Width = 80, Height = 30 };
-                
-                buttonPanel.Children.Add(okButton);
-                buttonPanel.Children.Add(cancelButton);
-
-                var mainPanel = new StackPanel();
-                mainPanel.Children.Add(instructionLabel);
-                mainPanel.Children.Add(textBox);
-                mainPanel.Children.Add(buttonPanel);
-
-                editSummaryDialog.Content = mainPanel;
-
-                RoutedEventHandler okClick = (s, args) => { 
-                    editSummaryDialog.DialogResult = true;
-                    editSummaryDialog.Close(); 
-                };
-                
-                RoutedEventHandler cancelClick = (s, args) => { 
-                    editSummaryDialog.DialogResult = false;
-                    editSummaryDialog.Close(); 
-                };
-
-                okButton.Click += okClick;
-                cancelButton.Click += cancelClick;
-
-                // Show dialog modally
-                if (editSummaryDialog.ShowDialog() == true)
-                {
-                    // Add the evidence with the user-edited summary
-                    // This summary (including the AI analysis) will be broadcast to agents
-                    // Pass the already-generated detailed analysis to avoid a duplicate LLM call
-                    await _viewModel.AddEvidence(fileNameOnly, filePath, textBox.Text, detailedAnalysis, clerkAttorney);
-                    // Increment the reporter's document count
-                    var reporter = _viewModel.JudgeArea.FirstOrDefault(a => a.Role == AgentRole.Reporter);
-                    if (reporter != null)
-                        reporter.DocumentCount++;
-                    processedCount++;
-                }
-            }
-            MessageBox.Show($"{processedCount} document(s) submitted and parsed into evidence.");
+            await _viewModel.SubmitClerkDocumentsCommand.ExecuteAsync(openFileDialog.FileNames);
+            MessageBox.Show("Document(s) submitted and parsed into evidence.");
         }
+    }
+
+    private string? ShowClerkEvidenceSummaryEditor(string fileName, string initialSummary)
+    {
+        var dialog = new Window
+        {
+            Title = $"Review & Edit - {fileName}",
+            Width = 650, Height = 500,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this, ResizeMode = ResizeMode.CanResize
+        };
+
+        var instructionLabel = new Label
+        {
+            Content = "Edit the summary below. This will be broadcast to all agents as their memory of the document:",
+            Margin = new Thickness(10),
+            FontWeight = FontWeights.SemiBold
+        };
+
+        var textBox = new TextBox
+        {
+            Text = initialSummary,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Margin = new Thickness(10),
+            Height = 300
+        };
+
+        var buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(10) };
+        var okButton = new Button { Content = "Submit to Agents", Margin = new Thickness(5), Width = 120, Height = 30, Background = System.Windows.Media.Brushes.DarkGreen, Foreground = System.Windows.Media.Brushes.White, FontWeight = FontWeights.Bold };
+        var cancelButton = new Button { Content = "Cancel", Margin = new Thickness(5), Width = 80, Height = 30 };
+
+        buttonPanel.Children.Add(okButton);
+        buttonPanel.Children.Add(cancelButton);
+
+        var mainPanel = new StackPanel();
+        mainPanel.Children.Add(instructionLabel);
+        mainPanel.Children.Add(textBox);
+        mainPanel.Children.Add(buttonPanel);
+
+        dialog.Content = mainPanel;
+
+        bool? result = dialog.ShowDialog();
+        return result == true ? textBox.Text : null;
     }
 
     private void ExhibitList_Click(object sender, RoutedEventArgs e)
@@ -908,12 +915,33 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
         }
     }
 
-    private void GenerateJury_Click(object sender, RoutedEventArgs e)
+    private async void GenerateJury_Click(object sender, RoutedEventArgs e)
     {
-        _viewModel.GenerateJury();
+        await _viewModel.GenerateJury();
         MessageBox.Show("Jury generated based on case jurisdiction demographics.");
     }
     private void CourtroomLayoutSettings_Click(object sender, RoutedEventArgs e) => MessageBox.Show("Layout Settings feature coming soon.");
+
+    private async void ClerkSeat_SubmitTextEvidence_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
+            Title = "Submit Text Evidence"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            var textContent = System.IO.File.ReadAllText(dialog.FileName);
+            await _viewModel.AddTestimonyEvidence(
+                witnessName: System.IO.Path.GetFileNameWithoutExtension(dialog.FileName),
+                testimonyText: textContent,
+                offeringAttorney: "Clerk",
+                offeredByPlaintiff: true);
+            MessageBox.Show($"Text evidence from {dialog.FileName} submitted.", "Evidence Submitted", 
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
 
     private void About_Click(object sender, RoutedEventArgs e)
     {

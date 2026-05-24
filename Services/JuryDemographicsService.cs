@@ -235,21 +235,19 @@ public class JuryDemographicsService : IJuryDemographicsService
     {
         var panel = new List<Agent>();
 
-        // Generate regular jurors
+        // Generate regular jurors with generated names
         for (int i = 0; i < jurorCount; i++)
         {
             var juror = GenerateJuror(county, state);
             juror.Role = AgentRole.Juror;
-            juror.Name = $"Juror {i + 1}";
             panel.Add(juror);
         }
 
-        // Generate alternates
+        // Generate alternates with generated names
         for (int i = 0; i < alternateCount; i++)
         {
             var alternate = GenerateJuror(county, state);
             alternate.Role = AgentRole.AlternateJuror;
-            alternate.Name = $"Alt {i + 1}";
             panel.Add(alternate);
         }
 
@@ -288,6 +286,10 @@ public class JuryDemographicsService : IJuryDemographicsService
 
         // Generate a profile based on demographics
         juror.Profile = GenerateProfile(juror);
+
+        // Set knowledge-domain predictors by demographics/occupation
+        ApplyKnowledgeDefaultsFromDemographics(juror);
+
         juror.SystemPrompt = BuildSystemPrompt(juror);
 
         return juror;
@@ -516,6 +518,60 @@ public class JuryDemographicsService : IJuryDemographicsService
         return "General public knowledge";
     }
 
+    private static void ApplyKnowledgeDefaultsFromDemographics(Agent juror)
+    {
+        // Knowledge-domain predictors: ScienceLiteracy, FinancialLiteracy, TechnologyFamiliarity
+        // Defaults are derived from juror demographics/occupation so the toy juror engine
+        // has research-aligned inputs by default.
+
+        // Baseline (research table default): 5.0
+        double science = 5.0;
+        double finance = 5.0;
+        double tech = 5.0;
+
+        var occ = (juror.Occupation ?? "").ToLowerInvariant();
+        var edu = (juror.EducationLevel ?? "").ToLowerInvariant();
+
+        // Doctors / healthcare -> science literacy
+        if (occ.Contains("doctor") || occ.Contains("nurse") || occ.Contains("physician") || occ.Contains("medical"))
+        {
+            science += 3.0;
+        }
+
+        // Engineers / IT / tech -> technology familiarity
+        if (occ.Contains("engineer") || occ.Contains("it") || occ.Contains("software") || occ.Contains("developer") || occ.Contains("technology"))
+        {
+            tech += 3.0;
+        }
+
+        // Trade/craft roles that work with tools -> mild tech familiarity
+        if (occ.Contains("electrician") || occ.Contains("plumber") || occ.Contains("mechanic") || occ.Contains("carpenter") || occ.Contains("construction") || occ.Contains("truck driver"))
+        {
+            tech += 1.5;
+        }
+
+        // Accountants/analysts -> financial literacy
+        if (occ.Contains("accountant") || occ.Contains("analyst") || occ.Contains("finance") || occ.Contains("insurance") || occ.Contains("auditor"))
+        {
+            finance += 3.0;
+        }
+
+        // Advanced degrees generally increase literacy in relevant domains
+        if (edu.Contains("master") || edu.Contains("doctorate"))
+        {
+            // Doctorate often implies domain-depth (science/finance/tech depending on field)
+            // but we keep it mild because occupation should be the primary driver.
+            science += 1.0;
+            finance += 1.0;
+            tech += 0.75;
+        }
+
+        // Clamp to [0,10]
+        juror.ScienceLiteracy = Math.Clamp(science, 0.0, 10.0);
+        juror.FinancialLiteracy = Math.Clamp(finance, 0.0, 10.0);
+        juror.TechnologyFamiliarity = Math.Clamp(tech, 0.0, 10.0);
+    }
+
     private string BuildSystemPrompt(Agent juror)
     {
         return $"You are a juror named {juror.Name}. {juror.Profile} " +
@@ -526,6 +582,7 @@ public class JuryDemographicsService : IJuryDemographicsService
                "background, experiences, and the facts of the case. " +
                "Your verdict lean should reflect your genuine assessment.";
     }
+
 
     private string WeightedChoice(params (string, double)[] options)
     {

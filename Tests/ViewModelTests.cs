@@ -19,6 +19,9 @@ public class ViewModelTests : BaseTestClass
         TestMainViewModel();
         TestCaseSettingsViewModel();
         TestModelSettingsViewModel();
+        TestAgentChatWindow();
+        TestUniversalChatWindow();
+        TestChatMemoryPersistence();
 
         return GetResults();
     }
@@ -152,5 +155,74 @@ public class ViewModelTests : BaseTestClass
             if (File.Exists(savedPath))
                 File.Delete(savedPath);
         }
+    }
+
+    private static void TestAgentChatWindow()
+    {
+        Console.WriteLine("─── AgentChatWindow ───");
+
+        var vm = new MainViewModel();
+        var agent = new Agent
+        {
+            Name = "Test Juror",
+            Role = AgentRole.Juror,
+            SystemPrompt = "You are a thoughtful juror.",
+            Profile = "A careful evaluator of evidence."
+        };
+
+        // Verify the window can be instantiated
+        var window = new Views.AgentChatWindow(vm, agent);
+        Assert(window != null, "AgentChatWindow can be instantiated");
+        Assert(window.Title == "Chat with Test Juror", "Window title includes agent name");
+
+        window.Close();
+    }
+
+    private static void TestUniversalChatWindow()
+    {
+        Console.WriteLine("─── UniversalChatWindow ───");
+
+        var vm = new MainViewModel();
+        var window = new Views.UniversalChatWindow(vm);
+        Assert(window != null, "UniversalChatWindow can be instantiated");
+
+        window.Close();
+    }
+
+    private static void TestChatMemoryPersistence()
+    {
+        Console.WriteLine("─── Chat Memory Persistence ───");
+
+        var agent = new Agent { Name = "Test Agent", Role = AgentRole.Juror };
+
+        // Simulate adding chat memories
+        var userMemory = new MemoryEntry
+        {
+            Content = "You said: What do you think about the evidence?",
+            Timestamp = DateTime.Now,
+            Source = "Chat",
+            Strength = 1.0
+        };
+        var agentMemory = new MemoryEntry
+        {
+            Content = "Test Agent responded: The evidence seems credible.",
+            Timestamp = DateTime.Now,
+            Source = "Chat",
+            Strength = 1.0
+        };
+        agent.Memories.Add(userMemory);
+        agent.Memories.Add(agentMemory);
+
+        Assert(agent.Memories.Count == 2, "Chat memories are added to agent");
+        Assert(agent.Memories.Any(m => m.Source == "Chat"), "Chat source is preserved");
+
+        // Simulate wiping chat memories
+        var chatMemories = agent.Memories.Where(m => m.Source == "Chat").ToList();
+        foreach (var memory in chatMemories)
+        {
+            agent.Memories.Remove(memory);
+        }
+
+        Assert(agent.Memories.Count == 0, "Chat memories are removed after wipe");
     }
 }

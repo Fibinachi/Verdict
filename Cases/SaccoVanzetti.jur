@@ -1,0 +1,102 @@
+{
+  "CaseName": "Commonwealth v. Sacco & Vanzetti (Rebranded)",
+  "CaseNumber": "23-CR-0002",
+  "CourtName": "Boston Superior Court",
+  "Mode": "Criminal",
+  "Jurisdiction": "State",
+  "JurisdictionSpecifics": "Massachusetts",
+  "JurorCount": 12,
+  "TrialPhase": "Trial",
+  "CurrentDebateStage": "JuryDeliberation",
+  "DeliberationRounds": 20,
+  "GlobalTemperature": 0.7,
+  "GlobalMaxTokens": 4096,
+  "DefaultBiasWeight": 0.0,
+  "Plaintiffs": ["The People"],
+  "Defendants": ["Sacco (Rebranded)", "Vanzetti (Rebranded)"],
+  "PlaintiffAttorney": "Prosecution",
+  "DefenseAttorney": "Defense",
+  "Instructions": {
+    "Text": "You are to decide guilt beyond a reasonable doubt based on the evidence presented. Do not speculate. If the evidence leaves you with reasonable doubt, acquit.",
+    "Standard": "BeyondReasonableDoubt"
+  },
+  "Verdict": {
+    "Charges": [{"Name": "Serious Felony (Rebranded)"}],
+    "Convicted": false,
+    "Fine": 0
+  },
+  "Evidence": [
+    {
+      "ExhibitNumber": 1,
+      "FileName": "Testimony_Inspector_Moreau.txt",
+      "Summary": "We obtained witness accounts and documents that place the defendants at the relevant location. The prosecution contends the evidence demonstrates intent and participation beyond reasonable doubt.",
+      "OfferingAttorney": "Prosecution",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.60,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Inspector's testimony establishes presence and opportunity but stops short of definitive proof. The narrative emphasizes witness credibility while acknowledging potential biases."
+    },
+    {
+      "ExhibitNumber": 2,
+      "FileName": "Testimony_Ballistics_Examiner_Wills.txt",
+      "Summary": "The ballistic analysis indicated consistency between recovered materials and those associated with the defendants. The matches were not incidental.",
+      "OfferingAttorney": "Prosecution",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.70,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Scientific evidence provides technical support for prosecution theory. However, the examiner does not claim absolute certainty and acknowledges standard error margins in ballistic matching."
+    },
+    {
+      "ExhibitNumber": 3,
+      "FileName": "Testimony_Merchant_Elias_Reed.txt",
+      "Summary": "I recall seeing the defendants near the incident. I am confident in my memory because of the circumstances and subsequent events.",
+      "OfferingAttorney": "Prosecution",
+      "IsOfferedByPlaintiffSide": true,
+      "EvidenceStrength": 0.55,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Merchant's identification testimony is strengthened by temporal proximity but weakened by lack of direct confrontation. Confidence may be influenced by subsequent events rather than initial observation."
+    },
+    {
+      "ExhibitNumber": 4,
+      "FileName": "Testimony_Defense_Attorney_Samuels.txt",
+      "Summary": "The prosecution's timeline relies on shifting testimony. There is evidence of coercion concerns and unreliable identification.",
+      "OfferingAttorney": "Defense",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.55,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Defense attorney attacks witness reliability and timeline consistency. Raises concerns about coercive interrogation practices that could affect testimony credibility."
+    },
+    {
+      "ExhibitNumber": 5,
+      "FileName": "Testimony_Linguist_Expert_Hart.txt",
+      "Summary": "Translation issues can distort meaning. Some documentary interpretations presented by the state may be inaccurate.",
+      "OfferingAttorney": "Defense",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.50,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Linguistic expert introduces reasonable doubt about document authenticity and interpretation. Technical expertise undermines prosecution's documentary evidence foundation."
+    },
+    {
+      "ExhibitNumber": 6,
+      "FileName": "Testimony_Community_Leader_Quintero.txt",
+      "Summary": "I believe the defendants have community support. The case appears driven by politics rather than purely reliable facts.",
+      "OfferingAttorney": "Defense",
+      "IsOfferedByPlaintiffSide": false,
+      "EvidenceStrength": 0.45,
+      "EstimatedDamages": 0,
+      "IsDiscoveryComplete": true,
+      "DetailedAnalysis": "Community leader testimony contextualizes case within broader social and political framework. May influence some jurors' perception of prosecutorial motivation."
+    }
+  ],
+  "Agents": [],
+  "AvailableModels": [
+    {"FriendlyName": "OpenAI GPT-4o", "Provider": "OpenAI", "ModelId": "gpt-4o"},
+    {"FriendlyName": "Claude 3.5 Sonnet", "Provider": "Anthropic", "ModelId": "claude-3-5-sonnet-20240620"},
+    {"FriendlyName": "Google Gemini 1.5 Pro", "Provider": "Google", "ModelId": "gemini-1.5-pro"}
+  ]
+}

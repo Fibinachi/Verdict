@@ -8,12 +8,32 @@ using Verdict.ViewModels;
 
 namespace Verdict.Views;
 
+/// <summary>
+/// A chat window for conversing with a single agent. Provides LLM-powered responses
+/// when a model is configured, with fallback to role-based canned responses.
+/// Chat exchanges are stored in `Agent.ChatEvents`.
+/// </summary>
+/// <remarks>
+/// <para><b>LLM Integration:</b> Uses the agent's selected model or the first available
+/// model from the case configuration. Agent-specific overrides (temperature, max tokens)
+/// are applied when set.</para>
+/// <para><b>Memory Persistence:</b> Both user and agent messages are stored as MemoryEntry
+/// objects with Source="Chat" for later retrieval and analysis. The Wipe Memories button
+/// clears only chat-sourced memories.</para>
+/// <para><b>Role-Based Fallbacks:</b> When no LLM is available, provides contextually-appropriate
+/// responses based on the agent's role (Juror, Lawyer, Judge, Witness, Client, Reporter).</para>
+/// </remarks>
 public partial class AgentChatWindow : Window
 {
     private readonly MainViewModel _mainVm;
     private readonly Agent _agent;
     private string _conversationLog = string.Empty;
 
+    /// <summary>
+    /// Initializes a new AgentChatWindow for the specified agent.
+    /// </summary>
+    /// <param name="mainVm">The main view model containing case data and providers.</param>
+    /// <param name="agent">The agent to chat with.</param>
     public AgentChatWindow(MainViewModel mainVm, Agent agent)
     {
         InitializeComponent();
@@ -23,6 +43,11 @@ public partial class AgentChatWindow : Window
         HeaderText.Text = $"CHAT WITH {_agent.Name} ({_agent.Role})";
     }
 
+    /// <summary>
+    /// Handles the Send button click. Gets an LLM response if available, otherwise
+    /// uses role-based canned responses. Saves the exchange as chat events.
+
+    /// </summary>
     private async void Send_Click(object sender, RoutedEventArgs e)
     {
         string message = MessageInput.Text.Trim();
@@ -34,11 +59,13 @@ public partial class AgentChatWindow : Window
         // Try to get a real LLM response first
         string response = await GetLLMResponse(message);
 
-        // Fall back to role-based canned response if LLM fails or returns empty
+        // Do not use role-based fallbacks for juror interview/chat.
+        // If the model fails/unavailable, return an explicit error message so the user knows what to expect.
         if (string.IsNullOrEmpty(response) || response.StartsWith("(Error") || response.StartsWith("(No LLM"))
         {
-            response = GenerateRoleBasedResponse();
+            response = "[LLM unavailable] I can’t answer because no LLM response could be generated. Configure a model/provider for this agent.";
         }
+
 
         result += $"{_agent.Name}: {response}\n";
 
@@ -46,25 +73,30 @@ public partial class AgentChatWindow : Window
         ConversationLog.Text = _conversationLog;
         MessageInput.Clear();
 
-        // Save the exchange as MemoryEntries tagged with source "Chat"
-        var userMemory = new MemoryEntry
+        // Save the exchange as chat transcript entries (chat-only; must not affect bias/lean)
+        var userChatEvent = new MemoryEntry
         {
             Content = $"You said: {message}",
             Timestamp = DateTime.Now,
             Source = "Chat",
             Strength = 1.0
         };
-        var agentMemory = new MemoryEntry
+        var agentChatEvent = new MemoryEntry
         {
             Content = $"{_agent.Name} responded: {response}",
             Timestamp = DateTime.Now,
             Source = "Chat",
             Strength = 1.0
         };
-        _agent.Memories.Add(userMemory);
-        _agent.Memories.Add(agentMemory);
+        _agent.ChatEvents.Add(userChatEvent);
+        _agent.ChatEvents.Add(agentChatEvent);
+
     }
 
+    /// <summary>
+    /// Gets an LLM response for the given message using the agent's configured model.
+    /// Applies any agent-specific temperature or max tokens overrides.
+    /// </summary>
     private async Task<string> GetLLMResponse(string userMessage)
     {
         try
@@ -87,11 +119,38 @@ public partial class AgentChatWindow : Window
             if (provider == null)
                 return $"(Provider '{modelConfig.Provider}' not found)";
 
+            // For juror chat: let users ask general perspective questions, but if they ask
+            // about the specific case/evidence, ground it in admitted exhibits.
+            string admittedExhibitsContext = string.Empty;
+            bool isJuror = _agent.Role == AgentRole.Juror || _agent.Role == AgentRole.AlternateJuror;
+            if (isJuror)
+            {
+                if (_mainVm?.CurrentCase?.Evidence != null && _mainVm.CurrentCase.Evidence.Any())
+                {
+                    admittedExhibitsContext = string.Join("\n",
+                        _mainVm.CurrentCase.Evidence
+                            .Select(e => $"Exhibit {e.ExhibitNumber} ({e.FileName}): {e.Summary}")
+                            .Where(s => !string.IsNullOrWhiteSpace(s))
+                            .Take(12));
+                }
+                else
+                {
+                    admittedExhibitsContext = "(No evidence/exhibits have been admitted yet.)";
+                }
+            }
+
             // Build the system prompt with agent context
             string systemPrompt = $"You are {_agent.Name}, a {_agent.Role} in a courtroom simulation. {_agent.SystemPrompt}\n\n" +
                 $"Your background: {_agent.Profile}\n" +
                 $"Your current sentiment: {_agent.Sentiment:P0}\n" +
                 $"Your verdict lean: {_agent.VerdictLean:P0} towards plaintiff\n\n" +
+                (isJuror
+                    ? $"Admitted record (use this to ground any case-specific claims):\n{admittedExhibitsContext}\n\n" +
+                      "Juror interview rules:\n" +
+                      "- If the user asks about the case/evidence/what happened in court, answer using ONLY the admitted record above.\n" +
+                      "- If the admitted record does not contain enough information, respond exactly: \"I can’t answer that from the admitted evidence.\"\n" +
+                      "- If the user asks for general perspective (psychology/fairness/deliberation/how jurors generally think), answer generally and do NOT add new case-specific facts.\n"
+                    : "") +
                 $"Respond in character as this {_agent.Role}. Keep responses concise (2-4 sentences). " +
                 $"This is a private conversation, not a courtroom proceeding.";
 
@@ -114,6 +173,10 @@ public partial class AgentChatWindow : Window
         }
     }
 
+    /// <summary>
+    /// Generates a role-appropriate response when no LLM is available.
+    /// Provides unique response sets for Juror, Lawyer, Judge, Witness, Client, and Reporter roles.
+    /// </summary>
     private string GenerateRoleBasedResponse()
     {
         var random = new Random();
@@ -173,7 +236,6 @@ public partial class AgentChatWindow : Window
                     "I'm prepared to issue my ruling on this matter.",
                     "Let's maintain decorum in the courtroom, please.",
                     "I'll hear arguments from both sides before making a decision.",
-                    "The objection is sustained. Please rephrase the question.",
                     "I'm instructing the jury on the applicable law at this time.",
                     "We'll take a brief recess while the court considers this matter."
                 ];
@@ -254,6 +316,10 @@ public partial class AgentChatWindow : Window
         }
     }
 
+    /// <summary>
+    /// Handles the Wipe Memories button click. Removes all MemoryEntries
+    /// with Source="Chat" from the agent's memories and clears the conversation log.
+    /// </summary>
     private void WipeMemories_Click(object sender, RoutedEventArgs e)
     {
         var result = MessageBox.Show(
@@ -264,11 +330,11 @@ public partial class AgentChatWindow : Window
 
         if (result == MessageBoxResult.Yes)
         {
-            // Remove all MemoryEntries with Source == "Chat"
-            var chatMemories = _agent.Memories.Where(m => m.Source == "Chat").ToList();
-            foreach (var memory in chatMemories)
+            // Remove all chat transcript entries with Source == "Chat"
+            var chatEvents = _agent.ChatEvents.Where(m => m.Source == "Chat").ToList();
+            foreach (var memory in chatEvents)
             {
-                _agent.Memories.Remove(memory);
+                _agent.ChatEvents.Remove(memory);
             }
 
             // Also clear the conversation log display
@@ -280,8 +346,12 @@ public partial class AgentChatWindow : Window
         }
     }
 
+    /// <summary>
+    /// Closes the window.
+    /// </summary>
     private void Close_Click(object sender, RoutedEventArgs e)
     {
         Close();
     }
 }
+

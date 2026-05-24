@@ -14,16 +14,17 @@ namespace Verdict.Services;
 /// </summary>
 public interface IEvidenceAnalysisService
 {
-    void AssessStrength(EvidenceDocument doc, string summary, string fileContent = "");
+    double AssessStrength(EvidenceDocument doc, string summary, string fileContent = "");
     void CalculateExposure(CaseFile caseFile);
     string InterpretSummary(string summary, CaseFile caseFile);
     string ReadFileContent(string filePath);
     Task<(string Analysis, double TotalDamages)> GenerateDocumentAnalysisAsync(string fileName, string fileContent, string userSummary, CaseFile caseFile, IAgentInteractionService agentInteraction);
+    double CalculatePerceivedStrength(Agent agent, EvidenceDocument doc, double baseStrength);
 }
 
 public class EvidenceAnalysisService : IEvidenceAnalysisService
 {
-    public void AssessStrength(EvidenceDocument doc, string summary, string fileContent = "")
+    public double AssessStrength(EvidenceDocument doc, string summary, string fileContent = "")
     {
         // Combine summary and file content for analysis
         string combined = $"{summary} {fileContent}";
@@ -102,6 +103,25 @@ public class EvidenceAnalysisService : IEvidenceAnalysisService
 
         doc.EvidenceStrength = Math.Clamp(strength, 0.0, 1.0);
         doc.EstimatedDamages = damages;
+        return doc.EvidenceStrength;
+    }
+
+    public double CalculatePerceivedStrength(Agent agent, EvidenceDocument doc, double baseStrength)
+    {
+        // Perception is influenced by the agent's inherent bias and which side offered the evidence.
+        // If the agent's bias matches the offering side, the perceived strength increases.
+        
+        double sideFactor = doc.IsOfferedByPlaintiffSide ? 1.0 : -1.0;
+        
+        // A bias of 1.0 means full alignment with Plaintiff.
+        // Alignment score: positive if bias and side match.
+        double alignment = agent.Bias * sideFactor;
+        
+        // Perception shift: amplify or dampen strength by up to 30% based on bias alignment.
+        double perceptionShift = 1.0 + (alignment * 0.3);
+        
+        double perceived = baseStrength * perceptionShift;
+        return Math.Clamp(perceived, 0.0, 1.0);
     }
 
     /// <summary>

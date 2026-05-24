@@ -37,6 +37,9 @@ public class Agent : ObservableObject
     private string _specializedKnowledge = "None (General Public)";
     private ObservableCollection<MemoryEntry> _memories = new();
     private ObservableCollection<MemoryEntry> _trialEvents = new();
+    private ObservableCollection<MemoryEntry> _chatEvents = new();
+    private ObservableCollection<EvidencePerception> _perceivedEvidence = new();
+
     private string _judicialRulings = string.Empty;
     private string _writtenOpinions = string.Empty;
     private string _judicialTemperament = string.Empty;
@@ -257,6 +260,26 @@ public class Agent : ObservableObject
     }
 
     /// <summary>
+    /// Chat-only transcript entries. These are for analysis/conversation and
+    /// must not affect juror bias/lean or trial internalization.
+    /// </summary>
+    public ObservableCollection<MemoryEntry> ChatEvents
+    {
+        get => _chatEvents;
+        set => SetProperty(ref _chatEvents, value);
+    }
+
+    /// <summary>
+    /// Per-agent determination of evidence strength and trust.
+    /// </summary>
+    public ObservableCollection<EvidencePerception> PerceivedEvidence
+    {
+        get => _perceivedEvidence;
+        set => SetProperty(ref _perceivedEvidence, value);
+    }
+
+
+    /// <summary>
     /// For Judge roles: past rulings and legal precedents established by this judge.
     /// </summary>
     public string JudicialRulings
@@ -389,9 +412,14 @@ public class Agent : ObservableObject
         }
     }
 
-    public bool CanVote => Role == AgentRole.Juror || Role == AgentRole.AlternateJuror;
-    public bool HasOpinion => (CanVote || Role == AgentRole.Judge) && Role != AgentRole.Reporter;
-    public bool CanDeliberate => Role == AgentRole.Juror || Role == AgentRole.AlternateJuror;
+    public bool CanVote => IsOccupied && (Role == AgentRole.Juror || Role == AgentRole.AlternateJuror);
+
+    // Only jurors/judge form opinions and update verdict lean in this simulation.
+    // Stakeholders should be selectable/created, but they should not deliberate/vote
+    // and should not update verdict lean unless explicitly intended.
+    public bool HasOpinion => IsOccupied && ((CanVote || Role == AgentRole.Judge) && Role != AgentRole.Reporter);
+
+    public bool CanDeliberate => IsOccupied && (Role == AgentRole.Juror || Role == AgentRole.AlternateJuror);
     public bool IsClient => Role == AgentRole.Client;
 
     private double _consideredDamages = 0;
@@ -544,6 +572,10 @@ public class Agent : ObservableObject
         target.Sentiment = this.Sentiment;
         target.IsOccupied = true;
         target.ConsideredDamages = this.ConsideredDamages;
+        target.ChatEvents.Clear();
+        foreach (var e in ChatEvents)
+            target.ChatEvents.Add(new MemoryEntry { Content = e.Content, Strength = e.Strength, Timestamp = e.Timestamp, IsFromDocument = e.IsFromDocument, Source = e.Source });
+
         target.JudicialRulings = this.JudicialRulings;
         target.WrittenOpinions = this.WrittenOpinions;
         target.JudicialTemperament = this.JudicialTemperament;
@@ -573,10 +605,62 @@ public class Agent : ObservableObject
             target.ExhibitLog.Add(entry);
         foreach (var bf in BiasFactors)
             target.BiasFactors.Add(new BiasFactor { Name = bf.Name, Weight = bf.Weight });
-    }
+        
+        target.PerceivedEvidence.Clear();
+        foreach (var pe in PerceivedEvidence)
+            target.PerceivedEvidence.Add(new EvidencePerception { ExhibitNumber = pe.ExhibitNumber, PerceivedStrength = pe.PerceivedStrength, TrustIndex = pe.TrustIndex });
+
+// Optional bias-research predictors (defaults are fine for older cases)
+         target.PriorVictimizationHistory = this.PriorVictimizationHistory;
+         target.SystemJustification = this.SystemJustification;
+         target.NeedForCognition = this.NeedForCognition;
+         target.NeedForClosure = this.NeedForClosure;
+         target.TraitAnxiety = this.TraitAnxiety;
+         target.MediaConsumptionType = this.MediaConsumptionType;
+         target.PriorJuryOutcome = this.PriorJuryOutcome;
+         target.Openness = this.Openness;
+         target.Agreeableness = this.Agreeableness;
+         target.Neuroticism = this.Neuroticism;
+         target.MoralHarm = this.MoralHarm;
+         target.MoralFairness = this.MoralFairness;
+         target.MoralAuthority = this.MoralAuthority;
+         target.MoralPurity = this.MoralPurity;
+
+         // Personality-Texture predictors
+         target.HumorLevityTendency = this.HumorLevityTendency;
+         target.ConflictAvoidance = this.ConflictAvoidance;
+         target.DominanceAssertiveness = this.DominanceAssertiveness;
+         target.PatienceImpulsivity = this.PatienceImpulsivity;
+
+         // Social-Identity predictors
+         target.UrbanRuralBackground = this.UrbanRuralBackground;
+         target.MilitaryService = this.MilitaryService;
+         target.UnionMembership = this.UnionMembership;
+         target.ImmigrationGeneration = this.ImmigrationGeneration;
+
+         // Cognitive/Emotional/Knowledge predictors
+         target.DetailOrientation = this.DetailOrientation;
+         target.MemoryReliability = this.MemoryReliability;
+         target.SuspicionTendency = this.SuspicionTendency;
+         target.DisgustSensitivity = this.DisgustSensitivity;
+         target.Compassion = this.Compassion;
+         target.AngerReactivity = this.AngerReactivity;
+         target.ScienceLiteracy = this.ScienceLiteracy;
+         target.FinancialLiteracy = this.FinancialLiteracy;
+         target.TechnologyFamiliarity = this.TechnologyFamiliarity;
+     }
+
+
 
     // NOTE: ExhibitLog is copied in CopyTo above. CommunicationTeam/OnlyAnswerWhenAsked
     // are also copied there for correct save/load + editor flows.
+
+    // ---------------------------------------------------------------------
+    // Additional juror predictors (bias research)
+    // These are optional inputs for the toy math engine. Defaults keep
+    // backwards compatibility with existing saved cases.
+    // ---------------------------------------------------------------------
+
 
 
     /// <summary>
@@ -696,5 +780,290 @@ public class Agent : ObservableObject
     {
         get => _modelMaxTokensOverride;
         set => SetProperty(ref _modelMaxTokensOverride, value.HasValue ? Math.Max(64, value.Value) : null);
+    }
+
+    // ---------------------------------------------------------------------
+    // Additional juror predictors (bias research)
+    // These are optional inputs for the toy math engine. Defaults keep
+    // backwards compatibility with existing saved cases.
+    // ---------------------------------------------------------------------
+
+    // Prior victimization history (0..2)
+    private int _priorVictimizationHistory;
+    public int PriorVictimizationHistory
+    {
+        get => _priorVictimizationHistory;
+        set => SetProperty(ref _priorVictimizationHistory, Math.Clamp(value, 0, 2));
+    }
+
+    // Trust in institutions / system justification (0..10)
+    private double _systemJustification;
+    public double SystemJustification
+    {
+        get => _systemJustification;
+        set => SetProperty(ref _systemJustification, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // Need-for-cognition / need-for-closure (0..10)
+    private double _needForCognition;
+    public double NeedForCognition
+    {
+        get => _needForCognition;
+        set => SetProperty(ref _needForCognition, Math.Clamp(value, 0.0, 10.0));
+    }
+
+private double _needForClosure;
+     public double NeedForClosure
+     {
+         get => _needForClosure;
+         set => SetProperty(ref _needForClosure, Math.Clamp(value, 0.0, 10.0));
+     }
+
+     // Trait anxiety (0..10)
+     private double _traitAnxiety;
+     public double TraitAnxiety
+     {
+         get => _traitAnxiety;
+         set => SetProperty(ref _traitAnxiety, Math.Clamp(value, 0.0, 10.0));
+     }
+
+     // --- Personality-Texture Predictors (Soft but Useful) ---
+     // Humor/Levity Tendency (0=serious, 10=light-hearted)
+     private double _humorLevityTendency;
+     public double HumorLevityTendency
+     {
+         get => _humorLevityTendency;
+         set => SetProperty(ref _humorLevityTendency, Math.Clamp(value, 0.0, 10.0));
+     }
+
+     // Conflict Avoidance (high=goes along with majority, low=holdout tendency)
+     private double _conflictAvoidance;
+     public double ConflictAvoidance
+     {
+         get => _conflictAvoidance;
+         set => SetProperty(ref _conflictAvoidance, Math.Clamp(value, 0.0, 10.0));
+     }
+
+     // Dominance/Assertiveness (predicts foreperson influence weight)
+     private double _dominanceAssertiveness;
+     public double DominanceAssertiveness
+     {
+         get => _dominanceAssertiveness;
+         set => SetProperty(ref _dominanceAssertiveness, Math.Clamp(value, 0.0, 10.0));
+     }
+
+     // Patience/Impulsivity (high=patient/slow process, low=impulsive/quick verdict)
+     private double _patienceImpulsivity;
+     public double PatienceImpulsivity
+     {
+         get => _patienceImpulsivity;
+         set => SetProperty(ref _patienceImpulsivity, Math.Clamp(value, 0.0, 10.0));
+     }
+
+     // --- Social-Identity Predictors (Contextual) ---
+     // Urban vs Rural Background (0=rural, 1=urban)
+     private int _urbanRuralBackground;
+     public int UrbanRuralBackground
+     {
+         get => _urbanRuralBackground;
+         set => SetProperty(ref _urbanRuralBackground, Math.Clamp(value, 0, 1));
+     }
+
+     // Military Service (0=no, 1=yes)
+     private int _militaryService;
+     public int MilitaryService
+     {
+         get => _militaryService;
+         set => SetProperty(ref _militaryService, Math.Clamp(value, 0, 1));
+     }
+
+     // Union Membership (0=no, 1=yes)
+     private int _unionMembership;
+     public int UnionMembership
+     {
+         get => _unionMembership;
+         set => SetProperty(ref _unionMembership, Math.Clamp(value, 0, 1));
+     }
+
+     // Immigration Generation (1=first-gen, 2=second, 3=third+)
+     private int _immigrationGeneration;
+     public int ImmigrationGeneration
+     {
+         get => _immigrationGeneration;
+         set => SetProperty(ref _immigrationGeneration, Math.Clamp(value, 1, 3));
+     }
+
+     // Media consumption type (string category)
+    private string _mediaConsumptionType = "Generic";
+    public string MediaConsumptionType
+    {
+        get => _mediaConsumptionType;
+        set => SetProperty(ref _mediaConsumptionType, value ?? "Generic");
+    }
+
+    // Prior jury outcome anchor (0..2)
+    // 0 = none/unknown, 1 = hung, 2 = convicted/weakly aligned, 3.. => convicted-acquitted separate not stored here
+    // We'll interpret 1 = hung, 2 = convicted, 3 = acquitted via numeric mapping in the engine.
+    private int _priorJuryOutcome;
+    public int PriorJuryOutcome
+    {
+        get => _priorJuryOutcome;
+        set => SetProperty(ref _priorJuryOutcome, Math.Clamp(value, 0, 3));
+    }
+
+    // Big Five (0..10)
+    private double _openness;
+    public double Openness
+    {
+        get => _openness;
+        set => SetProperty(ref _openness, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    private double _agreeableness;
+    public double Agreeableness
+    {
+        get => _agreeableness;
+        set => SetProperty(ref _agreeableness, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    private double _neuroticism;
+    public double Neuroticism
+    {
+        get => _neuroticism;
+        set => SetProperty(ref _neuroticism, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // Moral foundations (0..10)
+    private double _moralHarm;
+    public double MoralHarm
+    {
+        get => _moralHarm;
+        set => SetProperty(ref _moralHarm, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    private double _moralFairness;
+    public double MoralFairness
+    {
+        get => _moralFairness;
+        set => SetProperty(ref _moralFairness, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    private double _moralAuthority;
+    public double MoralAuthority
+    {
+        get => _moralAuthority;
+        set => SetProperty(ref _moralAuthority, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    private double _moralPurity;
+    public double MoralPurity
+    {
+        get => _moralPurity;
+        set => SetProperty(ref _moralPurity, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // ---------------------------------------------------------------------
+    // Cognitive/Emotional/Knowledge predictors (path shaping)
+    // These are optional inputs for the toy juror engine.
+    // Defaults keep backwards compatibility with older saved cases.
+    // ---------------------------------------------------------------------
+
+    // A. Detail Orientation (0..10)
+    private double _detailOrientation = 5.0;
+    public double DetailOrientation
+    {
+        get => _detailOrientation;
+        set => SetProperty(ref _detailOrientation, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // B. Memory Reliability (0..10) where higher = more accurate recall
+    private double _memoryReliability = 5.0;
+    public double MemoryReliability
+    {
+        get => _memoryReliability;
+        set => SetProperty(ref _memoryReliability, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // C. Suspicion Tendency (0..10) higher => doubts people
+    private double _suspicionTendency = 5.0;
+    public double SuspicionTendency
+    {
+        get => _suspicionTendency;
+        set => SetProperty(ref _suspicionTendency, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // Emotional predictors
+    // Disgust Sensitivity (0..10)
+    private double _disgustSensitivity = 5.0;
+    public double DisgustSensitivity
+    {
+        get => _disgustSensitivity;
+        set => SetProperty(ref _disgustSensitivity, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // Sympathy/Compassion Baseline (0..10)
+    private double _compassion = 5.0;
+    public double Compassion
+    {
+        get => _compassion;
+        set => SetProperty(ref _compassion, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // Anger Reactivity (0..10)
+    private double _angerReactivity = 5.0;
+    public double AngerReactivity
+    {
+        get => _angerReactivity;
+        set => SetProperty(ref _angerReactivity, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    // Knowledge-domain predictors (0..10)
+    private double _scienceLiteracy = 5.0;
+    public double ScienceLiteracy
+    {
+        get => _scienceLiteracy;
+        set => SetProperty(ref _scienceLiteracy, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    private double _financialLiteracy = 5.0;
+    public double FinancialLiteracy
+    {
+        get => _financialLiteracy;
+        set => SetProperty(ref _financialLiteracy, Math.Clamp(value, 0.0, 10.0));
+    }
+
+    private double _technologyFamiliarity = 5.0;
+    public double TechnologyFamiliarity
+    {
+        get => _technologyFamiliarity;
+        set => SetProperty(ref _technologyFamiliarity, Math.Clamp(value, 0.0, 10.0));
+    }
+}
+
+/// <summary>
+/// Represents an agent's subjective view of a specific piece of evidence.
+/// </summary>
+public class EvidencePerception : ObservableObject
+{
+    private int _exhibitNumber;
+    private double _perceivedStrength;
+    private double _trustIndex = 1.0;
+
+    public int ExhibitNumber
+    {
+        get => _exhibitNumber;
+        set => SetProperty(ref _exhibitNumber, value);
+    }
+
+    public double PerceivedStrength
+    {
+        get => _perceivedStrength;
+        set => SetProperty(ref _perceivedStrength, value);
+    }
+
+    public double TrustIndex
+    {
+        get => _trustIndex;
+        set => SetProperty(ref _trustIndex, value);
     }
 }

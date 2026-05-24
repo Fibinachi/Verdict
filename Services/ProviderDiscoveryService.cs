@@ -36,6 +36,7 @@ public class ProviderDiscoveryService
 
     public static ILLMProviderModule? GetProviderByName(string name)
     {
-        return GetAvailableProviders().FirstOrDefault(p => p.ProviderName == name);
+        return GetAvailableProviders().FirstOrDefault(p =>
+            p.ProviderName.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 }
