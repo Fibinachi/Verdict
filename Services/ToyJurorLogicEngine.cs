@@ -88,6 +88,17 @@ public int SierraClub;
          public double OutcomeBias = 5;
          public double SocialConsensus = 5;
          public double StatusQuoBias = 5;
+
+         // ── Research-backed individual difference traits (2026-05-27 expansion) ──
+         public double NeedForCognition = 5;    // 0..10  Cacioppo & Petty (1982): central vs peripheral processing
+         public double BeliefInJustWorld = 5;   // 0..10  Lerner (1980): victim-blaming, defense-leaning
+         public int DeathPenaltyQualified;      // 0/1    Haney (1984): more conviction-prone in all cases
+         public double TrustInInstitutions = 5; // 0..10  Tyler (2006): trust in police/courts/government
+         public double TraitEmpathy = 5;        // 0..10  Davis (1983) IRI: affects damages and sympathy
+         public double NeedForClosure = 5;      // 0..10  Kruglanski (1996): faster decisions, more conforming
+         public double CognitiveReflection = 5; // 0..10  Frederick (2005): overrides intuitive bias
+         public double SmNewsReliance = 5;      // 0..10  Barberá (2020): social media as primary news
+         public int PersonalInjuryHistory;      // 0/1    Hans & Reyna (2011): prior similar injury
      }
 
     private sealed class ToyCoefs
@@ -247,8 +258,16 @@ public int SierraClub;
         // Treat: political polarity, religiosity/conservatism, and education as major directional components.
         coefs.Alpha["intercept"] = 0.0;
         coefs.Alpha["pol_id"] = 0.9;
-        coefs.Alpha["conserv_relig"] = 0.35;
-        coefs.Alpha["education_years"] = 0.15; // (not used directly by Alpha compute; kept for future extension)
+        coefs.Alpha["conserv_relig"] = 0.25;
+        coefs.Alpha["education_years"] = 0.15;
+        coefs.Alpha["nra"] = 0.12;  // NRA members lean defense: skepticism toward prosecution authority
+        coefs.Alpha["news_lean"] = 0.18;  // Partisan news consumption affects verdict direction
+        coefs.Alpha["prior_victim"] = 0.15;  // Crime victims lean prosecution
+        coefs.Alpha["prior_system"] = -0.12;  // Prior system contact → skepticism toward prosecution
+        coefs.Alpha["bjw"] = -0.20;  // Belief in Just World → victim-blaming, defense-leaning
+        coefs.Alpha["death_penalty"] = 0.25;  // Death-qualified jurors more conviction-prone (Haney 1984)
+        coefs.Alpha["trust_institutions"] = 0.15;  // Trust in police/courts → pro-prosecution (Tyler 2006)
+        coefs.Alpha["trait_empathy"] = -0.10;  // Empathy → plaintiff sympathy in civil, defendant in criminal
 
         // --- Eta (rigidity -> evidence discounting) ---
         // Higher RWA/SDO and religiosity/conservatism -> increased rigidity.
@@ -262,6 +281,12 @@ public int SierraClub;
         coefs.Eta["income_band"] = 0.10;
         coefs.Eta["job_security"] = 0.06;
         coefs.Eta["home_own"] = 0.05;
+        coefs.Eta["nra"] = 0.10;
+        coefs.Eta["religiosity"] = 0.12;  // General religiosity increases resistance to counterevidence
+        coefs.Eta["tv_crime"] = 0.08;  // Heavy crime TV → more rigid in prosecution-leaning beliefs
+        coefs.Eta["need_closure"] = 0.12;  // Need for Closure → resists counterevidence (Kruglanski 1996)
+        coefs.Eta["cognitive_reflection"] = -0.15;  // CRT → less rigid, more evidence-driven
+        coefs.Eta["bjw"] = 0.10;  // BJW → just-world beliefs resist contradictory evidence
 
         // --- Zeta (hardness -> conformity resistance) ---
         // Higher religiosity/conservatism and political strength -> harder to move.
@@ -274,9 +299,13 @@ public int SierraClub;
         coefs.Zeta["online_partisan"] = 0.08;
         coefs.Zeta["trade_school"] = 0.03;
         coefs.Zeta["hbcu"] = 0.03;
+        coefs.Zeta["community_college"] = 0.02;  // Community college: moderate conviction
+        coefs.Zeta["bible_college"] = 0.06;  // Bible college: strong religious convictions → harder to move
         coefs.Zeta["blue_collar"] = 0.04;
         coefs.Zeta["diyer"] = 0.02;
         coefs.Zeta["income_band"] = 0.05;
+        coefs.Zeta["need_closure"] = 0.10;  // Need for Closure → harder to move once decided
+        coefs.Zeta["cognitive_reflection"] = -0.08;  // CRT → more open to being persuaded
 
         // --- Chi (influence weight -> deliberation impact) ---
         // Higher education / legal knowledge proxy -> greater influence (ability to parse evidence).
@@ -284,14 +313,19 @@ public int SierraClub;
         // Elite/private/proxy degrees -> slight additional influence.
         coefs.Chi["elite_private"] = 0.08;
         coefs.Chi["state_flagship"] = 0.05;
+        coefs.Chi["other_private"] = 0.04;  // Other private colleges: above-average influence
         coefs.Chi["trade_school"] = 0.03;
         coefs.Chi["hbcu"] = 0.02;
+        coefs.Chi["community_college"] = 0.02;  // Community college: practical, working-class credibility
+        coefs.Chi["bible_college"] = 0.02;  // Bible college: moral authority in religious communities
         coefs.Chi["blue_collar"] = 0.01;
         coefs.Chi["diyer"] = 0.01;
         // Age -> mild influence (life experience, confidence).
         coefs.Chi["age"] = 0.02;
         // Certainty proxy uses (G2-0.5); keep small to avoid extremes.
         coefs.Chi["certainty"] = 0.03;
+        coefs.Chi["nfc"] = 0.20;  // Need for Cognition → high analytical influence in deliberation
+        coefs.Chi["cognitive_reflection"] = 0.12;  // CRT → clear thinkers are persuasive
 
         // --- Rho (conformity -> susceptibility to jury consensus) ---
         // Increase conformity when religiosity/conservatism and political identity are strong.
@@ -303,6 +337,11 @@ public int SierraClub;
         coefs.Rho["sm_polar"] = 0.06;
         coefs.Rho["blue_collar"] = 0.02;
         coefs.Rho["diyer"] = 0.01;
+        coefs.Rho["nra"] = -0.10;  // NRA members less susceptible to group conformity pressure
+        coefs.Rho["religiosity"] = 0.10;  // Religious jurors more susceptible to group consensus
+        coefs.Rho["need_closure"] = 0.12;  // Need for Closure → more conforming, wants resolution
+        coefs.Rho["nfc"] = -0.08;  // High NFC → thinks independently, less conforming
+        coefs.Rho["sm_news_reliance"] = 0.08;  // Social media news → susceptible to groupthink
 
         coefs.Beta0 = 0.0;
         coefs.Beta1 = 1.0;
@@ -316,8 +355,19 @@ public int SierraClub;
 
     private static double ComputeStaticBias(ToyJurorTraits j, ToyCoefs coefs)
     {
-        // alpha is empty => intercept only.
-        return coefs.Alpha.TryGetValue("intercept", out var v) ? v : 0.0;
+        // alpha coefficients weight latent traits toward prosecution (positive) or defense (negative)
+        double x = coefs.Alpha.TryGetValue("intercept", out var intercept) ? intercept : 0.0;
+        x += coefs.Alpha.TryGetValue("pol_id", out var pidW) ? pidW * j.PolId : 0.0;
+        x += coefs.Alpha.TryGetValue("conserv_relig", out var crW) ? crW * j.ConservRelig : 0.0;
+        x += coefs.Alpha.TryGetValue("nra", out var nraW) ? nraW * j.Nra * -1.0 : 0.0; // NRA → defense lean
+        x += coefs.Alpha.TryGetValue("news_lean", out var nlW) ? nlW * j.NewsLean * -1.0 : 0.0; // Conservative news → defense
+        x += coefs.Alpha.TryGetValue("prior_victim", out var pvW) ? pvW * j.PriorVictimization : 0.0; // Victim → prosecution
+        x += coefs.Alpha.TryGetValue("prior_system", out var psW) ? psW * j.PriorSystemContact * -1.0 : 0.0; // System contact → defense
+        x += coefs.Alpha.TryGetValue("bjw", out var bjwW) ? bjwW * j.BeliefInJustWorld * -1.0 : 0.0; // BJW → defense
+        x += coefs.Alpha.TryGetValue("death_penalty", out var dpW) ? dpW * j.DeathPenaltyQualified : 0.0; // DP-qualified → prosecution
+        x += coefs.Alpha.TryGetValue("trust_institutions", out var tiW) ? tiW * j.TrustInInstitutions : 0.0; // Trust → prosecution
+        x += coefs.Alpha.TryGetValue("trait_empathy", out var teW) ? teW * j.TraitEmpathy * -1.0 : 0.0; // Empathy → defense/plaintiff context-dependent
+        return x;
     }
 
 private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
@@ -345,6 +395,12 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          x += j.ConfirmationBias * 0.15;
          x += j.StatusQuoBias * 0.12;
          x += j.NarrativeCoherence * 0.08; // Coherent narratives resist counterevidence
+         x += coefs.Eta.TryGetValue("nra", out var nraW) ? nraW * j.Nra : 0.0; // NRA → rigidity
+         x += coefs.Eta.TryGetValue("religiosity", out var relW) ? relW * j.Religiosity : 0.0; // Religiosity → rigidity
+         x += coefs.Eta.TryGetValue("tv_crime", out var tcW) ? tcW * j.TvCrime : 0.0; // Crime TV → rigidity
+         x += coefs.Eta.TryGetValue("need_closure", out var ncW) ? ncW * j.NeedForClosure : 0.0; // NFC → rigidity
+         x += coefs.Eta.TryGetValue("cognitive_reflection", out var crW2) ? crW2 * j.CognitiveReflection : 0.0; // CRT → less rigid
+         x += coefs.Eta.TryGetValue("bjw", out var bjwW) ? bjwW * j.BeliefInJustWorld : 0.0; // BJW → rigidity
          return Logistic(x);
      }
 
@@ -365,6 +421,8 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          x += coefs.Zeta.TryGetValue("income_band", out var ibW) ? ibW * j.IncomeBand : 0.0;
          x += coefs.Zeta.TryGetValue("trade_school", out var tsW) ? tsW * j.TradeSchool : 0.0;
          x += coefs.Zeta.TryGetValue("hbcu", out var hbW) ? hbW * j.Hbcu : 0.0;
+         x += coefs.Zeta.TryGetValue("community_college", out var ccW) ? ccW * j.CommunityCollege : 0.0;
+         x += coefs.Zeta.TryGetValue("bible_college", out var bcW3) ? bcW3 * j.BibleCollege : 0.0;
          x += coefs.Zeta.TryGetValue("blue_collar", out var bcW) ? bcW * j.BlueCollar : 0.0;
          x += coefs.Zeta.TryGetValue("diyer", out var dyW) ? dyW * j.Diyer : 0.0;
          x += coefs.Zeta.TryGetValue("education_years", out var eduW) ? eduW * 12.0 : 0.0;
@@ -372,6 +430,8 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          x += j.HindsightBias * 0.12;
          x += j.NarrativeCoherence * 0.10;
          x += j.StatusQuoBias * 0.10;
+         x += coefs.Zeta.TryGetValue("need_closure", out var ncW) ? ncW * j.NeedForClosure : 0.0; // NFC → harder to move
+         x += coefs.Zeta.TryGetValue("cognitive_reflection", out var crtW) ? crtW * j.CognitiveReflection : 0.0; // CRT → more open
          return Logistic(x);
      }
 
@@ -390,6 +450,8 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          x += coefs.Chi.TryGetValue("diyer", out var dyW) ? dyW * j.Diyer : 0.0;
          x += coefs.Chi.TryGetValue("age", out var ageW) ? ageW * j.AgeYears : 0.0;
          x += coefs.Chi.TryGetValue("certainty", out var certW) ? certW * Math.Abs(G2 - 0.5) : 0.0;
+         x += coefs.Chi.TryGetValue("nfc", out var nfcW) ? nfcW * j.NeedForCognition : 0.0; // High NFC → persuasive
+         x += coefs.Chi.TryGetValue("cognitive_reflection", out var crW) ? crW * j.CognitiveReflection : 0.0; // CRT → persuasive
          // Additional: Narrative coherence and social consensus increase influence
          x += coefs.Chi.TryGetValue("narrative_coherence", out var ncW) ? ncW * j.NarrativeCoherence : 0.0;
          x += coefs.Chi.TryGetValue("social_consensus", out var scW) ? scW * j.SocialConsensus : 0.0;
@@ -418,6 +480,11 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          x += j.Anchoring * 0.04;
          x += j.OutcomeBias * 0.05;
          x += j.OnlinePartisan * 0.02;
+         x += coefs.Rho.TryGetValue("nra", out var nraW) ? nraW * j.Nra : 0.0; // NRA → less conforming
+         x += coefs.Rho.TryGetValue("religiosity", out var relW) ? relW * j.Religiosity : 0.0; // Religiosity → more conforming
+         x += coefs.Rho.TryGetValue("need_closure", out var ncW) ? ncW * j.NeedForClosure : 0.0; // NFC → more conforming
+         x += coefs.Rho.TryGetValue("nfc", out var nfcW) ? nfcW * j.NeedForCognition : 0.0; // High NFC → less conforming
+         x += coefs.Rho.TryGetValue("sm_news_reliance", out var snrW) ? snrW * j.SmNewsReliance : 0.0; // SM → groupthink
          return x;
      }
 
@@ -441,6 +508,7 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
             SampleBlueCollarDiy(arng, agent, j);
             SampleExperience(arng, j);
             SampleMemberships(arng, agent, j);
+            SampleIndividualDifferences(arng, j);
 
             if (ViolatesHardRules(j)) continue;
             if (CoherenceScore(j) >= coherenceThreshold) return j;
@@ -458,6 +526,7 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
         SampleBlueCollarDiy(new Random(), agent, fallback);
         SampleExperience(new Random(), fallback);
         SampleMemberships(new Random(), agent, fallback);
+        SampleIndividualDifferences(new Random(), fallback);
 
         if (ViolatesHardRules(fallback))
             fallback.ToolOwnership = 10; // avoid diy high + zero tools
@@ -506,7 +575,17 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
         Hbcu = 0,
         SierraClub = 0,
         Nra = 0,
-        OilExecutive = 0
+        OilExecutive = 0,
+        // New individual-difference traits (2026-05-27)
+        NeedForCognition = 5,
+        BeliefInJustWorld = 5,
+        DeathPenaltyQualified = 0,
+        TrustInInstitutions = 5,
+        TraitEmpathy = 5,
+        NeedForClosure = 5,
+        CognitiveReflection = 5,
+        SmNewsReliance = 5,
+        PersonalInjuryHistory = 0
     };
 
     private static void SampleDemographics(Random arng, Agent agent, IReadOnlyDictionary<string, double> biasLookup, ToyJurorTraits j)
@@ -708,12 +787,31 @@ private static void SampleTraits(Random arng, ToyJurorTraits j)
 
 private static void SampleMedia(Random arng, ToyJurorTraits j)
      {
-         j.TvCrime = arng.NextDouble() * 20;
-         j.TvCableNews = arng.NextDouble() * 20;
-         j.NewsLean = (arng.NextDouble() - 0.5) * 2; // -1..1
-         j.NewsIntensity = arng.NextDouble() * 30;
-         j.SmUse = arng.NextDouble() * 8;
-         j.SmPolar = arng.NextDouble() * 10;
+         // ── Media traits correlated with political identity, education, and age ──
+         // Conservative (PolId > 0) → Fox News, talk radio; Liberal (PolId < 0) → MSNBC/NPR
+         // Older → cable TV; Younger → social media; Higher education → more news consumption
+
+         double pol = j.PolId;           // -1 (liberal) .. +1 (conservative)
+         double ageNorm = j.AgeYears / 80.0; // 0..1, older = higher
+
+         // NewsLean: strongly correlated with political identity (+ noise), range -1..1
+         j.NewsLean = Clamp11(pol * 1.2 + (arng.NextDouble() - 0.5) * 0.6);
+
+         // TvCableNews: older + conservative → Fox News audience; younger liberal → less cable, range ~0..20
+         j.TvCableNews = Math.Max(0, 10 + pol * 3 + ageNorm * 8 + (arng.NextDouble() - 0.5) * 6);
+
+         // TvCrime: older + higher punitiveness → more crime TV (Law & Order, CSI), range ~0..20
+         j.TvCrime = Math.Max(0, 10 + ageNorm * 8 + (j.Punitiveness / 10.0) * 4 + (arng.NextDouble() - 0.5) * 6);
+
+         // NewsIntensity: higher education + politically engaged → more news consumption, range ~0..30
+         double eduNorm = (j.ElitePrivate + j.StateFlagship + j.OtherPrivate) > 0 ? 0.7 : 0.4;
+         j.NewsIntensity = Math.Max(0, 15 + Math.Abs(pol) * 4 + eduNorm * 8 + (arng.NextDouble() - 0.5) * 8);
+
+         // SmUse: younger → more social media; older → less, range ~0..8
+         j.SmUse = Clamp10(4 - ageNorm * 3 + (arng.NextDouble() - 0.3) * 4);
+
+         // SmPolar: politically extreme → more polarized social media feed, range 0..10
+         j.SmPolar = Clamp10(5 + Math.Abs(pol) * 2.5 + (arng.NextDouble() - 0.5) * 4);
      }
 
      /// <summary>
@@ -772,10 +870,68 @@ private static void SampleMedia(Random arng, ToyJurorTraits j)
 
     private static void SampleMemberships(Random arng, Agent agent, ToyJurorTraits j)
     {
-        // placeholder probabilities
-        j.Nra = arng.NextDouble() < 0.2 ? 1 : 0;
-        j.SierraClub = arng.NextDouble() < 0.1 ? 1 : 0;
+        // NRA: strongly correlated with conservative politics (PolId > 0) and religiosity
+        // A conservative religious rural voter: ~45% NRA; a liberal secular urbanite: ~3%
+        double nraProb = 0.20  // base rate
+            + j.PolId * 0.15   // conservative → +15%
+            + (j.Religiosity / 10.0) * 0.10  // religious → +10%
+            + (j.ConservRelig / 10.0) * 0.10; // conservative religious → +10%
+        j.Nra = arng.NextDouble() < Math.Clamp(nraProb, 0.02, 0.50) ? 1 : 0;
+
+        // Sierra Club: correlated with liberal politics (PolId < 0) and higher education
+        double scProb = 0.10
+            - j.PolId * 0.06   // liberal → +6%
+            + (j.ElitePrivate + j.StateFlagship) * 0.04; // college educated → +4%
+        j.SierraClub = arng.NextDouble() < Math.Clamp(scProb, 0.02, 0.25) ? 1 : 0;
+
+        // OilExecutive: rare, occupation-dependent
         j.OilExecutive = (agent.Occupation ?? "").ToLower().Contains("exec") && arng.NextDouble() < 0.3 ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Samples research-backed individual difference traits correlated with
+    /// existing political, religious, and educational traits for realistic clustering.
+    /// </summary>
+    private static void SampleIndividualDifferences(Random arng, ToyJurorTraits j)
+    {
+        double pol = j.PolId;          // -1..1
+        double absPol = Math.Abs(pol); // 0..1, extremity
+        double eduNorm = (j.ElitePrivate + j.StateFlagship + j.OtherPrivate) > 0 ? 0.7 :
+                         (j.CommunityCollege + j.TradeSchool) > 0 ? 0.5 : 0.3;
+        double religNorm = j.Religiosity / 10.0;
+
+        // Need for Cognition: strongly correlated with education, slightly negatively with political extremity
+        // High education + moderate politics → highest NFC (Kahan et al. 2012: educated partisans less analytical)
+        j.NeedForCognition = Clamp10(5 + eduNorm * 4 - absPol * 1.5 + (arng.NextDouble() - 0.5) * 5);
+
+        // Belief in Just World: correlated with conservatism + religiosity (Lerner 1980; Jost et al. 2003)
+        j.BeliefInJustWorld = Clamp10(5 + pol * 2.0 + religNorm * 2.0 + (arng.NextDouble() - 0.5) * 4);
+
+        // Death Penalty Qualified: strongly correlated with conservatism, punitiveness, low empathy
+        // Sampled after empathy is set below (dependency)
+
+        // Trust in Institutions: correlated with conservatism + older age (Tyler 2006; Pew 2023)
+        j.TrustInInstitutions = Clamp10(5 + pol * 2.5 + (j.AgeYears / 80.0) * 2 + (arng.NextDouble() - 0.5) * 4);
+
+        // Trait Empathy: slightly higher in women proxy (not available), negatively with SDO
+        // SDO (Social Dominance) negatively predicts empathy (Pratto et al. 1994)
+        j.TraitEmpathy = Clamp10(5 - (j.SDO / 10.0) * 2.0 + (arng.NextDouble() - 0.4) * 4);
+
+        // Need for Closure: correlated with political strength, lower education, higher religiosity
+        j.NeedForClosure = Clamp10(5 + absPol * 2 + religNorm * 2 - eduNorm * 2 + (arng.NextDouble() - 0.5) * 5);
+
+        // Cognitive Reflection: strongly correlated with education, negatively with religiosity (Pennycook 2016)
+        j.CognitiveReflection = Clamp10(3 + eduNorm * 5 - religNorm * 1.5 + arng.NextDouble() * 4);
+
+        // Social Media News Reliance: correlated with SmUse, younger, lower education
+        j.SmNewsReliance = Clamp10(j.SmUse > 5 ? 5 + (arng.NextDouble() - 0.3) * 6 - eduNorm * 1.5 : arng.NextDouble() * 5);
+
+        // Personal Injury History: independent — life accidents don't cluster with ideology
+        j.PersonalInjuryHistory = arng.NextDouble() < 0.15 ? 1 : 0;
+
+        // Update DeathPenaltyQualified now that empathy is set (dependency fix)
+        double dpProb = 0.65 + pol * 0.20 + (j.Punitiveness / 10.0) * 0.15 - (j.TraitEmpathy / 10.0) * 0.10;
+        j.DeathPenaltyQualified = arng.NextDouble() < Math.Clamp(dpProb, 0.20, 0.95) ? 1 : 0;
     }
 
     private static bool ViolatesHardRules(ToyJurorTraits j)

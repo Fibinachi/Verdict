@@ -56,6 +56,7 @@ public class MainViewModel : ViewModelBase
         var caseName = _currentCase?.CaseName ?? "Untitled Case";
         var plaintiffs = _currentCase?.Plaintiffs ?? new();
         var defendants = _currentCase?.Defendants ?? new();
+        bool isCriminal = _currentCase?.Mode == CaseMode.Criminal;
 
         string plaintiffPart = plaintiffs.Count > 0 ? string.Join(", ", plaintiffs) : "Unknown";
         string defendantPart = defendants.Count > 0 ? string.Join(", ", defendants) : "Unknown";
@@ -63,6 +64,9 @@ public class MainViewModel : ViewModelBase
         // If there are multiple parties, add "et al."
         string plaintiffDisplay = plaintiffs.Count > 1 ? $"{plaintiffs[0]} et al." : plaintiffPart;
         string defendantDisplay = defendants.Count > 1 ? $"{defendants[0]} et al." : defendantPart;
+
+        // Criminal cases show "State" or "People" as the prosecuting party
+        string prosecutingDisplay = isCriminal ? "State" : plaintiffDisplay;
 
         string caseStage = _currentCase?.TrialPhase switch
         {
@@ -72,7 +76,7 @@ public class MainViewModel : ViewModelBase
             _ => "UNKNOWN"
         };
 
-        WindowTitle = $"VERDICT - {plaintiffDisplay} v. {defendantDisplay} - ({caseStage})";
+        WindowTitle = $"VERDICT - {prosecutingDisplay} v. {defendantDisplay} - ({caseStage})";
     }
 
     public string CurrentDebateStageDisplay => _currentDebateStage switch
@@ -167,7 +171,7 @@ public class MainViewModel : ViewModelBase
     /// <summary>
     /// Human-readable prediction of the current jury state.
     /// </summary>
-    public string LikelyVerdict => _juryCalc.LikelyVerdict(Jurors);
+    public string LikelyVerdict => _juryCalc.LikelyVerdict(Jurors, _currentCase?.Mode ?? CaseMode.Civil);
 
     public ObservableCollection<Agent> JudgeArea { get; } = new();
     public ObservableCollection<Agent> Jurors { get; } = new();

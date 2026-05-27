@@ -181,7 +181,7 @@
             <MenuItem Header="_Stage">
                 <MenuItem Header="_Discovery" Click="SetTrialPhase_Discovery_Click" IsChecked="{Binding CurrentCase.TrialPhase, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Discovery}" IsCheckable="True"/>
                 <MenuItem Header="_Pretrial" Click="SetTrialPhase_Pretrial_Click" IsChecked="{Binding CurrentCase.TrialPhase, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Pretrial}" IsCheckable="True"/>
-                <MenuItem Header="_Trial" IsChecked="{Binding CurrentCase.TrialPhase, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Trial}" IsCheckable="True">
+                <MenuItem Header="_Trial">
                     <MenuItem Header="_Opening Statements" Click="SetCourtPhase_OpeningStatements_Click"/>
                     <MenuItem Header="_Witness Testimony" Click="SetCourtPhase_WitnessTestimony_Click"/>
                     <MenuItem Header="_Cross Examination" Click="SetCourtPhase_CrossExamination_Click"/>

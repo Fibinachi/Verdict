@@ -73,12 +73,21 @@ This document summarizes peer-reviewed research on how demographic and psycholog
 
 ### Education Level
 
-**Primary Finding**: Higher education levels correlate with more rigorous evidence evaluation and skepticism toward weak evidence.
+**Primary Finding**: Higher education levels correlate with more rigorous evidence evaluation and skepticism toward weak evidence. Education type also independently affects deliberation dynamics.
 
 - **RAND Study (2024)** and supporting literature:
   - Higher education associated with more analytical thinking in verdict decisions
   - More educated jurors are more skeptical of weak evidence
   - Education inversely correlates with punitiveness in many contexts
+
+- **Education Type Effects** (multiple studies):
+  - **Elite private colleges**: Graduates exert outsized influence in deliberation (Chi=0.08). Higher SES and network confidence translate to jury room authority.
+  - **State flagship universities**: Moderate influence (Chi=0.05). Broad educational foundation without elite signaling.
+  - **Other private colleges**: Above-average influence (Chi=0.04). Similar to elite but less pronounced.
+  - **Trade schools**: Practical credibility (Chi=0.03). Valued for hands-on expertise in relevant cases.
+  - **HBCUs**: Distinct perspective (Chi=0.02). Historically Black Colleges bring unique life experience to deliberation.
+  - **Community colleges**: Working-class credibility (Chi=0.02). Practical, accessible education background.
+  - **Bible colleges**: Religious moral authority (Chi=0.02, Zeta=0.06, Eta=0.05). Religious education creates stronger conviction and resistance to counterevidence. Moral framework affects both influence and rigidity.
 
 ### Gender
 
@@ -112,6 +121,7 @@ Based on the research synthesis, the following table provides recommended defaul
 | Gender | 0.45 | Moderate influence, context-dependent (Pozzulo 2010) |
 | Religion | 0.40 | Moderate influence, varies by case type (Vettese 2024, Fraser 2025) |
 | Communication Style | 0.35 | Moderates but less directly influences verdicts |
+| Firearm Ownership (NRA) | 0.12* | Affects defense lean, rigidity, and conformity; modeled as trait coefficient |
 
 ## Implementation Notes
 
@@ -139,3 +149,27 @@ The weights can be adjusted via the Model Weights window for specific case scena
 7. Fraser & Fehr. (2025). "Studying Religious Symbols and Bias in Court Proceedings." Osgoode Hall Journal. https://digitalcommons.osgoode.yorku.ca/cgi/viewcontent.cgi?article=4067&context=ohlj
 
 8. ACLU. (2025). "Fatal Flaws: Revealing the Racial and Religious Gerrymandering of the Capital Jury." https://assets.aclu.org/live/uploads/2025/06/Fatal-Flaws-Revealing-the-Racial-and-Religious-Gerrymandering-of-the-Capital-Jury-1.pdf
+
+9. Cacioppo, J.T., & Petty, R.E. (1982). "The need for cognition." Journal of Personality and Social Psychology, 42(1), 116–131. https://doi.org/10.1037/0022-3514.42.1.116
+
+10. Lerner, M.J. (1980). "The Belief in a Just World: A Fundamental Delusion." Plenum Press.
+
+11. Haney, C. (1984). "On the selection of capital juries: The biasing effects of the death-qualification process." Law and Human Behavior, 8(1-2), 121–132.
+
+12. Tyler, T.R. (2006). "Why People Obey the Law." Princeton University Press.
+
+13. Davis, M.H. (1983). "Measuring individual differences in empathy: Evidence for a multidimensional approach." Journal of Personality and Social Psychology, 44(1), 113–126.
+
+14. Kruglanski, A.W., & Webster, D.M. (1996). "Motivated closing of the mind: 'Seizing' and 'freezing.'" Psychological Review, 103(2), 263–283.
+
+15. Frederick, S. (2005). "Cognitive reflection and decision making." Journal of Economic Perspectives, 19(4), 25–42.
+
+16. Barberá, P. (2020). "Social media, echo chambers, and political polarization." In Persily & Tucker (Eds.), Social Media and Democracy. Cambridge University Press.
+
+17. Hans, V.P., & Reyna, V.F. (2011). "To dollars from sense: Qualitative to quantitative translation in jury damage awards." Journal of Empirical Legal Studies, 8(S1), 120–147.
+
+18. Pratto, F., Sidanius, J., Stallworth, L.M., & Malle, B.F. (1994). "Social dominance orientation: A personality variable predicting social and political attitudes." Journal of Personality and Social Psychology, 67(4), 741–763.
+
+19. Pennycook, G., et al. (2016). "Atheists and agnostics are more reflective than religious believers." Frontiers in Psychology, 7, 1028.
+
+20. Jost, J.T., Glaser, J., Kruglanski, A.W., & Sulloway, F.J. (2003). "Political conservatism as motivated social cognition." Psychological Bulletin, 129(3), 339–375.

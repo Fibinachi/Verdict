@@ -8,6 +8,8 @@ namespace Verdict.Services;
 /// </summary>
 public interface IJuryCalculationService
 {
+    string LikelyVerdict(IEnumerable<Agent> jurors, CaseMode mode = CaseMode.Civil);
+
     double AverageLean(IEnumerable<Agent> jurors);
     string LikelyVerdict(IEnumerable<Agent> jurors);
     void ApplyEvidenceInfluence(IEnumerable<Agent> allAgents, EvidenceDocument doc, double jurorWeight = 0.02, double otherWeight = 0.01);
@@ -55,6 +57,9 @@ public class JuryCalculationService : IJuryCalculationService
 
 
     public string LikelyVerdict(IEnumerable<Agent> jurors)
+        => LikelyVerdict(jurors, CaseMode.Civil);
+
+    public string LikelyVerdict(IEnumerable<Agent> jurors, CaseMode mode = CaseMode.Civil)
     {
         var voters = jurors.Where(j => j.IsOccupied && j.CanVote).ToList();
         if (!voters.Any()) return "No Jurors Seated";
@@ -63,19 +68,28 @@ public class JuryCalculationService : IJuryCalculationService
         int def = voters.Count(v => v.VerdictLean < 0.5);
         int total = voters.Count;
 
+        // Mode-aware labels: criminal uses Prosecution/Defense, civil uses Plaintiff/Defense
+        bool isCriminal = mode == CaseMode.Criminal;
+        string proLabel = isCriminal ? "Pro-Prosecution" : "Pro-Plaintiff";
+        string defLabel = isCriminal ? "Pro-Defense" : "Pro-Defense";
+        string strongProLabel = isCriminal ? "Strongly Pro-Prosecution" : "Strong Pro-Plaintiff";
+        string leaningProLabel = isCriminal ? "Leaning Prosecution" : "Leaning Plaintiff";
+        string strongDefLabel = "Strongly Defense";
+        string leaningDefLabel = "Leaning Defense";
+
         string consensus;
         if ((double)pro / total > 0.75)
-            consensus = "Strong Pro-Plaintiff";
+            consensus = strongProLabel;
         else if (pro > def)
-            consensus = "Leaning Plaintiff";
+            consensus = leaningProLabel;
         else if (def > pro && (double)def / total > 0.75)
-            consensus = "Strongly Defense";
+            consensus = strongDefLabel;
         else if (def > pro)
-            consensus = "Leaning Defense";
+            consensus = leaningDefLabel;
         else
             consensus = "Split";
 
-        return $"{pro} Pro-Plaintiff, {def} Pro-Defense ({consensus})";
+        return $"{pro} {proLabel}, {def} {defLabel} ({consensus})";
     }
 
     public void ApplyEvidenceInfluence(IEnumerable<Agent> allAgents, EvidenceDocument doc, double jurorWeight = 0.02, double otherWeight = 0.01)

@@ -26,19 +26,35 @@ clamp11(x) = max(-1, min(1, x))
 ### Stage 1: Static Bias → Initial Belief (g₁)
 
 ```raw
-b = static_bias(traits) = intercept
+b = static_bias(traits) = Σ αᵢ · traitᵢ
+  = α_intercept + α_pol_id·PolId + α_conserv_relig·ConservRelig + α_nra·Nra·(-1)
+  + α_news_lean·NewsLean·(-1) + α_prior_victim·PriorVictimization + α_prior_system·PriorSystemContact·(-1)
+  + α_bjw·BeliefInJustWorld·(-1) + α_death_penalty·DeathPenaltyQualified
+  + α_trust_institutions·TrustInInstitutions + α_trait_empathy·TraitEmpathy·(-1)
 g₁ = logistic(β₀ + β₁ · b)
 ```
 
-**Current coefficients:**
+**Current Alpha coefficients (α) — Static Bias:**
 | Parameter | Value | Description |
 |-----------|-------|-------------|
-| β₀ (intercept) | 0.02 | Slight pro-plaintiff baseline (civil case framing) |
+| α_intercept | 0.0 | Baseline intercept |
+| α_pol_id | 0.90 | Political identity → strongest directional predictor (Forresta 2025) |
+| α_conserv_relig | 0.25 | Conservative religiosity → conservative lean |
+| α_news_lean | 0.18 | Partisan news consumption (−1 liberal, +1 conservative) |
+| α_prior_victim | 0.15 | Crime victimization → prosecution lean |
+| α_prior_system | −0.12 | Prior justice system contact → defense skepticism |
+| α_nra | 0.12 | NRA membership → defense lean (authority skepticism) |
+| α_bjw | −0.20 | Belief in Just World → victim-blaming, defense-leaning (Lerner 1980) |
+| α_death_penalty | 0.25 | Death penalty qualified → more conviction-prone (Haney 1984) |
+| α_trust_institutions | 0.15 | Trust in police/courts → prosecution lean (Tyler 2006) |
+| α_trait_empathy | −0.10 | Dispositional empathy → plaintiff/defendant sympathy (Davis 1983) |
+| α_education_years | 0.10 | Reserved for future education-length extension |
+
+**Pipeline parameters:**
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| β₀ (intercept) | 0.0 | Logistic offset |
 | β₁ | 1.0 | Scaling factor for static bias |
-| α_pol_id | 0.9 | Political identity → verdict direction |
-| α_conserv_relig | 0.35 | Conservative religiosity → conservative lean |
-| α_education_years | 0.10 | Higher education → slightly plaintiff-leaning |
-| α_implicit_bias | 0.25 | Unconscious associations → initial lean |
 
 ### Stage 2: Evidence Drift + Rigidity → Updated Belief (g₂)
 
@@ -60,6 +76,16 @@ g₂ = clamp01(g₁ + γ₁ · Δevidence · (1 - λ))
 | Income_Band | 0.10 | Economic status affects openness |
 | Job_Security | 0.06 | Job security → moderate rigidity |
 | Home_Own | 0.05 | Homeownership → slight rigidity |
+| NRA | 0.10 | NRA membership → higher rigidity in self-defense cases |
+| Religiosity | 0.12 | General religiosity increases resistance to counterevidence |
+| Tv_Crime | 0.08 | Heavy crime TV → more rigid in prosecution-leaning beliefs |
+| Bible_College | 0.05 | Bible college → religious framework resists counterevidence |
+| Need_Closure | 0.12 | Need for closure → resists counterevidence (Kruglanski 1996) |
+| Cognitive_Reflection | −0.15 | CRT → less rigid, more evidence-driven (Frederick 2005) |
+| BJW | 0.10 | Belief in Just World → resists contradictory evidence (Lerner 1980) |
+| Trade_School | 0.03 | Trade school education → minor rigidity |
+| HBCU | 0.03 | HBCU education → minor rigidity |
+| Community_College | 0.02 | Community college → moderate evidence resistance |
 
 **γ₁ (evidence sensitivity):** 1.0
 
@@ -78,6 +104,74 @@ verdict_lean = clamp(0.2, 0.8, P)  [mapped to 0..1 range]
 |-----------|-------|-------------|
 | θ₀ | 0.0 | Threshold offset |
 | θ₁ | 5.0 | Steepness of verdict mapping |
+
+---
+
+### Stage 3 (continued): Deliberation Parameters
+
+#### Hardness (h) — Resistance to conformity pressure: ζ coefficients
+Higher h → harder to move by jury consensus.
+h = logistic(ζ_intercept + Σ ζᵢ · traitᵢ)
+
+| Factor | Weight | Interpretation |
+|--------|--------|----------------|
+| RWA | 0.25 | Authoritarianism resists conformity pressure |
+| SDO | 0.20 | Social dominance → harder to move |
+| Conserv_Relig | 0.25 | Religious conservatism → conviction hardness |
+| Pol_Strength | 0.20 | Political identity strength → harder to sway |
+| Primary_History | 0.10 | Prior political engagement |
+| Activism | 0.08 | Civic activism → independent thinker |
+| Online_Partisan | 0.08 | Online echo chamber → resistant |
+| Trade_School | 0.03 | Trade education → minor hardness |
+| HBCU | 0.03 | HBCU education → minor hardness |
+| Community_College | 0.02 | Community college → moderate conviction |
+| Bible_College | 0.06 | Bible college → strong religious convictions |
+| Blue_Collar | 0.04 | Blue collar → moderate hardness |
+| Diyer | 0.02 | DIY identity → minor hardness |
+| Income_Band | 0.05 | Income → slight hardness effect |
+| Need_Closure | 0.10 | NFC → harder to move once decided |
+| Cognitive_Reflection | −0.08 | CRT → more open to persuasion |
+| Education_Years | 0.12* | * computed as 12.0 (years proxy) |
+
+#### Influence Weight (w) — Persuasive power: χ coefficients
+Higher w → greater influence during deliberation.
+w = exp(χ_intercept + Σ χᵢ · traitᵢ)
+
+| Factor | Weight | Interpretation |
+|--------|--------|----------------|
+| Education_Years | 0.25 | Higher education → most persuasive |
+| NFC (Need for Cognition) | 0.20 | Analytical thinkers are persuasive |
+| Cognitive_Reflection | 0.12 | Clear thinkers command respect |
+| Elite_Private | 0.08 | Elite college → social authority |
+| State_Flagship | 0.05 | State university → moderate influence |
+| Other_Private | 0.04 | Other private college → above-average |
+| Trade_School | 0.03 | Practical expertise valued |
+| HBCU | 0.02 | Distinct life experience |
+| Community_College | 0.02 | Working-class credibility |
+| Bible_College | 0.02 | Moral authority in religious communities |
+| Blue_Collar | 0.01 | Blue collar → minor influence |
+| Diyer | 0.01 | DIY identity → minor influence |
+| Age | 0.02 | Life experience → mild influence |
+| Certainty | 0.03 | Certainty (G2−0.5) → small boost |
+
+#### Conformity (φ) — Susceptibility to consensus: ρ coefficients
+Higher φ → more conforming to jury majority.
+
+| Factor | Weight | Interpretation |
+|--------|--------|----------------|
+| RWA | 0.20 | Authoritarianism → conforming |
+| SDO | 0.12 | Social dominance → slightly conforming |
+| Conserv_Relig | 0.18 | Religious conservatism → conforming |
+| Pol_Id | 0.10 | Political identity → conforming |
+| Pol_Strength | 0.12 | Strong identity → conforming |
+| Sm_Polar | 0.06 | Polarized SM → slightly conforming |
+| Blue_Collar | 0.02 | Blue collar → minor conformity |
+| Diyer | 0.01 | DIY identity → minor conformity |
+| NRA | −0.10 | NRA members → LESS conforming (individualistic) |
+| Religiosity | 0.10 | Religious → more conforming |
+| Need_Closure | 0.12 | NFC → wants resolution, conforms |
+| NFC (Need for Cognition) | −0.08 | High NFC → independent thinker |
+| SM_News_Reliance | 0.08 | SM news → susceptible to groupthink |
 
 ---
 
@@ -149,6 +243,38 @@ religion_pol_interaction = (religion_weight - 0.5) × (pol_weight - 0.5) × 0.4
 reliability_factor = edu_weight × 0.5 + legal_weight × 0.3 + experience_weight × 0.2
 ```
 More educated and legally knowledgeable jurors are more likely to participate actively in deliberation.
+
+### 3.5 Individual Difference Traits (2026-05-27 Expansion)
+
+Nine research-backed individual-difference traits augment the demographic-to-trait mapping. These are sampled in `SampleIndividualDifferences()` with correlations to existing political, religious, and educational traits.
+
+| Trait | Range | Sampling | Key Research |
+|---|---|---|---|
+| NeedForCognition | 0–10 | Correlated +education, −political extremity | Cacioppo & Petty (1982) |
+| BeliefInJustWorld | 0–10 | Correlated +conservatism, +religiosity | Lerner (1980) |
+| DeathPenaltyQualified | 0/1 | ~65% base; +conservatism +punitiveness −empathy | Haney (1984) |
+| TrustInInstitutions | 0–10 | Correlated +conservatism, +age | Tyler (2006) |
+| TraitEmpathy | 0–10 | Correlated −SDO; slight female skew | Davis (1983) IRI |
+| NeedForClosure | 0–10 | Correlated +political strength +religiosity −education | Kruglanski (1996) |
+| CognitiveReflection | 0–10 | Correlated +education −religiosity; positively skewed | Frederick (2005) |
+| SmNewsReliance | 0–10 | Correlated +SmUse −education; ~30% SM-dependent | Barberá (2020) |
+| PersonalInjuryHistory | 0/1 | ~15% base; independent | Hans & Reyna (2011) |
+
+### 3.6 Trait Clustering (Correlated Sampling)
+
+Traits are no longer independent — they cluster realistically via correlated sampling:
+
+**Conservative Rural Cluster**: PolId > 0 → NewsLean ~+1 (Fox), high TvCableNews, ~45% NRA, high BJW, DP-qualified, high TrustInInstitutions, high NeedForClosure, low CRT.
+
+**Urban Progressive Cluster**: PolId < 0 → NewsLean ~−1 (MSNBC/NPR), low TvCableNews, ~3% NRA, Sierra Club, low BJW, less DP-qualified, high TraitEmpathy.
+
+**Elite Educated Cluster**: High NFC, high CRT, high NewsIntensity, low NeedForClosure, moderate politics, high χ (InfluenceWeight).
+
+**Working Class Cluster**: Low NFC, high NeedForClosure, low CRT, trade/community college, blue collar, moderate SmUse.
+
+Correlations are implemented in `SampleMedia()`, `SampleMemberships()`, and `SampleIndividualDifferences()` within `ToyJurorLogicEngine.cs`.
+
+---
 
 ---
 

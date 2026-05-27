@@ -749,7 +749,7 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
         var agent = menuItem?.Tag as Agent;
         if (agent == null || !agent.IsOccupied) return;
 
-        var reportWindow = new Views.JurorReportWindow(agent)
+        var reportWindow = new Views.JurorReportWindow(agent, _viewModel.CurrentCase?.Mode ?? Models.CaseMode.Civil)
         {
             Owner = this
         };

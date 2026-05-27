@@ -9,11 +9,17 @@ namespace Verdict.Views;
 
 public partial class JurorReportWindow : Window
 {
-    public JurorReportWindow(Agent juror)
+    private readonly bool _isCriminal;
+
+    public JurorReportWindow(Agent juror, CaseMode mode = CaseMode.Civil)
     {
         InitializeComponent();
         Title = $"Juror Report - {juror.Name}";
         DataContext = juror;
+        _isCriminal = mode == CaseMode.Criminal;
+
+        // Set the lean direction label based on case mode
+        LeanDirectionLabel.Text = _isCriminal ? "towards Prosecution" : "towards Plaintiff";
     }
 
     private void Close_Click(object sender, RoutedEventArgs e)

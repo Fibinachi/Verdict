@@ -150,7 +150,7 @@
                     <TextBlock Style="{StaticResource InfoLabel}" Text="Verdict Lean" HorizontalAlignment="Center"/>
                     <TextBlock FontSize="20" FontWeight="Bold" Foreground="#3498DB" HorizontalAlignment="Center"
                                Text="{Binding VerdictLean, StringFormat={}{0:P0}}"/>
-                    <TextBlock FontSize="10" Foreground="#7F8C8D" HorizontalAlignment="Center" Text="towards Plaintiff"/>
+                    <TextBlock x:Name="LeanDirectionLabel" FontSize="10" Foreground="#7F8C8D" HorizontalAlignment="Center" Text="towards Plaintiff"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                     <TextBlock Style="{StaticResource InfoLabel}" Text="Valuation" HorizontalAlignment="Center"/>

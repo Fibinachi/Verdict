@@ -38,7 +38,7 @@
     "ModelMaxTokensOverride": null,
     "HasOverrides": false
   },
-  "AgentId": "f5f0e824-e474-48fb-81c7-e1c9ebc303cc",
+  "AgentId": "3740452d-896e-4fad-ad4b-0c1729b83142",
   "Name": "Test Character",
   "Initials": "TC",
   "Role": "Judge",
@@ -75,14 +75,14 @@
   "Memories": [
     {
       "Content": "Memory 1",
-      "Timestamp": "2026-05-27T12:39:21.7763418-04:00",
+      "Timestamp": "2026-05-27T13:29:43.991131-04:00",
       "IsFromDocument": false,
       "Source": "",
       "Strength": 1
     },
     {
       "Content": "Memory 2",
-      "Timestamp": "2026-05-27T12:39:21.7763452-04:00",
+      "Timestamp": "2026-05-27T13:29:43.991135-04:00",
       "IsFromDocument": false,
       "Source": "",
       "Strength": 0.5
