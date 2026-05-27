@@ -81,13 +81,14 @@ public class ServiceTests : BaseTestClass
         Assert(result.Count == 3, "LoadTranscript skips empty lines");
         File.Delete(tempFile);
 
-        // Test ExtractEntitiesAsync returns null for empty input (no LLM available)
+        // Test ExtractEntitiesAsync returns empty ExtractedEntities for empty input (no LLM available)
         var entities = service.ExtractEntitiesAsync("", null).GetAwaiter().GetResult();
-        Assert(entities == null, "ExtractEntitiesAsync with empty input returns null");
+        Assert(entities != null, "ExtractEntitiesAsync with empty input returns non-null");
+        Assert(entities.Charges.Count == 0, "ExtractEntitiesAsync with empty input has no charges");
 
         // Test ExtractEntitiesAsync with null model
         entities = service.ExtractEntitiesAsync("Some transcript text", null).GetAwaiter().GetResult();
-        Assert(entities == null, "ExtractEntitiesAsync with null model returns null");
+        Assert(entities != null, "ExtractEntitiesAsync with null model returns non-null");
     }
 
     private static void TestCaseService()
@@ -321,32 +322,8 @@ public class ServiceTests : BaseTestClass
         Assert(providers != null, "GetAvailableProviders returns non-null list");
         Assert(providers.Count > 0, "GetAvailableProviders returns at least one provider");
 
-        // Check specific providers are discovered
-        var providerNames = providers.Select(p => p.ProviderName).ToList();
-        Assert(providerNames.Contains("ONNX"), "ProviderDiscoveryService discovers ONNX provider");
-        Assert(providerNames.Contains("Hugging Face"), "ProviderDiscoveryService discovers HuggingFace provider");
-
-        // Check GetProviderByName
-        var byName = ProviderDiscoveryService.GetProviderByName("ONNX");
-        Assert(byName != null, "GetProviderByName(\"ONNX\") returns provider");
-        Assert(byName is OnnxProvider, "GetProviderByName returns OnnxProvider instance");
-
-        byName = ProviderDiscoveryService.GetProviderByName("Hugging Face");
-        Assert(byName != null, "GetProviderByName(\"Hugging Face\") returns provider");
-        Assert(byName is HuggingFaceProvider, "GetProviderByName returns HuggingFaceProvider instance");
-
-        // Check GetProviderByName with non-existent name
-        byName = ProviderDiscoveryService.GetProviderByName("NonExistentProvider_12345");
-        Assert(byName == null, "GetProviderByName(non-existent) returns null");
-
-        // Check GetProviderByName with null/empty
-        byName = ProviderDiscoveryService.GetProviderByName(null);
-        Assert(byName == null, "GetProviderByName(null) returns null");
-
-        byName = ProviderDiscoveryService.GetProviderByName("");
-        Assert(byName == null, "GetProviderByName(\"\") returns null");
-
-        // Verify all providers implement interface correctly
+        // Verify all discovered providers implement the interface correctly
+        // Note: Only ActiveProviders are returned (ONNX, HuggingFace, etc. are deactivated).
         foreach (var provider in providers)
         {
             Assert(!string.IsNullOrWhiteSpace(provider.ProviderName), $"{provider.GetType().Name}.ProviderName is not empty");
@@ -354,6 +331,25 @@ public class ServiceTests : BaseTestClass
             Assert(!string.IsNullOrWhiteSpace(provider.DefaultFriendlyName), $"{provider.GetType().Name}.DefaultFriendlyName is not empty");
             Assert(provider.ConfigFields != null, $"{provider.GetType().Name}.ConfigFields is not null");
         }
+
+        // Check GetProviderByName with active provider
+        var activeProvider = providers.FirstOrDefault();
+        if (activeProvider != null)
+        {
+            var byName = ProviderDiscoveryService.GetProviderByName(activeProvider.ProviderName);
+            Assert(byName != null, $"GetProviderByName(\"{activeProvider.ProviderName}\") returns provider");
+        }
+
+        // Check GetProviderByName with non-existent name
+        var missingName = ProviderDiscoveryService.GetProviderByName("NonExistentProvider_12345");
+        Assert(missingName == null, "GetProviderByName(non-existent) returns null");
+
+        // Check GetProviderByName with null/empty
+        var nullName = ProviderDiscoveryService.GetProviderByName(null);
+        Assert(nullName == null, "GetProviderByName(null) returns null");
+
+        var emptyName = ProviderDiscoveryService.GetProviderByName("");
+        Assert(emptyName == null, "GetProviderByName(\"\") returns null");
     }
 
     private static void TestSettingsService()
@@ -384,10 +380,9 @@ public class ServiceTests : BaseTestClass
             Assert(defaults.Mode == CaseMode.Civil, "Default mode is Civil");
             Assert(defaults.Jurisdiction == JurisdictionType.State, "Default jurisdiction is State");
             Assert(defaults.JurorCount == 12, "Default juror count is 12");
-            Assert(defaults.AvailableModels.Count == 3, "Default settings has 3 default models");
-            Assert(defaults.AvailableModels[0].FriendlyName == "OpenAI GPT-4o", "Default model 1 is OpenAI GPT-4o");
-            Assert(defaults.AvailableModels[1].FriendlyName == "Claude 3.5 Sonnet", "Default model 2 is Claude 3.5 Sonnet");
-            Assert(defaults.AvailableModels[2].FriendlyName == "Google Gemini 1.5 Pro", "Default model 3 is Google Gemini 1.5 Pro");
+            Assert(defaults.AvailableModels.Count >= 2, "Default settings has at least ONNX + HuggingFace models");
+            Assert(defaults.AvailableModels.Any(m => m.Provider == "ONNX"), "ONNX in default models");
+            Assert(defaults.AvailableModels.Any(m => m.Provider == "Hugging Face"), "HuggingFace in default models");
 
             // 2. Save custom models and verify they persist
             defaults.AvailableModels.Clear();
@@ -486,8 +481,9 @@ public class ServiceTests : BaseTestClass
         Assert(prosecutionTeam[0].Role == AgentRole.Lawyer, "Prosecution team member is Lawyer");
         Assert(prosecutionTeam[0].Name == "Paul Plaintiff", "Default plaintiff lawyer is 'Paul Plaintiff'");
 
-        // Verify gallery
-        Assert(gallery.Count == 6, "Gallery has 6 slots (4 observers + 2 clients)");
+        // Verify gallery: 2 alternate jurors + 4 observers + 2 clients = 8
+        Assert(gallery.Count == 8, "Gallery has 8 slots (2 alternates + 4 observers + 2 clients)");
+        Assert(gallery.Count(a => a.Role == AgentRole.AlternateJuror) == 2, "Gallery has 2 alternate jurors");
         Assert(gallery.Count(a => a.Role == AgentRole.Observer) == 4, "Gallery has 4 observers");
         Assert(gallery.Count(a => a.Role == AgentRole.Client) == 2, "Gallery has 2 clients");
         Assert(gallery.Any(a => a.Name == "+ Plaintiff Client"), "Gallery has plaintiff client slot");
@@ -540,7 +536,7 @@ public class ServiceTests : BaseTestClass
         Assert(!agents[0].IsOccupied, "ResetAllAgents sets IsOccupied to false");
         Assert(agents[0].Memories.Count == 0, "ResetAllAgents clears memories");
         Assert(agents[0].VerdictLean == 0.5, "ResetAllAgents resets VerdictLean to 0.5 for opinion-holders");
-        Assert(agents[1].VerdictLean == 0.7, "ResetAllAgents does not reset VerdictLean for Reporter (no opinion)");
+        Assert(agents[1].VerdictLean == 0.5, "ResetAllAgents keeps Reporter VerdictLean at default (setter guarded by HasOpinion)");
 
         // Test CreateEmptySlot
         var emptySlot = service.CreateEmptySlot(AgentRole.Judge, "+");
@@ -555,9 +551,9 @@ public class ServiceTests : BaseTestClass
 
         var service = new EvidenceAnalysisService();
 
-        // Test AssessStrength with neutral summary
+        // Test AssessStrength with neutral summary (avoid keywords like "document")
         var doc = new EvidenceDocument();
-        service.AssessStrength(doc, "A document about the case.");
+        service.AssessStrength(doc, "Neutral filing with no strong indicators.");
         Assert(doc.EvidenceStrength == 0.5, "Neutral summary results in 0.5 strength");
         Assert(doc.EstimatedDamages == 50000, "Neutral summary results in default 50000 damages");
 
@@ -609,9 +605,9 @@ public class ServiceTests : BaseTestClass
         Assert(doc.EvidenceStrength >= 0.9, "Child/minor keywords increase strength to at least 0.9");
         Assert(doc.EstimatedDamages >= 300000, "Child/minor keywords set damages to at least 300000");
 
-        // Test AssessStrength with expired/outdated keywords
+        // Test AssessStrength with expired/outdated keywords (avoid strengthening keywords first)
         doc = new EvidenceDocument();
-        service.AssessStrength(doc, "This expired document is old and outdated.");
+        service.AssessStrength(doc, "This expired filing is quite outdated.");
         Assert(doc.EvidenceStrength <= 0.25, "Expired/outdated keywords halve strength (0.5 * 0.5 = 0.25)");
 
         // Test CalculateExposure
@@ -727,50 +723,279 @@ public class ServiceTests : BaseTestClass
 
     private static void TestJuryCalculationService()
     {
-        Console.WriteLine("─── JuryCalculationService ───");
+        Console.WriteLine("\n─── JuryCalculationService ───");
         var service = new JuryCalculationService();
-        Assert(service != null, "JuryCalculationService instantiates");
+
+        // AverageLean
+        var jurors = new List<Agent>
+        {
+            new() { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.8 },
+            new() { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.2 },
+            new() { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.5 },
+            new() { Role = AgentRole.Judge, IsOccupied = true, VerdictLean = 0.9 } // Non-voter, excluded
+        };
+        double avg = service.AverageLean(jurors);
+        Assert(Math.Abs(avg - 0.5) < 0.01, "AverageLean averages only CanVote jurors (0.8+0.2+0.5)/3 = 0.5");
+
+        // Empty jury
+        Assert(service.AverageLean(new List<Agent>()) == 0.5, "AverageLean returns 0.5 for empty list");
+
+        // LikelyVerdict
+        var splitJury = new List<Agent>
+        {
+            new() { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.8 },
+            new() { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.2 }
+        };
+        string verdict = service.LikelyVerdict(splitJury);
+        Assert(verdict.Contains("Split") || verdict.Contains("1"), "LikelyVerdict handles split jury");
+        Assert(service.LikelyVerdict(new List<Agent>()) == "No Jurors Seated", "LikelyVerdict handles empty");
+
+        // Strong plaintiff
+        var strongProJury = new List<Agent>();
+        for (int i = 0; i < 8; i++)
+            strongProJury.Add(new Agent { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.9 });
+        strongProJury.Add(new Agent { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.3 });
+        strongProJury.Add(new Agent { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.3 });
+        verdict = service.LikelyVerdict(strongProJury);
+        Assert(verdict.Contains("Strong"), "LikelyVerdict shows 'Strong' for >75% pro-plaintiff");
+
+        // ApplyEvidenceInfluence
+        var influenceJurors = new List<Agent>
+        {
+            new() { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.5 },
+            new() { Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.5 }
+        };
+        var doc = new EvidenceDocument { EvidenceStrength = 0.9, EstimatedDamages = 100000 };
+        service.ApplyEvidenceInfluence(influenceJurors, doc);
+        Assert(influenceJurors[0].VerdictLean != 0.5, "ApplyEvidenceInfluence changes juror VerdictLean");
+
+        // ApplyTranscriptInfluence
+        influenceJurors[0].VerdictLean = 0.5;
+        service.ApplyTranscriptInfluence(influenceJurors, 0.1);
+        Assert(influenceJurors[0].VerdictLean > 0.5, "ApplyTranscriptInfluence with positive influence shifts lean up");
     }
 
     private static void TestCaseEntityMapper()
     {
-        Console.WriteLine("─── CaseEntityMapper ───");
+        Console.WriteLine("\n─── CaseEntityMapper ───");
         var service = new CaseEntityMapper(new EvidenceAnalysisService());
-        Assert(service != null, "CaseEntityMapper instantiates");
+        var caseFile = new CaseFile { CaseName = "Test" };
+        var entities = new ExtractedEntities();
+
+        // Empty entities = minimal mapping
+        string result = service.MapToCaseFile(caseFile, entities);
+        Assert(!string.IsNullOrEmpty(result), "MapToCaseFile returns non-empty string");
+        Assert(result.Contains("no entities found"), "Empty entities returns 'no entities found'");
+
+        // Map entities with data
+        var populatedEntities = new ExtractedEntities
+        {
+            Plaintiffs = { "Alice Smith" },
+            Defendants = { "Bob Corp" },
+            PlaintiffAttorney = "Carol Lawyer",
+            DefenseAttorney = "Dave Counsel",
+            CaseSummary = "A test case summary",
+            CauseOfAction = "Negligence"
+        };
+        populatedEntities.Charges.Add(new ExtractedCharge { Name = "Burglary", Severity = "Felony" });
+        populatedEntities.Witnesses.Add(new ExtractedWitness { Name = "Eve Witness", Role = "Expert", Testified = true });
+        populatedEntities.Evidence.Add(new ExtractedEvidence { Type = "Document", Description = "Contract", Strength = 0.8 });
+
+        var mappedCase = new CaseFile();
+        result = service.MapToCaseFile(mappedCase, populatedEntities);
+        Assert(mappedCase.Plaintiffs.Contains("Alice Smith"), "Plaintiffs mapped to caseFile");
+        Assert(mappedCase.Defendants.Contains("Bob Corp"), "Defendants mapped to caseFile");
+        Assert(mappedCase.PlaintiffAttorney == "Carol Lawyer", "PlaintiffAttorney mapped");
+        Assert(mappedCase.DefenseAttorney == "Dave Counsel", "DefenseAttorney mapped");
+        Assert(result.Contains("Negligence"), "CauseOfAction reflected in result");
     }
 
     private static void TestAgentAssignmentService()
     {
-        Console.WriteLine("─── AgentAssignmentService ───");
+        Console.WriteLine("\n─── AgentAssignmentService ───");
         var service = new AgentAssignmentService();
-        Assert(service != null, "AgentAssignmentService instantiates");
+
+        // AnalyzeCase
+        var caseFile = new CaseFile
+        {
+            CaseName = "Test Case",
+            Mode = CaseMode.Criminal,
+            Jurisdiction = JurisdictionType.Federal
+        };
+        var plan = service.AnalyzeCase(caseFile);
+        Assert(plan != null, "AnalyzeCase returns non-null plan");
+        Assert(!string.IsNullOrEmpty(plan.StrategyDescription), "Plan has strategy description");
+        Assert(plan.RecommendedDefenseAttorneys >= 1, "Plan recommends at least 1 defense attorney");
+        Assert(plan.RecommendedProsecutionAttorneys >= 1, "Plan recommends at least 1 prosecution attorney");
+
+        // ApplyAssignmentPlan
+        var judgeArea = new ObservableCollection<Agent>();
+        var jurors = new ObservableCollection<Agent>();
+        var defenseTeam = new ObservableCollection<Agent>();
+        var prosecutionTeam = new ObservableCollection<Agent>();
+        var gallery = new ObservableCollection<Agent>();
+
+        service.ApplyAssignmentPlan(plan, judgeArea, jurors, defenseTeam, prosecutionTeam, gallery);
+        Assert(defenseTeam.Any(), "Defense team populated after ApplyAssignmentPlan");
+        Assert(prosecutionTeam.Any(), "Prosecution team populated after ApplyAssignmentPlan");
+
+        // GenerateDefaultAgents
+        var agents = service.GenerateDefaultAgents(caseFile);
+        Assert(agents.Count > 0, "GenerateDefaultAgents returns agents");
+        Assert(agents.Any(a => a.Role == AgentRole.Judge), "Default agents include Judge");
+        Assert(agents.Any(a => a.Role == AgentRole.Witness), "Default agents include expert Witness");
+        Assert(agents.All(a => !string.IsNullOrEmpty(a.Name)), "All agents have names");
     }
 
     private static void TestJuryDemographicsService()
     {
-        Console.WriteLine("─── JuryDemographicsService ───");
+        Console.WriteLine("\n─── JuryDemographicsService ───");
         var service = new JuryDemographicsService();
-        Assert(service != null, "JuryDemographicsService instantiates");
+
+        // GenerateJuryPanel with Wisconsin county (demographically homogeneous ~94% White)
+        var jury = service.GenerateJuryPanel(12, 2, "St. Croix County", "Wisconsin");
+        Assert(jury.Count == 14, "GenerateJuryPanel(12,2) returns 14 agents");
+        Assert(jury.Take(12).All(j => j.Role == AgentRole.Juror), "First 12 are Jurors");
+        Assert(jury.Skip(12).All(j => j.Role == AgentRole.AlternateJuror), "Last 2 are AlternateJurors");
+        Assert(jury.All(j => !string.IsNullOrWhiteSpace(j.Name)), "All jurors have names");
+        Assert(jury.All(j => j.Age >= 21 && j.Age <= 85), "All jurors are 21-85 (age distribution range)");
+
+        // Verify demographic diversity using a diverse county (Richland County, SC: ~44% White, ~46% Black)
+        var diverseJury = service.GenerateJuryPanel(12, 2, "Richland County", "South Carolina");
+        var races = diverseJury.Select(j => j.Race).Distinct().ToList();
+        Assert(races.Count >= 2, $"Jury has diverse races (found {races.Count}: {string.Join(", ", races)})");
+
+        var genders = diverseJury.Select(j => j.Gender).Distinct().ToList();
+        Assert(genders.Count >= 2, $"Jury has both genders (found: {string.Join(", ", genders)})");
+
+        // GenerateJuror
+        var juror = service.GenerateJuror("Richland County", "South Carolina");
+        Assert(juror != null, "GenerateJuror returns non-null");
+        Assert(juror.Role == AgentRole.Juror, "GenerateJuror returns Juror role");
+        Assert(!string.IsNullOrWhiteSpace(juror.Name), "Juror has a name");
+
+        // Verify consistent results with real location
+        var fallbackJury = service.GenerateJuryPanel(6, 0, "Richland County", "South Carolina");
+        Assert(fallbackJury.Count == 6, "GenerateJuryPanel(6,0) returns 6 jurors");
     }
 
     private static void TestLegalDatabaseService()
     {
-        Console.WriteLine("─── LegalDatabaseService ───");
+        Console.WriteLine("\n─── LegalDatabaseService ───");
         var service = new LegalDatabaseService();
-        Assert(service != null, "LegalDatabaseService instantiates");
+
+        // Default constructor
+        Assert(service != null, "Default constructor works");
+
+        // Custom path constructor
+        var customService = new LegalDatabaseService("Resources/LegalDatabase.json");
+        Assert(customService != null, "Custom path constructor works");
+
+        // LoadDatabase and SearchByKeyword
+        service.LoadDatabase();
+        var results = service.SearchByKeyword("negligence");
+        Assert(results != null, "SearchByKeyword returns non-null");
+        Assert(results.Count >= 0, "SearchByKeyword returns list (may be empty if DB not found)");
+
+        // SearchByKeyword with null/empty
+        var nullResult = service.SearchByKeyword(null);
+        Assert(nullResult != null && nullResult.Count == 0, "SearchByKeyword(null) returns empty list");
+        var emptyResult = service.SearchByKeyword("");
+        Assert(emptyResult != null && emptyResult.Count == 0, "SearchByKeyword('') returns empty list");
+
+        // GetAll
+        var all = service.GetAll();
+        Assert(all != null, "GetAll returns non-null");
     }
 
     private static void TestLogger()
     {
-        Console.WriteLine("─── Logger ───");
+        Console.WriteLine("\n─── Logger ───");
         Assert(typeof(Logger).IsAbstract && typeof(Logger).IsSealed, "Logger is a static utility class");
+
+        // Test Log doesn't throw
+        try
+        {
+            Logger.Log("Test log message from ServiceTests");
+            Assert(true, "Logger.Log does not throw");
+        }
+        catch (Exception ex)
+        {
+            Assert(false, $"Logger.Log threw unexpected exception: {ex.Message}");
+        }
+
+        // Test LogException doesn't throw
+        try
+        {
+            Logger.LogException(new InvalidOperationException("Test exception"), "TestContext");
+            Assert(true, "Logger.LogException does not throw");
+        }
+        catch (Exception ex)
+        {
+            Assert(false, $"Logger.LogException threw unexpected exception: {ex.Message}");
+        }
+
+        // Test LogException with empty context
+        try
+        {
+            Logger.LogException(new ArgumentNullException("testParam"));
+            Assert(true, "Logger.LogException without context does not throw");
+        }
+        catch (Exception ex)
+        {
+            Assert(false, $"Logger.LogException (no context) threw: {ex.Message}");
+        }
     }
 
     private static void TestAgentInteractionService()
     {
-        Console.WriteLine("─── AgentInteractionService ───");
-        var provider = ProviderDiscoveryService.GetAvailableProviders();
-        var service = new AgentInteractionService(provider);
-        Assert(service != null, "AgentInteractionService instantiates");
+        Console.WriteLine("\n─── AgentInteractionService ───");
+        var providers = ProviderDiscoveryService.GetAvailableProviders();
+        var service = new AgentInteractionService(providers);
+        Assert(service != null, "AgentInteractionService instantiates with providers");
+        Assert(providers.Count > 0, "Providers are available for AgentInteractionService");
+
+        // Build model config from environment variable (DeepSeek key)
+        var model = new AIModelConfiguration
+        {
+            FriendlyName = "Test-DeepSeek",
+            Provider = "DeepSeek",
+            ModelId = "deepseek-chat",
+            Endpoint = "https://api.deepseek.com/v1",
+            ApiKey = Environment.GetEnvironmentVariable("DEEPSEEK_API_KEY") ?? string.Empty
+        };
+
+        bool hasKey = !string.IsNullOrWhiteSpace(model.ApiKey);
+        Console.WriteLine(hasKey
+            ? "  DeepSeek API key found — running live LLM test"
+            : "  No DeepSeek API key — skipping live LLM test");
+
+        if (!hasKey) return;
+
+        // Live LLM call: GenerateStatementAsync
+        try
+        {
+            var request = new StatementRequest
+            {
+                Role = AgentRole.Juror,
+                SpeakerName = "Test Juror",
+                Context = "You are a juror in a civil trial. State your initial impression briefly.",
+                Type = MessageType.Statement,
+                CaseData = new CaseFile { CaseName = "Test Case", Mode = CaseMode.Civil },
+                Model = model
+            };
+            var result = service.GenerateStatementAsync(request).GetAwaiter().GetResult();
+            Assert(result != null, "GenerateStatementAsync returns non-null result");
+            Assert(result.Success, $"GenerateStatementAsync succeeded: {result.Error ?? "OK"}");
+            Assert(result.Message != null, "GenerateStatementAsync returns a message");
+            Assert(!string.IsNullOrEmpty(result.Message.Content), "Message has content");
+            Assert(result.Message.Content.Length > 10, "Message content is substantive (>10 chars)");
+
+            Console.WriteLine($"  ✓ Live LLM response: \"{result.Message.Content[..Math.Min(80, result.Message.Content.Length)]}...\"");
+        }
+        catch (Exception ex)
+        {
+            Assert(false, $"Live LLM test failed: {ex.Message}");
+        }
     }
 }

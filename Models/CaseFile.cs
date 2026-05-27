@@ -35,24 +35,50 @@ namespace Verdict.Models
         public void AddDefaultModels()
         {
             if (AvailableModels.Count > 0) return; // Don't overwrite existing models
-            
-            AvailableModels.Add(new AIModelConfiguration 
-            { 
-                FriendlyName = "OpenAI GPT-4o", 
-                Provider = "OpenAI", 
-                ModelId = "gpt-4o" 
+
+            // Add a default entry for each active provider, auto-detecting API keys from environment
+            var providers = new (string FriendlyName, string Provider, string ModelId, string Endpoint, string EnvVar)[]
+            {
+                ("DeepSeek-V3",   "DeepSeek",      "deepseek-chat",                "https://api.deepseek.com/v1",             "DEEPSEEK_API_KEY"),
+                ("Google Gemini", "Google Gemini",  "gemini-2.0-flash",             "https://generativelanguage.googleapis.com", "GEMINI_API_KEY"),
+                ("OpenAI GPT-4o", "OpenAI",         "gpt-4o",                       "https://api.openai.com/v1",               "OPENAI_API_KEY"),
+                ("Anthropic Claude","Anthropic",    "claude-sonnet-4-20250514",     "https://api.anthropic.com",               "ANTHROPIC_API_KEY"),
+                ("Grok",           "Grok",           "grok-3-beta",                  "https://api.x.ai/v1",                     "GROK_API_KEY"),
+                ("Alibaba Qwen",   "Alibaba Cloud",  "qwen-turbo",                   "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
+                ("NVIDIA NIM",     "NVIDIA",         "meta/llama-3.3-70b-instruct",  "https://integrate.api.nvidia.com/v1",     "NVIDIA_API_KEY"),
+                ("Intel Gaudi",    "Intel",          "meta-llama/Meta-Llama-3.3-70B-Instruct", "https://vault.habana.ai",        "INTEL_API_KEY"),
+            };
+
+            foreach (var (friendlyName, provider, modelId, endpoint, envVar) in providers)
+            {
+                var apiKey = Environment.GetEnvironmentVariable(envVar) ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                {
+                    AvailableModels.Add(new AIModelConfiguration
+                    {
+                        FriendlyName = friendlyName,
+                        Provider = provider,
+                        ModelId = modelId,
+                        Endpoint = endpoint,
+                        ApiKey = apiKey
+                    });
+                }
+            }
+
+            // Always add ONNX and HuggingFace (no API key needed)
+            AvailableModels.Add(new AIModelConfiguration
+            {
+                FriendlyName = "ONNX Local",
+                Provider = "ONNX",
+                ModelId = "llmware/llama-3.2-1b-instruct-onnx",
+                Endpoint = ""
             });
-            AvailableModels.Add(new AIModelConfiguration 
-            { 
-                FriendlyName = "Claude 3.5 Sonnet", 
-                Provider = "Anthropic", 
-                ModelId = "claude-3-5-sonnet-20240620" 
-            });
-            AvailableModels.Add(new AIModelConfiguration 
-            { 
-                FriendlyName = "Google Gemini 1.5 Pro", 
-                Provider = "Google", 
-                ModelId = "gemini-1.5-pro" 
+            AvailableModels.Add(new AIModelConfiguration
+            {
+                FriendlyName = "HF TinyLlama",
+                Provider = "Hugging Face",
+                ModelId = "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
+                Endpoint = ""
             });
         }
 
@@ -174,6 +200,13 @@ namespace Verdict.Models
             get => _defaultBiasWeight;
             set => SetProperty(ref _defaultBiasWeight, Math.Clamp(value, -1.0, 1.0));
         }
+
+        /// <summary>
+        /// The default AI model (FriendlyName) assigned to newly generated jurors.
+        /// When set, all generated jurors will use this model. Leave empty to
+        /// let each juror fall back to the first available model.
+        /// </summary>
+        public string DefaultJurorModel { get; set; } = string.Empty;
 
         public List<BiasFactor> DefaultBiasFactors { get; set; } = new()
         {

@@ -39,8 +39,8 @@
             <h3>Sentiment (0% - 100%)</h3>
             <p>Sentiment represents the juror's overall attitude toward the case. It is influenced by:</p>
             <ul>
-                <li>Evidence presented and its perceived strength.</li>
-                <li>Witness testimony and credibility.</li>
+                <li>Evidence presented and its probative value.</li>
+                <li>Witness testimony and perceived credibility.</li>
                 <li>Attorney arguments and effectiveness.</li>
                 <li>The juror's inherent biases and background.</li>
             </ul>
@@ -102,6 +102,42 @@
             <p>When you use the <strong>Generate Jury</strong> button, jurors are created with diverse demographics to create a realistic cross-section of the population.</p>
         </div>
 
+        <div class="metric" id="probative">
+            <h3>Probative Value Weighting</h3>
+            <p>Verdict distinguishes between raw <strong>Evidence Strength</strong> (persuasive impact) and <strong>Probative Value</strong> (legal weight). Each piece of evidence carries both metrics:</p>
+            <ul>
+                <li><strong>Evidence Strength</strong> &mdash; Raw impact scaled by media type. Videos (1.6&times;) and images (1.4&times;) have more impact than documents (1.0&times;).</li>
+                <li><strong>Probative Value</strong> &mdash; Legal weight accounting for reliability (chain of custody), direct vs. circumstantial, hearsay concerns, and witness credibility. This is the value used when updating juror verdict lean.</li>
+            </ul>
+            <p>Jurors use <strong>Probative Value</strong> (not raw Evidence Strength) when updating their verdict lean, ensuring that flashy but unreliable evidence doesn't disproportionately sway the jury.</p>
+        </div>
+
+        <div class="metric" id="credibility">
+            <h3>Witness Credibility Assessment</h3>
+            <p>Each juror assesses witness credibility <em>through their own biases and cognitive tendencies</em> &mdash; just as real jurors do. The assessment is based on:</p>
+            <ul>
+                <li><strong>Education</strong> &mdash; More educated jurors are more skeptical of eyewitness testimony (JD/PhD jurors discount credibility by up to 8%).</li>
+                <li><strong>Age</strong> &mdash; Older jurors (55+) are more trusting of authority figures (+8% credibility). Younger jurors (&lt;25) are more skeptical (-5%).</li>
+                <li><strong>Political affiliation</strong> &mdash; Democratic jurors are slightly more trusting of expert testimony; Republican jurors slightly more skeptical of institutional witnesses.</li>
+                <li><strong>Race &amp; Gender</strong> &mdash; Implicit in-group bias: jurors tend to find witnesses of their own demographic slightly more credible.</li>
+                <li><strong>Current status</strong> &mdash; Attentive and focused jurors assess credibility more carefully; bored and distracted jurors are less discriminating.</li>
+                <li><strong>Risk perception</strong> &mdash; Risk-averse jurors are more skeptical of all testimony.</li>
+            </ul>
+            <p>The juror's perceived credibility is then used to scale the probative value of testimonial evidence &mdash; meaning the same witness statement can have <em>different legal weight</em> for different jurors.</p>
+        </div>
+
+        <div class="metric" id="media-sensitivity">
+            <h3>Media Type Sensitivity</h3>
+            <p>Different jurors are swayed differently by different types of evidence. Verdict models this with per-juror media sensitivity factors:</p>
+            <ul>
+                <li><strong>Age</strong> &mdash; Younger jurors (&lt;30) respond more to video (+15%) and images (+8%). Older jurors (55+) weigh documents (+10%) and testimony (+8%) more heavily.</li>
+                <li><strong>Education</strong> &mdash; Highly educated jurors are more skeptical of emotional video appeals (-8%) and prefer documentary evidence (+5%).</li>
+                <li><strong>Media consumption</strong> &mdash; Heavy TV viewers are more influenced by video evidence (+10%).</li>
+                <li><strong>Attentiveness</strong> &mdash; Bored jurors discount documents (-10%); focused jurors extract more from both documents (+8%) and testimony (+10%).</li>
+            </ul>
+            <p>These sensitivity factors ensure that a diverse jury panel will react differently to the same piece of evidence, creating realistic deliberation dynamics.</p>
+        </div>
+
         <div class="metric">
             <h3>Model Weight Calibration</h3>
             <p>Verdict uses configurable bias factor weights to calibrate how strongly juror demographics and background influence opinion formation and evidence interpretation. The default values are based on established jury research that identifies which attributes tend to have the largest measurable effects in voir dire and verdict prediction.</p>
@@ -126,6 +162,24 @@
                  <li><a href="https://www.ncsc.org/Topics/Jury/Research" target="_blank" rel="noopener">National Center for State Courts Jury Research</a></li>
                  <li><a href="https://www.apa.org/pubs/journals/law" target="_blank" rel="noopener">APA Law and Human Behavior Journal</a></li>
              </ul>
+        </div>
+
+        <div class="metric">
+            <h3>Burden of Proof &amp; Reasonable Doubt</h3>
+            <p>Verdict applies different conviction thresholds based on the case mode:</p>
+            <ul>
+                <li><strong>Criminal Cases (Beyond Reasonable Doubt)</strong> &mdash; The prosecution must prove guilt to a very high standard. A juror must have a Verdict Lean above <strong>85%</strong> to vote GUILTY. Jurors between 50% and 85% are in the <strong>Reasonable Doubt</strong> zone — they may think the defendant is probably guilty, but the prosecution hasn't met its burden, so they vote <strong>NOT GUILTY</strong>.</li>
+                <li><strong>Civil Cases (Preponderance of Evidence)</strong> &mdash; The plaintiff must only prove their case is more likely true than not. A juror with a Verdict Lean above <strong>50%</strong> votes LIABLE.</li>
+            </ul>
+            <p>This means a juror at 70% lean in a criminal case has <strong>reasonable doubt</strong> and votes NOT GUILTY, while the same 70% lean in a civil case is a LIABLE vote. The higher criminal threshold reflects real-world legal standards.</p>
+            <div class="bar-container">
+                <div class="bar bar-green" style="width: 85%;"></div>
+            </div>
+            <p style="margin-top:6px;"><strong>Criminal conviction threshold: 85%</strong> — only jurors to the right of this line vote guilty.</p>
+            <div class="bar-container">
+                <div class="bar bar-blue" style="width: 50%;"></div>
+            </div>
+            <p style="margin-top:6px;"><strong>Civil conviction threshold: 50%</strong> — simple majority standard.</p>
         </div>
 
         <div class="note">

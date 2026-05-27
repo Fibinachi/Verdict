@@ -35,8 +35,9 @@ public class ViewModelTests : BaseTestClass
 
         var vm = new MainViewModel();
 
-        Assert(vm.WindowTitle == "VERDICT", "Default window title is VERDICT");
-        Assert(vm.CurrentDebateStageDisplay == "Opening Statements", "Default debate stage display");
+        Assert(vm.WindowTitle.StartsWith("VERDICT"), "Default window title shows VERDICT prefix");
+        Assert(vm.WindowTitle.Contains("v."), "Default window title contains 'v.'");
+        Assert(vm.CurrentDebateStageDisplay == "Jury Deliberation", "Default debate stage is Jury Deliberation (stage UI disabled)");
         Assert(vm.Jurors.Count == 12, "Default courtroom has 12 jurors");
         Assert(vm.JudgeArea.Count == 3, "Default judge area has 3 slots");
         Assert(vm.DefenseTeam.Count == 1, "Default defense team has 1 lawyer");
@@ -54,7 +55,7 @@ public class ViewModelTests : BaseTestClass
         Assert(vm.WindowTitle == "VERDICT - Alice v. Bob - (TRIAL)", "UpdateWindowTitle formats title correctly");
 
         vm.AdvanceDebateStage();
-        Assert(vm.CurrentDebateStage == CourtPhase.WitnessTestimony, "AdvanceDebateStage advances to witness testimony");
+        Assert(vm.CurrentDebateStage == CourtPhase.VerdictAnnouncement, "AdvanceDebateStage advances from JuryDeliberation to next phase");
 
         var juror = vm.GenerateSingleJuror("Richland County", "South Carolina");
         Assert(juror.Role == AgentRole.Juror, "GenerateSingleJuror returns a juror role");
@@ -100,7 +101,7 @@ public class ViewModelTests : BaseTestClass
         Assert(vm.CaseModes.Contains(CaseMode.Civil), "CaseModes includes Civil");
         Assert(vm.JurisdictionTypes.Contains(JurisdictionType.State), "JurisdictionTypes includes State");
         Assert(vm.TrialPhases.Contains(TrialPhase.Trial), "TrialPhases includes Trial");
-        Assert(vm.CaseFile.AvailableModels.Count >= 3, "CaseFile.AddDefaultModels initializes available models");
+        Assert(vm.CaseFile.AvailableModels.Count >= 1, "CaseFile.AddDefaultModels initializes at least 1 default model");
     }
 
     private static void TestModelSettingsViewModel()

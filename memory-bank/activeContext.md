@@ -1,36 +1,20 @@
 # Active Context
 
 ## Current Work Focus
-Documenting the codebase and creating a comprehensive test harness that tests all functionality.
+Completed major architectural improvements: Agent factoring, burden-of-proof thresholds, and deliberation bug fixes. All 577 tests passing.
 
-## Recent Changes
-- All five LegalMind features have been fully integrated:
-  1. Five-Stage Courtroom Debate ✅
-  2. Legal Database Integration ✅
-  3. PDF Case Report Generation ✅
-  4. Enhanced Document Processing ✅
-  5. Dynamic Role Assignment ✅
+## Recent Changes (May 2026)
+- **2026-05-27**: Added `BurdenOfProof` service — criminal cases now require lean > 0.85 for guilty (beyond reasonable doubt), jurors at 0.50–0.85 show "reasonable doubt" and vote not guilty. Fixed hung-jury detection: unanimous-side vote returns verdict. Fixed LLM prompt to align text with lean values. Updated all verdict counting, questionnaires, reports, and deliberation logic.
+- **2026-05-26**: Factored `Agent.cs` into `AgentDemographics`, `BiasDimensionWeights`, `AgentModelOverrides`. Extracted `MemoryDecayService`. Added 4 test suites.
 
 ## Next Steps
-1. Create comprehensive Memory Bank documentation
-2. Expand the test harness to cover all services, models, providers, and viewmodels
-3. Ensure all edge cases are tested
-4. Verify the test harness runs successfully
-
-## Active Decisions and Considerations
-- The test harness currently tests: Models, TranscriptService, CaseService, CharacterManager, ProviderDiscovery, LLM Providers (logic only), ViewModels, Default Case Settings, and Jury Generation
-- Need to add tests for: EvidenceAnalysisService, DebateService, JuryCalculationService, CaseEntityMapper, AgentAssignmentService, LegalDatabaseService, ReportGenerationService, AgentInteractionService, CourtroomManagerService, Logger, and all remaining model edge cases
-- The test harness runs as a console application (Tests.csproj) referencing the main project
+1. Expand test coverage for remaining services (EvidenceAnalysis, Debate, ReportGeneration, etc.)
+2. Consider calibrating burden-of-proof threshold against real jury data
+3. Improve LLM deliberation prompt for better alignment with verdict lean values
 
 ## Important Patterns and Preferences
-- Tests use Console.WriteLine for progress and throw Exception on failure
-- LLM response generation tests are skipped by default (require live API keys)
-- Test methods follow naming convention: Test[Feature]
-- All tests are called from RunTests() method
-
-## Learnings and Project Insights
-- The MainViewModel constructor has a complex dependency chain with 9 parameters
-- Some services (CharacterManager, ProviderDiscoveryService, Logger) use static methods
-- The CourtroomManagerService.InitializeCourtroom takes 5 ObservableCollection parameters
-- Agent.CopyTo() is used for role assignment and slot population
-- Evidence handling behavior changes based on TrialPhase (Discovery/Pretrial/Trial)
+- `BurdenOfProof` is a static helper — no interface, used across ViewModels, Services, Tests
+- `MemoryDecayService` is static — pure computation with no dependencies
+- Agent sub-objects (`Demographics`, `BiasWeights`, `ModelOverrides`) all inherit `ObservableObject`
+- All flat Agent properties delegate to sub-objects for XAML binding backward compatibility
+- `CopyTo` uses each sub-object's `CopyFrom` for bulk transfer

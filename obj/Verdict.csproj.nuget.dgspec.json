@@ -56,13 +56,13 @@
               "target": "Package",
               "version": "[10.0.7, )"
             },
+            "Microsoft.ML.OnnxRuntimeGenAI": {
+              "target": "Package",
+              "version": "[0.6.0, )"
+            },
             "Microsoft.ML.OnnxRuntimeGenAI.DirectML": {
               "target": "Package",
-              "version": "[0.13.2, )"
-            },
-            "Microsoft.ML.OnnxRuntimeGenAI.Managed": {
-              "target": "Package",
-              "version": "[0.13.2, )"
+              "version": "[0.6.0, )"
             },
             "QuestPDF": {
               "target": "Package",

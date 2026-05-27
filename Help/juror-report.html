@@ -71,6 +71,17 @@
             <li><strong>Zero</strong> &mdash; Neutral / No bias</li>
         </ul>
 
+        <h3>Considered Damages</h3>
+        <p>Each juror arrives at their own <strong>Considered Damages</strong> amount based on the evidence they've seen. This is a personal, juror-specific calculation influenced by:</p>
+        <ul>
+            <li>The estimated damages from each piece of evidence.</li>
+            <li>The juror's personal bias (defense-leaning jurors award lower damages).</li>
+            <li>The juror's demographic background weight.</li>
+            <li>The probative value they assign to each piece of evidence.</li>
+            <li>For testimonial evidence, the juror's perceived credibility of the witness.</li>
+        </ul>
+        <p>The considered damages are displayed as a rounded dollar amount (e.g., <code>$250K</code>) and update dynamically as new evidence is admitted.</p>
+
         <h3>Trial Memories Tab</h3>
         <p>Lists memories created during the trial process, such as evidence presentations, witness testimony, and attorney arguments. These are tagged with <code>Source = "TrialEvent"</code> and directly influence the juror's evolving opinion.</p>
 

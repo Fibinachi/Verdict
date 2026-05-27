@@ -43,9 +43,11 @@
             </StackPanel>
             
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button x:Name="LoadModelsButton" Content="Load Models..." Click="LoadModels_Click" 
-                        Width="100" Margin="0,0,10,0" Visibility="Collapsed"/>
-                <Button Content="Save" Click="Save_Click" Width="75" IsDefault="True"/>
+                <Button x:Name="DownloadButton" Content="Download" Click="Download_Click" 
+                        Width="80" Margin="0,0,6,0" Visibility="Collapsed"/>
+                <Button x:Name="LoadModelsButton" Content="Browse..." Click="LoadModels_Click" 
+                        Width="70" Margin="0,0,6,0" Visibility="Collapsed"/>
+                <Button Content="Save" Click="Save_Click" Width="60" IsDefault="True"/>
             </StackPanel>
         </Grid>
         

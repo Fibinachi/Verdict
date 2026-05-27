@@ -74,6 +74,10 @@ public class DebateService : IDebateService
 
             agent.RecordTrialEvent(description, agent.Bias * 0.1);
 
+            // If this statement references exhibits (e.g., "Exhibit 1"),
+            // reinforce any existing memories that mention the same exhibit.
+            agent.ReinforceRelatedMemories(description);
+
             if (agent.Role != AgentRole.Reporter)
                 agent.AnalyzeSentiment(description);
 

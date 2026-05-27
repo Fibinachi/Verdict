@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,12 +16,21 @@ public partial class MainWindow : Window
     private MainViewModel _viewModel;
     private readonly ISettingsService _settingsService = new SettingsService();
 
+    static MainWindow()
+    {
+        System.Console.WriteLine("MAINWINDOW STATIC CTOR");
+    }
+
     public MainWindow()
     {
+        System.Console.WriteLine("MAINWINDOW CTOR START");
         InitializeComponent();
+        System.Console.WriteLine("MAINWINDOW INITIALIZECOMPONENT DONE");
         _viewModel = new MainViewModel();
+        System.Console.WriteLine("MAINWINDOW VIEWMODEL DONE");
         this.DataContext = _viewModel;
         PopulateRecentFilesMenu();
+        System.Console.WriteLine("MAINWINDOW CTOR DONE");
     }
 
     private void ChatInput_KeyDown(object sender, KeyEventArgs e)
@@ -57,6 +67,11 @@ private void Podium_Click(object sender, RoutedEventArgs e)
     {
         // Turn-based deliberation step (repurposed button)
         await _viewModel.DeliberateNextTurn();
+    }
+
+    private async void AutoDeliberate_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.AutoSimulateTrial();
     }
 
 
@@ -104,41 +119,46 @@ private void Podium_Click(object sender, RoutedEventArgs e)
                 ApplyRoleDefaults(agentToEdit);
             }
             
-            var profileWindow = new Views.AgentProfileWindow(agentToEdit, _viewModel.CurrentCase.AvailableModels)
+            var profileWindow = new Views.AgentProfileWindow(agentToEdit, _viewModel.EffectiveModels)
             {
                 Owner = this
             };
 
             if (profileWindow.ShowDialog() == true)
             {
-                // Only copy values back if it's an unoccupied agent
-                if (!agent.IsOccupied)
+                // Read back values from the wrapper (which holds the actual edits)
+                // For occupied agents, agentToEdit is the same reference as agent,
+                // but the dialog edits a separate AgentWithAvailableModels wrapper.
+                if (profileWindow.DataContext is AgentWithAvailableModels wrapper)
                 {
-                    agent.Name = string.IsNullOrWhiteSpace(agentToEdit.Name) ? $"Active {agentToEdit.Role}" : agentToEdit.Name;
-                    agent.Gender = agentToEdit.Gender;
-                    agent.Age = agentToEdit.Age;
-                    agent.Race = agentToEdit.Race;
-                    agent.Occupation = agentToEdit.Occupation;
-                    agent.EducationLevel = agentToEdit.EducationLevel;
-                    agent.IncomeLevel = agentToEdit.IncomeLevel;
-                    agent.ZipCode = agentToEdit.ZipCode;
-                    agent.PoliticalAffiliation = agentToEdit.PoliticalAffiliation;
-                    agent.ReligiousAffiliation = agentToEdit.ReligiousAffiliation;
-                    agent.SpecializedKnowledge = agentToEdit.SpecializedKnowledge;
-                    agent.MaritalStatus = agentToEdit.MaritalStatus;
-                    agent.ParentalStatus = agentToEdit.ParentalStatus;
-                    agent.SettlementAuthority = agentToEdit.SettlementAuthority;
-                    agent.RiskPerception = agentToEdit.RiskPerception;
-                    agent.MediaConsumption = agentToEdit.MediaConsumption;
-                    agent.ConsumerSegment = agentToEdit.ConsumerSegment;
-                    agent.Hobbies = agentToEdit.Hobbies;
-                    agent.ViewingCharacteristics = agentToEdit.ViewingCharacteristics;
-                    agent.CurrentStatus = agentToEdit.CurrentStatus;
-                    agent.SystemPrompt = agentToEdit.SystemPrompt;
+                    if (!agent.IsOccupied)
+                    {
+                        agent.Name = string.IsNullOrWhiteSpace(wrapper.Name) ? $"Active {wrapper.Role}" : wrapper.Name;
+                        agent.Gender = wrapper.Gender;
+                        agent.Age = wrapper.Age;
+                        agent.Race = wrapper.Race;
+                        agent.Occupation = wrapper.Occupation;
+                        agent.EducationLevel = wrapper.EducationLevel;
+                        agent.IncomeLevel = wrapper.IncomeLevel;
+                        agent.ZipCode = wrapper.ZipCode;
+                        agent.PoliticalAffiliation = wrapper.PoliticalAffiliation;
+                        agent.ReligiousAffiliation = wrapper.ReligiousAffiliation;
+                        agent.SpecializedKnowledge = wrapper.SpecializedKnowledge;
+                        agent.MaritalStatus = wrapper.MaritalStatus;
+                        agent.ParentalStatus = wrapper.ParentalStatus;
+                        agent.SettlementAuthority = wrapper.SettlementAuthority;
+                        agent.RiskPerception = wrapper.RiskPerception;
+                        agent.MediaConsumption = wrapper.MediaConsumption;
+                        agent.ConsumerSegment = wrapper.ConsumerSegment;
+                        agent.Hobbies = wrapper.Hobbies;
+                        agent.ViewingCharacteristics = wrapper.ViewingCharacteristics;
+                        agent.CurrentStatus = wrapper.CurrentStatus;
+                        agent.SystemPrompt = wrapper.SystemPrompt;
+                    }
+                    
+                    // Always copy the selected model from the wrapper
+                    agent.SelectedModel = wrapper.SelectedModel;
                 }
-                
-                // Always copy the selected model regardless of whether the agent was occupied
-                agent.SelectedModel = agentToEdit.SelectedModel;
                 
                 _viewModel.OccupySlot(agent);
             }
@@ -243,6 +263,12 @@ private void Podium_Click(object sender, RoutedEventArgs e)
                 agent.VerdictLean = newJuror.VerdictLean;
                 agent.Sentiment = newJuror.Sentiment;
 
+                // Copy trial-event memories so the new juror has the same
+                // evidence impressions and event log as all other jurors.
+                agent.TrialEvents.Clear();
+                foreach (var mem in newJuror.TrialEvents)
+                    agent.TrialEvents.Add(mem);
+
                 // Mark as occupied if not already
                 if (!agent.IsOccupied)
                 {
@@ -323,7 +349,7 @@ private void Podium_Click(object sender, RoutedEventArgs e)
     {
         var openFileDialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "All Evidence (*.pdf;*.txt;*.docx;*.rtf;*.jpg;*.jpeg;*.png;*.gif;*.bmp)|*.pdf;*.txt;*.docx;*.rtf;*.jpg;*.jpeg;*.png;*.gif;*.bmp|Documents (*.pdf;*.txt;*.docx;*.rtf)|*.pdf;*.txt;*.docx;*.rtf|Images (*.jpg;*.jpeg;*.png;*.gif;*.bmp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp|All Files (*.*)|*.*"
+            Filter = "All Evidence (*.pdf;*.txt;*.docx;*.rtf;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.mov;*.avi;*.wmv;*.mkv;*.mp3;*.wav;*.ogg)|*.pdf;*.txt;*.docx;*.rtf;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.mov;*.avi;*.wmv;*.mkv;*.mp3;*.wav;*.ogg|Documents (*.pdf;*.txt;*.docx;*.rtf)|*.pdf;*.txt;*.docx;*.rtf|Images (*.jpg;*.jpeg;*.png;*.gif;*.bmp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp|Video (*.mp4;*.mov;*.avi;*.wmv;*.mkv)|*.mp4;*.mov;*.avi;*.wmv;*.mkv|Audio (*.mp3;*.wav;*.ogg)|*.mp3;*.wav;*.ogg|All Files (*.*)|*.*"
         };
         if (openFileDialog.ShowDialog() == true)
         {
@@ -345,7 +371,7 @@ private void Podium_Click(object sender, RoutedEventArgs e)
         var agent = menuItem?.DataContext as Agent;
         if (agent != null)
         {
-            var profileWindow = new Views.AgentProfileWindow(agent, _viewModel.CurrentCase.AvailableModels)
+            var profileWindow = new Views.AgentProfileWindow(agent, _viewModel.EffectiveModels)
             {
                 Owner = this
             };
@@ -366,7 +392,7 @@ private void Podium_Click(object sender, RoutedEventArgs e)
     {
         var openFileDialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "All Evidence (*.pdf;*.txt;*.docx;*.rtf;*.jpg;*.jpeg;*.png;*.gif;*.bmp)|*.pdf;*.txt;*.docx;*.rtf;*.jpg;*.jpeg;*.png;*.gif;*.bmp|Documents (*.pdf;*.txt;*.docx;*.rtf)|*.pdf;*.txt;*.docx;*.rtf|Images (*.jpg;*.jpeg;*.png;*.gif;*.bmp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp|All Files (*.*)|*.*",
+            Filter = "All Evidence (*.pdf;*.txt;*.docx;*.rtf;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.mov;*.avi;*.wmv;*.mkv;*.mp3;*.wav;*.ogg)|*.pdf;*.txt;*.docx;*.rtf;*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.mov;*.avi;*.wmv;*.mkv;*.mp3;*.wav;*.ogg|Documents (*.pdf;*.txt;*.docx;*.rtf)|*.pdf;*.txt;*.docx;*.rtf|Images (*.jpg;*.jpeg;*.png;*.gif;*.bmp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp|Video (*.mp4;*.mov;*.avi;*.wmv;*.mkv)|*.mp4;*.mov;*.avi;*.wmv;*.mkv|Audio (*.mp3;*.wav;*.ogg)|*.mp3;*.wav;*.ogg|All Files (*.*)|*.*",
             Multiselect = true
         };
 
@@ -515,6 +541,51 @@ private void Podium_Click(object sender, RoutedEventArgs e)
             _settingsService.AddRecentFile(openFileDialog.FileName);
             PopulateRecentFilesMenu();
         }
+    }
+
+    private void LoadDefaultCase(string caseFileName)
+    {
+        if (_viewModel.CurrentCase?.Agents?.Count > 0 &&
+            MessageBox.Show("Load a default case? Any unsaved changes will be lost.", "Default Case", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        // Look for default case files relative to the executable (deployed) and project root (dev)
+        string[] searchPaths = new[]
+        {
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DefaultCases", caseFileName),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "DefaultCases", caseFileName)
+        };
+
+        string? casePath = searchPaths.FirstOrDefault(File.Exists);
+        if (casePath == null)
+        {
+            MessageBox.Show($"Default case file '{caseFileName}' not found.", "Default Case", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _viewModel.LoadCase(casePath);
+    }
+
+    private void DefaultCase_AppleRiver_Click(object sender, RoutedEventArgs e)
+    {
+        LoadDefaultCase("apple-river.jur");
+    }
+
+    private void DefaultCase_AppleJuice_Click(object sender, RoutedEventArgs e)
+    {
+        LoadDefaultCase("apple-juice-murders.jur");
+    }
+
+    private void DefaultCase_NCAccident_Click(object sender, RoutedEventArgs e)
+    {
+        LoadDefaultCase("nc-comparative-fault-accident.jur");
+    }
+
+    private void DefaultCase_SmokingMemo_Click(object sender, RoutedEventArgs e)
+    {
+        LoadDefaultCase("smoking-memo.jur");
     }
 
     private void SaveCaseAs_Click(object sender, RoutedEventArgs e)
@@ -685,58 +756,86 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
         reportWindow.ShowDialog();
     }
 
-    private void SetTrialPhase_Discovery_Click(object sender, RoutedEventArgs e)
+    private async void SetTrialPhase_Discovery_Click(object sender, RoutedEventArgs e)
     {
         _viewModel.CurrentCase.TrialPhase = TrialPhase.Discovery;
-        _viewModel.TranscriptOutput = "Trial phase set to Discovery. You can now add evidence and documents for initial review.";
+        _viewModel.CurrentCase.CurrentDebateStage = CourtPhase.CaseGeneration;
+        _viewModel.TranscriptOutput = "[PHASE] Discovery\n\n";
+        await _viewModel.RunDiscoveryPhase();
     }
 
-    private void SetTrialPhase_Pretrial_Click(object sender, RoutedEventArgs e)
+    private async void SetTrialPhase_Pretrial_Click(object sender, RoutedEventArgs e)
     {
         _viewModel.CurrentCase.TrialPhase = TrialPhase.Pretrial;
-        _viewModel.TranscriptOutput = "Trial phase set to Pretrial. You can now submit evidence and see how it affects jury opinions.";
+        _viewModel.CurrentCase.CurrentDebateStage = CourtPhase.LegalResearch;
+        _viewModel.TranscriptOutput = "[PHASE] Pretrial\n\n";
+        await _viewModel.RunPretrialEvaluation();
     }
 
-    private void SetTrialPhase_Trial_Click(object sender, RoutedEventArgs e)
+    private async void SetCourtPhase_OpeningStatements_Click(object sender, RoutedEventArgs e)
     {
-        _viewModel.CurrentCase.TrialPhase = TrialPhase.Trial;
-        _viewModel.TranscriptOutput = "Trial phase set to Trial. Evidence now directly influences seated jurors.";
-    }
-
-    private void SetCourtPhase_OpeningStatements_Click(object sender, RoutedEventArgs e)
-    {
-        // Debate stage selection disabled; always deliberation.
-        _viewModel.CurrentDebateStage = CourtPhase.JuryDeliberation;
+        SetTrialPhaseToTrial();
+        await _viewModel.EnterOpeningStatements();
     }
 
 
-    private void SetCourtPhase_WitnessTestimony_Click(object sender, RoutedEventArgs e)
+    private async void SetCourtPhase_WitnessTestimony_Click(object sender, RoutedEventArgs e)
     {
-        _viewModel.CurrentDebateStage = CourtPhase.JuryDeliberation;
+        SetTrialPhaseToTrial();
+        await _viewModel.EnterWitnessTestimony();
     }
 
 
-    private void SetCourtPhase_CrossExamination_Click(object sender, RoutedEventArgs e)
+    private async void SetCourtPhase_CrossExamination_Click(object sender, RoutedEventArgs e)
     {
-        _viewModel.CurrentDebateStage = CourtPhase.JuryDeliberation;
+        SetTrialPhaseToTrial();
+        await _viewModel.EnterCrossExamination();
     }
 
 
     private void SetCourtPhase_PartyStatements_Click(object sender, RoutedEventArgs e)
     {
-        _viewModel.CurrentDebateStage = CourtPhase.JuryDeliberation;
+        SetTrialPhaseToTrial();
+        _viewModel.CurrentDebateStage = CourtPhase.PartyStatements;
+        _viewModel.CurrentCase.CurrentDebateStage = CourtPhase.PartyStatements;
+        _viewModel.TranscriptOutput = "[STAGE] Party Statements";
     }
 
 
-    private void SetCourtPhase_ClosingArguments_Click(object sender, RoutedEventArgs e)
+    private async void SetCourtPhase_ClosingArguments_Click(object sender, RoutedEventArgs e)
     {
-        _viewModel.CurrentDebateStage = CourtPhase.JuryDeliberation;
+        SetTrialPhaseToTrial();
+        await _viewModel.EnterClosingArguments();
     }
 
+
+    private void SetCourtPhase_JuryInstructions_Click(object sender, RoutedEventArgs e)
+    {
+        SetTrialPhaseToTrial();
+        _viewModel.CurrentDebateStage = CourtPhase.JuryInstructions;
+        _viewModel.CurrentCase.CurrentDebateStage = CourtPhase.JuryInstructions;
+        _viewModel.TranscriptOutput = "[STAGE] Jury Instructions\n\n";
+        _viewModel.GenerateJuryInstructions();
+    }
 
     private void SetCourtPhase_JuryDeliberation_Click(object sender, RoutedEventArgs e)
     {
+        SetTrialPhaseToTrial();
         _viewModel.CurrentDebateStage = CourtPhase.JuryDeliberation;
+        _viewModel.CurrentCase.CurrentDebateStage = CourtPhase.JuryDeliberation;
+        _viewModel.TranscriptOutput = "[STAGE] Jury Deliberation";
+    }
+
+    /// <summary>
+    /// Sets the case to Trial phase if not already in Trial mode.
+    /// </summary>
+    private void SetTrialPhaseToTrial()
+    {
+        if (_viewModel.CurrentCase.TrialPhase != TrialPhase.Trial)
+        {
+            _viewModel.CurrentCase.TrialPhase = TrialPhase.Trial;
+            _viewModel.TranscriptOutput = "[PHASE] Trial\n\nThe trial is now in session.\n";
+        }
     }
 
 
@@ -747,6 +846,31 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
 
     private void GeneralSettings_Click(object sender, RoutedEventArgs e) => MessageBox.Show("Settings feature coming soon.");
     
+    private void GenerateCase_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Views.CaseSelectionDialog { Owner = this };
+        if (dialog.ShowDialog() == true)
+        {
+            if (dialog.SelectedFilePath != null)
+            {
+                if (MessageBox.Show("Load this demo case? Unsaved changes will be lost.",
+                    "Load Demo", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                {
+                    _viewModel.LoadCase(dialog.SelectedFilePath);
+                }
+            }
+            else
+            {
+                // Blank Case button was clicked
+                if (MessageBox.Show("Start a new blank case? Unsaved changes will be lost.",
+                    "New Case", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                {
+                    _viewModel.NewCase();
+                }
+            }
+        }
+    }
+
     private void CaseSettings_Click(object sender, RoutedEventArgs e)
     {
         var originalPhase = _viewModel.CurrentCase.TrialPhase;
@@ -842,13 +966,39 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
         }
     }
 
-    private void LLMConfiguration_Click(object sender, RoutedEventArgs e)
+    private void CaseCustomModels_Click(object sender, RoutedEventArgs e)
     {
+        // Open LLM config with ONLY this case's models — changes stay in the .jur file
         var viewModel = new ModelSettingsViewModel(
             _viewModel.CurrentCase.AvailableModels,
             _viewModel.CurrentCase.GlobalTemperature,
             _viewModel.CurrentCase.GlobalMaxTokens,
-            _viewModel.CurrentCase.DefaultBiasFactors);
+            _viewModel.CurrentCase.DefaultBiasFactors,
+            _viewModel.CurrentCase.DefaultJurorModel);
+        var window = new Views.ModelSettingsWindow(viewModel) { Owner = this };
+
+        if (window.ShowDialog() == true)
+        {
+            if (viewModel.Models.Count > 0)
+            {
+                _viewModel.CurrentCase.AvailableModels.Clear();
+                _viewModel.CurrentCase.AvailableModels.AddRange(viewModel.Models);
+            }
+            _viewModel.CurrentCase.GlobalTemperature = viewModel.GlobalTemperature;
+            _viewModel.CurrentCase.GlobalMaxTokens = viewModel.GlobalMaxTokens;
+            _viewModel.CurrentCase.DefaultJurorModel = viewModel.DefaultJurorModel;
+            // Note: NOT saving to universal defaults — these are case-only
+        }
+    }
+
+    private void LLMConfiguration_Click(object sender, RoutedEventArgs e)
+    {
+        var viewModel = new ModelSettingsViewModel(
+            _viewModel.EffectiveModels,
+            _viewModel.CurrentCase.GlobalTemperature,
+            _viewModel.CurrentCase.GlobalMaxTokens,
+            _viewModel.CurrentCase.DefaultBiasFactors,
+            _viewModel.CurrentCase.DefaultJurorModel);
         var window = new Views.ModelSettingsWindow(viewModel)
         {
             Owner = this
@@ -856,13 +1006,48 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
 
         if (window.ShowDialog() == true)
         {
-            _viewModel.CurrentCase.AvailableModels.Clear();
-            _viewModel.CurrentCase.AvailableModels.AddRange(viewModel.Models);
+            if (viewModel.Models.Count > 0)
+            {
+                _viewModel.CurrentCase.AvailableModels.Clear();
+                _viewModel.CurrentCase.AvailableModels.AddRange(viewModel.Models);
+            }
             _viewModel.CurrentCase.GlobalTemperature = viewModel.GlobalTemperature;
             _viewModel.CurrentCase.GlobalMaxTokens = viewModel.GlobalMaxTokens;
+            _viewModel.CurrentCase.DefaultJurorModel = viewModel.DefaultJurorModel;
             _viewModel.CurrentCase.DefaultBiasFactors.Clear();
             foreach (var bf in viewModel.DefaultBiasFactors)
                 _viewModel.CurrentCase.DefaultBiasFactors.Add(new BiasFactor { Name = bf.Name, Weight = bf.Weight });
+
+            // Persist model config changes to default settings so they survive restarts
+            _viewModel.SaveDefaultSettings(_viewModel.CurrentCase);
+            
+            // Auto-assign the newly configured model to all agents that don't have one selected.
+            // Prefer models with real API keys (not empty or placeholder values like "sk-").
+            if (viewModel.Models.Count > 0)
+            {
+                var preferredModel = viewModel.Models.LastOrDefault(m =>
+                    !string.IsNullOrWhiteSpace(m.ApiKey) && m.ApiKey.Trim() != "sk-")
+                    ?? viewModel.Models.LastOrDefault();
+
+                if (preferredModel != null)
+                {
+                    // Warn if the selected model has no real API key
+                    if (string.IsNullOrWhiteSpace(preferredModel.ApiKey) || preferredModel.ApiKey.Trim() == "sk-")
+                    {
+                        MessageBox.Show(
+                            $"Model '{preferredModel.FriendlyName}' has no API key configured.\n" +
+                            "LLM calls will fail until you configure a valid API key.\n\n" +
+                            "Open LLM Configuration, select the model, and click 'Configure...' to set your key.",
+                            "Missing API Key", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+
+                    foreach (var agent in _viewModel.AllAgents.Where(a => a.IsOccupied))
+                    {
+                        if (string.IsNullOrWhiteSpace(agent.SelectedModel))
+                            agent.SelectedModel = preferredModel.FriendlyName;
+                    }
+                }
+            }
             
             // Persist the updated models to default settings so they survive app restart
             var defaults = _viewModel.GetDefaultSettings();
@@ -870,6 +1055,7 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
             defaults.AvailableModels.AddRange(viewModel.Models);
             defaults.GlobalTemperature = viewModel.GlobalTemperature;
             defaults.GlobalMaxTokens = viewModel.GlobalMaxTokens;
+            defaults.DefaultJurorModel = viewModel.DefaultJurorModel;
             defaults.DefaultBiasFactors.Clear();
             foreach (var bf in viewModel.DefaultBiasFactors)
                 defaults.DefaultBiasFactors.Add(new BiasFactor { Name = bf.Name, Weight = bf.Weight });
@@ -913,6 +1099,13 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
         _viewModel.GenerateJury();
         MessageBox.Show("Jury generated based on case jurisdiction demographics.");
     }
+
+    private void GenerateAlternates_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.GenerateAlternates(2);
+        MessageBox.Show("Alternate jurors generated based on case jurisdiction demographics.");
+    }
+
     private void CourtroomLayoutSettings_Click(object sender, RoutedEventArgs e) => MessageBox.Show("Layout Settings feature coming soon.");
 
     private void About_Click(object sender, RoutedEventArgs e)
@@ -982,31 +1175,17 @@ private async void ImportTranscript_Click(object sender, RoutedEventArgs e)
     }
 
     /// <summary>
-    /// Generates a PDF report for the current case.
+    /// Opens a savable text report window for the current case.
+    /// The user can review, edit, and save the report as a text file.
     /// </summary>
     private void GenerateReport_Click(object sender, RoutedEventArgs e)
     {
-        var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+        var reportText = _viewModel.GenerateTextReport();
+        var reportWindow = new Views.ReportWindow(reportText, _viewModel.CurrentCase.CaseName ?? "Case Report")
         {
-            Filter = "PDF Files (*.pdf)|*.pdf",
-            DefaultExt = "pdf",
-            FileName = (_viewModel.CurrentCase.CaseName ?? "Case_Report").Replace(" ", "_")
+            Owner = this
         };
-
-        if (saveFileDialog.ShowDialog() == true)
-        {
-            _viewModel.GeneratePDFReport(saveFileDialog.FileName);
-            var result = MessageBox.Show("PDF report generated. Would you like to open it?", 
-                "Report Generated", MessageBoxButton.YesNo, MessageBoxImage.Information);
-            if (result == MessageBoxResult.Yes)
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = saveFileDialog.FileName,
-                    UseShellExecute = true
-                });
-            }
-        }
+        reportWindow.ShowDialog();
     }
 
     /// <summary>

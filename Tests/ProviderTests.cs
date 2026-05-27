@@ -83,7 +83,7 @@ public class ProviderTests : BaseTestClass
         
         var modelIdField = fields.FirstOrDefault(f => f.Key == "ModelId");
         Assert(modelIdField != null, "OnnxProvider has ModelId config field");
-        Assert(modelIdField!.Label == "Model Path or HF Model ID", "ModelId field label is 'Model Path or HF Model ID'");
+        Assert(modelIdField!.Label == "HF Model ID or Local Path", "ModelId field label is 'HF Model ID or Local Path'");
         Assert(modelIdField.Description.Contains("llmware/llama"), "ModelId field describes Hugging Face model IDs");
         Assert(modelIdField.DefaultValue == "", "ModelId default value is empty");
 
@@ -197,6 +197,213 @@ public class ProviderTests : BaseTestClass
         }
     }
 
+    /// <summary>
+    /// Auto-downloads a small ONNX GenAI test model (llama-3.2-1b-instruct-onnx, ~1.8 GB)
+    /// to the local app data folder. Returns true if a valid model is available after the attempt.
+    /// After download, selects the largest self-contained .onnx variant if the default
+    /// model.onnx uses external data (model.onnx_data) that wasn't downloaded.
+    /// </summary>
+    private static bool TryAutoDownloadOnnxTestModel(AIModelConfiguration config)
+    {
+        const string testModelId = "llmware/llama-3.2-1b-instruct-onnx";
+
+        try
+        {
+            string modelsRoot = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Verdict", "Models");
+            string modelDir = Path.Combine(modelsRoot, "llama-3.2-1b-instruct-onnx");
+
+            // Check if already downloaded and valid
+            if (ModelDownloadService.IsValidModelDirectory(modelDir))
+            {
+                var actualPath = ModelDownloadService.FindModelDirectory(modelDir);
+                if (actualPath != null)
+                {
+                    actualPath = EnsureSelfContainedModel(actualPath);
+                    config.ModelId = actualPath;
+                    Console.WriteLine($"  ONNX test model ready: {actualPath}");
+                    return true;
+                }
+            }
+
+            // Download
+            Console.WriteLine($"  Downloading ONNX test model: {testModelId} (~1.8 GB, one-time)...");
+            var downloadService = new ModelDownloadService();
+
+            downloadService.DownloadModelAsync(testModelId, modelDir, progress =>
+            {
+                if (progress.TotalFiles > 0 && progress.FilesCompleted % 2 == 0)
+                    Console.WriteLine($"    [{progress.FilesCompleted}/{progress.TotalFiles}] {progress.CurrentFile} ({progress.ProgressPercent:F0}%)");
+            }).GetAwaiter().GetResult();
+
+            // Verify after download and pick best variant
+            var finalPath = ModelDownloadService.FindModelDirectory(modelDir);
+            if (finalPath != null && ModelDownloadService.IsValidModelDirectory(modelDir))
+            {
+                finalPath = EnsureSelfContainedModel(finalPath);
+                config.ModelId = finalPath;
+                Console.WriteLine($"  ONNX test model ready: {finalPath}");
+                return true;
+            }
+
+            Console.WriteLine($"  ONNX download completed but model directory is invalid.");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  ONNX auto-download failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Auto-downloads a small GGUF test model (TinyLlama-1.1B-Chat, ~700 MB Q4_K_M)
+    /// for HuggingFace provider testing. Returns true if a valid model is available.
+    /// </summary>
+    private static bool TryAutoDownloadHfTestModel(AIModelConfiguration config)
+    {
+        const string testModelId = "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF";
+
+        try
+        {
+            string modelsRoot = string.IsNullOrWhiteSpace(config.Endpoint)
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "models")
+                : config.Endpoint;
+            string modelDir = Path.Combine(modelsRoot, "TinyLlama-1.1B-Chat-v1.0-GGUF");
+
+            // Check if already downloaded
+            var existing = Directory.Exists(modelDir)
+                ? Directory.GetFiles(modelDir, "*.gguf", SearchOption.TopDirectoryOnly)
+                : Array.Empty<string>();
+            if (existing.Length > 0)
+            {
+                config.ModelId = existing[0];
+                var size = new FileInfo(existing[0]).Length;
+                Console.WriteLine($"  HF test model found locally: {Path.GetFileName(existing[0])} ({size / 1_000_000} MB)");
+                return true;
+            }
+
+            // Download via the HF provider's own download mechanism
+            Console.WriteLine($"  Downloading HF test model: {testModelId} (~700 MB, one-time)...");
+            var hfProvider = new Verdict.Providers.HuggingFaceProvider();
+
+            // Use the download workflow from the provider — it fetches only GGUF files
+            var downloadProgress = new Progress<DownloadProgressInfo>(info =>
+            {
+                if (info.TotalFiles > 0)
+                    Console.WriteLine($"    [{info.FilesCompleted}/{info.TotalFiles}] {info.CurrentFile} ({info.ProgressPercent:F0}%)");
+            });
+
+            // Trigger a connection test which will auto-download via ResolveModelPathAsync
+            config.ModelId = testModelId;
+            config.Endpoint = modelsRoot;
+            var testResult = hfProvider.TestConnectionAsync(config).GetAwaiter().GetResult();
+
+            if (testResult.StartsWith("Success"))
+            {
+                // Find the downloaded GGUF file
+                var ggufFiles = Directory.GetFiles(modelDir, "*.gguf", SearchOption.TopDirectoryOnly);
+                if (ggufFiles.Length > 0)
+                {
+                    config.ModelId = ggufFiles[0];
+                    Console.WriteLine($"  HF test model ready: {Path.GetFileName(ggufFiles[0])}");
+                    return true;
+                }
+            }
+
+            Console.WriteLine($"  HF model download/load result: {testResult}");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  HF auto-download failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Ensures the model directory uses a self-contained .onnx file.
+    /// If model.onnx has external data that's missing or named with wrong separator,
+    /// finds the largest .onnx variant and updates genai_config.json to point to it.
+    /// </summary>
+    private static string EnsureSelfContainedModel(string modelDir)
+    {
+        string defaultOnnx = Path.Combine(modelDir, "model.onnx");
+        string onnxDataDot = Path.Combine(modelDir, "model.onnx.data");   // what ONNX runtime expects
+        string onnxDataUnderscore = Path.Combine(modelDir, "model.onnx_data"); // what HuggingFace stores
+
+        // Fix HuggingFace naming mismatch: model.onnx_data → model.onnx.data
+        if (!File.Exists(onnxDataDot) && File.Exists(onnxDataUnderscore))
+        {
+            try
+            {
+                File.Move(onnxDataUnderscore, onnxDataDot);
+                Console.WriteLine($"  Renamed model.onnx_data → model.onnx.data");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  Could not rename onnx_data: {ex.Message}");
+            }
+        }
+
+        // If the default model is self-contained (large file) or has its data file, use it as-is
+        if (File.Exists(defaultOnnx))
+        {
+            var info = new FileInfo(defaultOnnx);
+            if (info.Length > 500_000_000 || File.Exists(onnxDataDot))
+                return modelDir;
+        }
+
+        // Find the largest .onnx file — that's the self-contained quantized variant
+        var allOnnx = Directory.GetFiles(modelDir, "model*.onnx", SearchOption.TopDirectoryOnly);
+        var largest = allOnnx
+            .Select(f => new { Path = f, Info = new FileInfo(f) })
+            .Where(x => x.Info.Length > 500_000_000)
+            .OrderByDescending(x => x.Info.Length)
+            .FirstOrDefault();
+
+        if (largest != null)
+        {
+            string variantName = Path.GetFileName(largest.Path);
+            Console.WriteLine($"  Using self-contained variant: {variantName} ({largest.Info.Length / 1_000_000} MB)");
+
+            var configPath = Path.Combine(modelDir, "genai_config.json");
+            if (File.Exists(configPath))
+            {
+                try
+                {
+                    var updated = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        model = new
+                        {
+                            type = "llama",
+                            context_length = 2048,
+                            pad_token_id = 0,
+                            eos_token_id = new[] { 128001, 128008, 128009 },
+                            vocab_size = 128256,
+                            decoder = new
+                            {
+                                filename = variantName,
+                                session_options = new
+                                {
+                                    enable_cpu_mem_arena = false
+                                }
+                            }
+                        }
+                    }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+                    File.WriteAllText(configPath, updated);
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        return modelDir;
+    }
+
     private static void TestAllProvidersSendReceive()
     {
         Console.WriteLine("\n─── Provider Send/Receive Tests (requires configured models via env vars or app options) ───");
@@ -284,6 +491,18 @@ public class ProviderTests : BaseTestClass
                         canTest = true;
                     }
                 }
+            }
+
+            // ── ONNX auto-download: if no model configured, download llama-3.2-1b-instruct-onnx ──
+            if (!canTest && !needsApiKey && provider.ProviderName == "ONNX")
+            {
+                canTest = TryAutoDownloadOnnxTestModel(config);
+            }
+
+            // ── HuggingFace auto-download: if no model configured, download TinyLlama GGUF ──
+            if (!canTest && !needsApiKey && provider.ProviderName == "Hugging Face")
+            {
+                canTest = TryAutoDownloadHfTestModel(config);
             }
 
             if (!canTest)
@@ -398,13 +617,10 @@ public class ProviderTests : BaseTestClass
         Console.WriteLine("\n─── HuggingFaceProvider Discovery ───");
 
         var providers = ProviderDiscoveryService.GetAvailableProviders();
-
-        // Check that HuggingFaceProvider is discovered by the service
         var hfProvider = providers.FirstOrDefault(p => p.ProviderName == "Hugging Face");
-        Assert(hfProvider != null, "ProviderDiscoveryService discovers HuggingFaceProvider");
-        Assert(hfProvider is HuggingFaceProvider, "Discovered Hugging Face provider is HuggingFaceProvider type");
+        Assert(hfProvider != null, "HuggingFaceProvider is in active providers");
+        Assert(hfProvider is HuggingFaceProvider, "Discovered HF provider is HuggingFaceProvider type");
 
-        // Check GetProviderByName works
         var byName = ProviderDiscoveryService.GetProviderByName("Hugging Face");
         Assert(byName != null, "GetProviderByName(\"Hugging Face\") returns provider");
         Assert(byName is HuggingFaceProvider, "GetProviderByName returns HuggingFaceProvider instance");

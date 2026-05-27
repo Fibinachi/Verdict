@@ -13,6 +13,7 @@ public class ModelSettingsViewModel : ViewModelBase
     private AIModelConfiguration? _selectedModel;
     private double _globalTemperature = 0.7;
     private int _globalMaxTokens = 4096;
+    private string _defaultJurorModel = string.Empty;
 
     private static string ModelsFolderPath =>
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models");
@@ -122,14 +123,24 @@ public class ModelSettingsViewModel : ViewModelBase
         get => _globalMaxTokens;
         set => SetProperty(ref _globalMaxTokens, value);
     }
-
+    /// <summary>
+    /// The FriendlyName of the default AI model assigned to newly generated jurors.
+    /// Empty means no default — each juror falls back to the first available model.
+    /// </summary>
+    public string DefaultJurorModel
+    {
+        get => _defaultJurorModel;
+        set => SetProperty(ref _defaultJurorModel, value ?? string.Empty);
+    }
     public ModelSettingsViewModel(IEnumerable<AIModelConfiguration> initialModels,
         double globalTemperature = 0.7, int globalMaxTokens = 4096,
-        IEnumerable<BiasFactor>? defaultBiasFactors = null)
+        IEnumerable<BiasFactor>? defaultBiasFactors = null,
+        string defaultJurorModel = "")
     {
         Models = new ObservableCollection<AIModelConfiguration>(initialModels);
         GlobalTemperature = globalTemperature;
         GlobalMaxTokens = globalMaxTokens;
+        DefaultJurorModel = defaultJurorModel;
 
         if (defaultBiasFactors != null)
         {
@@ -308,7 +319,10 @@ public class ModelSettingsViewModel : ViewModelBase
                             break;
                         }
                     }
-                    catch { }
+                    catch (Exception innerEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ModelSettings] Failed to delete model JSON file: {innerEx.Message}");
+                    }
                 }
             }
         }

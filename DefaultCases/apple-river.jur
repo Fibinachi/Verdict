@@ -1,0 +1,482 @@
+{
+    "CaseName":  "State v. Nicolae Miu",
+    "CaseNumber":  "2022-CF-0001",
+    "CourtName":  "St. Croix County Circuit Court",
+    "Mode":  "Criminal",
+    "Jurisdiction":  "State",
+    "JurisdictionSpecifics":  "Wisconsin. Self-defense is an affirmative defense under Wis. Stat. � 939.48. The defendant must produce evidence of self-defense; once raised, the State must disprove self-defense beyond a reasonable doubt. First-degree reckless homicide under Wis. Stat. � 940.02(1) requires proof that the defendant recklessly caused the death of another under circumstances showing utter disregard for human life.",
+    "JurorCount":  12,
+    "TrialPhase":  "Trial",
+    "CurrentDebateStage":  "JuryDeliberation",
+    "InsuranceReserve":  0.0,
+    "EstimatedSettlement":  0.0,
+    "GlobalTemperature":  0.7,
+    "GlobalMaxTokens":  4096,
+    "DefaultBiasWeight":  0.0,
+    "DeliberationRounds":  20,
+    "Plaintiffs":  [
+                       "State of Wisconsin"
+                   ],
+    "Defendants":  [
+                       "Nicolae Miu"
+                   ],
+    "PlaintiffAttorney":  "District Attorney Karl Anderson",
+    "DefenseAttorney":  "Corey Chirafisi",
+    "ProsecutionPlaintiffPrompt":  "You are District Attorney Karl Anderson, prosecuting Nicolae Miu for the fatal stabbing of 17-year-old Isaac Schuman on the Apple River on July 30, 2022.\n\nYOUR THEORY OF THE CASE:\nNicolae Miu brought a knife to a verbal argument and escalated a common river-tubing dispute into a deadly attack. He stabbed five people, killing a teenager. This was not self-defense � it was excessive, reckless violence born of anger. Miu had multiple opportunities to retreat, de-escalate, or simply stay away from the group. Instead, he chose to engage, then chose to stab.\n\nKEY ARGUMENTS:\n1. Miu approached the group, not vice versa. He was the initial aggressor.\n2. The cell phone video shows Miu had space to retreat but instead moved toward the group.\n3. Stabbing five unarmed people � including a 17-year-old � goes far beyond reasonable self-defense.\n4. Miu�s own statements to police minimized his actions and showed consciousness of guilt.\n5. The victims� toxicology does not justify deadly force. Being intoxicated does not make someone a deadly threat.\n6. A reasonable person would not have believed deadly force was necessary in that situation.\n\nRHETORICAL APPROACH: Emphasize the tragedy of a young life lost. Focus on Miu�s choices. Frame self-defense as a convenient excuse. Appeal to juror empathy for the victims and their families.",
+    "DefensePrompt":  "You are Attorney Corey Chirafisi, defending Nicolae Miu against charges of first-degree reckless homicide and recklessly endangering safety for the Apple River incident on July 30, 2022.\n\nYOUR THEORY OF THE CASE:\nNicolae Miu acted in lawful self-defense when he was surrounded, threatened, punched, and shoved underwater by a hostile, intoxicated mob. He used the only means available � a pocket knife � to protect himself from imminent bodily harm. The State cannot disprove self-defense beyond a reasonable doubt.\n\nKEY ARGUMENTS:\n1. The cell phone video shows Miu being punched, shoved, and swarmed before any knife was drawn.\n2. Miu was searching for a lost cell phone, not looking for a fight. He was outnumbered and outmuscled.\n3. The confronters were heavily intoxicated, hostile, and escalating. Their blood alcohol levels were 2-3x the legal limit.\n4. Miu had no duty to retreat under Wisconsin�s self-defense law when faced with imminent harm.\n5. The knife was a common pocket knife carried for utility, not a weapon brought for violence.\n6. A reasonable person in Miu�s position � older, outnumbered, being attacked � would fear for their life.\n\nRHETORICAL APPROACH: Humanize Miu as a family man who was terrified. Emphasize the mob mentality of the intoxicated group. Frame the tragedy as an accident of circumstance, not a crime.",
+    "GeneralPrompt":  "This is a JURY-COMPOSITION-DEPENDENT SCENARIO. The Apple River case evidence has been carefully weighted so that neither side has a decisive advantage � the verdict turns on who sits on the jury.\n\nEVIDENCE DESIGN:\nAll exhibits are weighted very close to neutral (0.48�0.52). The total evidentiary weight is within 1-2% of dead-even. This means juror demographics, life experience, and bias factors are the PRIMARY drivers of the verdict.\n\nHOW JURY COMPOSITION CHANGES THE OUTCOME:\n- A jury with more older members (50+) will tend toward acquittal (self-defense resonates with life experience)\n- A jury with more parents of teenagers will tend toward conviction (identify with victim\u0027s family)\n- Political conservatives favor self-defense/stand-your-ground ? acquittal\n- Political liberals may view the knife as excessive ? conviction\n- Higher education correlates with technical self-defense element analysis ? mixed effect\n- Blue-collar/trade backgrounds may sympathize with utility knife carry ? acquittal\n- Law enforcement/military background may view disparity of force favorably ? acquittal\n- Gender can affect perception of male-on-male violence ? mixed effect\n\nEXPECTED BEHAVIOR:\nGenerate different jury panels and run deliberation. You should observe different outcomes based on jury demographics. A panel tilted older/conservative/male should acquit. A panel tilted younger/liberal/female should convict. Mixed panels should produce close votes and extended deliberation.\n\nThis makes the scenario ideal for testing the jury simulation engine.",
+    "DefaultBiasFactors":  [
+                               {
+                                   "Name":  "Age",
+                                   "Weight":  0.55
+                               },
+                               {
+                                   "Name":  "Gender",
+                                   "Weight":  0.45
+                               },
+                               {
+                                   "Name":  "Education Level",
+                                   "Weight":  0.80
+                               },
+                               {
+                                   "Name":  "Income Level",
+                                   "Weight":  0.50
+                               },
+                               {
+                                   "Name":  "Political Affiliation",
+                                   "Weight":  0.90
+                               },
+                               {
+                                   "Name":  "Ethnicity",
+                                   "Weight":  0.60
+                               },
+                               {
+                                   "Name":  "Religion",
+                                   "Weight":  0.40
+                               },
+                               {
+                                   "Name":  "Juror Experience",
+                                   "Weight":  0.70
+                               },
+                               {
+                                   "Name":  "Legal Knowledge",
+                                   "Weight":  0.75
+                               },
+                               {
+                                   "Name":  "Professional Background",
+                                   "Weight":  0.55
+                               },
+                               {
+                                   "Name":  "Community Ties",
+                                   "Weight":  0.65
+                               },
+                               {
+                                   "Name":  "Communication Style",
+                                   "Weight":  0.35
+                               }
+                           ],
+    "Instructions":  {
+                         "Text":  "Ladies and gentlemen of the jury, you are instructed as follows:\n\nThe defendant, Nicolae Miu, is charged with one count of First-Degree Reckless Homicide under Wisconsin Statute � 940.02(1), and four counts of First-Degree Recklessly Endangering Safety under Wisconsin Statute � 941.30(1).\n\nFirst-Degree Reckless Homicide requires the State to prove beyond a reasonable doubt: (1) the defendant caused the death of Isaac Schuman; (2) the defendant acted with criminally reckless conduct; and (3) the circumstances of the defendant�s conduct showed utter disregard for human life.\n\nFirst-Degree Recklessly Endangering Safety requires the State to prove beyond a reasonable doubt: (1) the defendant endangered the safety of another human being; (2) the defendant acted with criminally reckless conduct; and (3) the circumstances showed utter disregard for human life.\n\nThe defendant has raised the affirmative defense of self-defense. Under Wisconsin law, a person is privileged to threaten or intentionally use force against another if the person reasonably believes that such force is necessary to prevent imminent death or great bodily harm to himself. The defendant may not use force that is intended or likely to cause death or great bodily harm unless the person reasonably believes that such force is necessary to prevent imminent death or great bodily harm to himself.\n\nOnce the issue of self-defense is raised, the State must prove beyond a reasonable doubt that the defendant did NOT act in self-defense. You must find the defendant not guilty if you are not satisfied beyond a reasonable doubt that the defendant did not act in self-defense.\n\nYou are the sole judges of the credibility of witnesses and the weight to be given to the evidence. You must deliberate together and reach a unanimous verdict on each count. Your verdict must be based solely on the evidence presented and these instructions of law.",
+                         "Standard":  "BeyondReasonableDoubt"
+                     },
+    "Verdict":  {
+                    "Charges":  [
+                                    {
+                                        "Name":  "First-Degree Reckless Homicide (Isaac Schuman)",
+                                        "Elements":  [
+                                                         {
+                                                             "Name":  "Causation",
+                                                             "Description":  "The defendant caused the death of Isaac Schuman by stabbing him.",
+                                                             "IsProven":  true
+                                                         },
+                                                         {
+                                                             "Name":  "Recklessness",
+                                                             "Description":  "The defendant acted with criminally reckless conduct � that is, conduct creating an unreasonable and substantial risk of death or great bodily harm, and the defendant was aware of that risk.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "Utter Disregard",
+                                                             "Description":  "The circumstances of the defendant�s conduct showed utter disregard for human life.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "No Self-Defense",
+                                                             "Description":  "The State has proven beyond a reasonable doubt that the defendant did NOT act in lawful self-defense.",
+                                                             "IsProven":  false
+                                                         }
+                                                     ],
+                                        "IsGuilty":  false
+                                    },
+                                    {
+                                        "Name":  "Recklessly Endangering Safety (Dante Carlson)",
+                                        "Elements":  [
+                                                         {
+                                                             "Name":  "Endangerment",
+                                                             "Description":  "The defendant endangered the safety of Dante Carlson.",
+                                                             "IsProven":  true
+                                                         },
+                                                         {
+                                                             "Name":  "Recklessness",
+                                                             "Description":  "The defendant acted with criminally reckless conduct.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "Utter Disregard",
+                                                             "Description":  "The circumstances showed utter disregard for human life.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "No Self-Defense",
+                                                             "Description":  "The State has proven the defendant did NOT act in lawful self-defense.",
+                                                             "IsProven":  false
+                                                         }
+                                                     ],
+                                        "IsGuilty":  false
+                                    },
+                                    {
+                                        "Name":  "Recklessly Endangering Safety (Tony Carlson)",
+                                        "Elements":  [
+                                                         {
+                                                             "Name":  "Endangerment",
+                                                             "Description":  "The defendant endangered the safety of Tony Carlson.",
+                                                             "IsProven":  true
+                                                         },
+                                                         {
+                                                             "Name":  "Recklessness",
+                                                             "Description":  "The defendant acted with criminally reckless conduct.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "Utter Disregard",
+                                                             "Description":  "The circumstances showed utter disregard for human life.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "No Self-Defense",
+                                                             "Description":  "The State has proven the defendant did NOT act in lawful self-defense.",
+                                                             "IsProven":  false
+                                                         }
+                                                     ],
+                                        "IsGuilty":  false
+                                    },
+                                    {
+                                        "Name":  "Recklessly Endangering Safety (Alex Martin)",
+                                        "Elements":  [
+                                                         {
+                                                             "Name":  "Endangerment",
+                                                             "Description":  "The defendant endangered the safety of Alex Martin.",
+                                                             "IsProven":  true
+                                                         },
+                                                         {
+                                                             "Name":  "Recklessness",
+                                                             "Description":  "The defendant acted with criminally reckless conduct.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "Utter Disregard",
+                                                             "Description":  "The circumstances showed utter disregard for human life.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "No Self-Defense",
+                                                             "Description":  "The State has proven the defendant did NOT act in lawful self-defense.",
+                                                             "IsProven":  false
+                                                         }
+                                                     ],
+                                        "IsGuilty":  false
+                                    },
+                                    {
+                                        "Name":  "Recklessly Endangering Safety (Rhyley Mattison)",
+                                        "Elements":  [
+                                                         {
+                                                             "Name":  "Endangerment",
+                                                             "Description":  "The defendant endangered the safety of Rhyley Mattison.",
+                                                             "IsProven":  true
+                                                         },
+                                                         {
+                                                             "Name":  "Recklessness",
+                                                             "Description":  "The defendant acted with criminally reckless conduct.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "Utter Disregard",
+                                                             "Description":  "The circumstances showed utter disregard for human life.",
+                                                             "IsProven":  false
+                                                         },
+                                                         {
+                                                             "Name":  "No Self-Defense",
+                                                             "Description":  "The State has proven the defendant did NOT act in lawful self-defense.",
+                                                             "IsProven":  false
+                                                         }
+                                                     ],
+                                        "IsGuilty":  false
+                                    }
+                                ],
+                    "CausesOfAction":  [
+
+                                       ],
+                    "DamagesAwarded":  0
+                },
+    "Evidence":  [
+                     {
+                         "FileName":  "Cell Phone Video - Confrontation.mp4",
+                         "FilePath":  "",
+                         "Summary":  "A 3-minute cell phone video recorded by a tuber showing the confrontation on the Apple River. The video shows Miu approaching a group of tubers, a verbal exchange escalating, individuals shoving Miu, Miu being pushed underwater, and then Miu emerging with a knife and stabbing multiple people in quick succession. The video captures chaotic shouting and screaming. Key disputed moments: whether Miu was the initial aggressor, whether he had space to retreat, and whether the level of force was proportionate to the threat.",
+                         "AdmittedAt":  "2024-04-08T09:00:00",
+                         "ExhibitNumber":  1,
+                         "EvidenceStrength":  0.48,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "Central exhibit. Video clearly shows Miu being shoved and punched by multiple individuals before the knife appears. While interpretations differ, the visual evidence of Miu being physically attacked first is compelling for the defense.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "District Attorney Karl Anderson",
+                         "IsOfferedByPlaintiffSide":  true
+                     },
+                     {
+                         "FileName":  "Autopsy Report - Isaac Schuman.pdf",
+                         "FilePath":  "",
+                         "Summary":  "Medical examiner\u0027s report confirming that Isaac Schuman, 17, died from a single stab wound to the chest penetrating the heart. The wound was 3.5 inches deep. Toxicology showed Schuman\u0027s blood alcohol content was 0.23%, nearly three times the legal limit for driving. Defense emphasizes that someone this intoxicated could be an unpredictable and dangerous physical threat. No other drugs detected.",
+                         "AdmittedAt":  "2024-04-08T10:30:00",
+                         "ExhibitNumber":  2,
+                         "EvidenceStrength":  0.52,
+                         "EstimatedDamages":  0.0,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "Undisputed cause of death. High BAC level (0.23%) strengthens defense argument that the victims were dangerously intoxicated and aggressive. A reasonable person could fear serious harm from someone this impaired.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "District Attorney Karl Anderson",
+                         "IsOfferedByPlaintiffSide":  true
+                     },
+                     {
+                         "FileName":  "Miu Police Interview Transcript.pdf",
+                         "FilePath":  "",
+                         "Summary":  "Transcript of Nicolae Miu\u0027s voluntary interview with police on the day of the incident. Miu consistently states he was tubing with his wife, lost his phone, and approached a group to ask if they had seen it. He describes being surrounded by 8-10 hostile, intoxicated individuals, being shoved underwater, and genuinely fearing for his life. He admits pulling out his pocket knife and swinging to create space. His account has remained consistent from the first police interview through trial. His emotional distress appears genuine throughout the recording.",
+                         "AdmittedAt":  "2024-04-09T09:00:00",
+                         "ExhibitNumber":  3,
+                         "EvidenceStrength":  0.49,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "Consistent account from day one. Voluntary interview. Miu\u0027s description of being surrounded and fearing for his life has remained unchanged.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "District Attorney Karl Anderson",
+                         "IsOfferedByPlaintiffSide":  true
+                     },
+                     {
+                         "FileName":  "Medical Records - Surviving Victims.pdf",
+                         "FilePath":  "",
+                         "Summary":  "Medical records for the four surviving stabbing victims: Dante Carlson (stab wound to abdomen, surgery), Tony Carlson (stab wound to chest wall, punctured lung), Alex Martin (stab wound to arm, nerve damage), and Rhyley Mattison (superficial stab wound to back). Crucially, all four had elevated blood alcohol levels (0.15% to 0.28%). Defense argues that facing a group of highly intoxicated, aggressive young men justifies Miu\u0027s fear of serious bodily harm. The pattern of wounds — quick, panicked strikes rather than targeted attacks — supports Miu\u0027s account of swinging wildly to escape.",
+                         "AdmittedAt":  "2024-04-09T11:00:00",
+                         "ExhibitNumber":  4,
+                         "EvidenceStrength":  0.51,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "BAC levels across all victims strongly support defense narrative of an intoxicated, hostile mob. Injury pattern is consistent with panicked self-defense rather than targeted violence.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "District Attorney Karl Anderson",
+                         "IsOfferedByPlaintiffSide":  true
+                     },
+                     {
+                         "FileName":  "Defense Expert - Use of Force Analysis.pdf",
+                         "FilePath":  "",
+                         "Summary":  "Defense-retained use-of-force expert (former law enforcement, 25 years) analyzed the video and concluded: (1) Miu was surrounded by 6-8 individuals; (2) Miu was physically assaulted — punched, shoved, pushed underwater — before any knife was visible; (3) A 52-year-old man facing multiple younger, intoxicated men reasonably feared imminent death or great bodily harm; (4) The disparity of force (one vs. many) and age differential (52 vs. early 20s) supports a reasonable belief in the need for deadly force; (5) The entire incident lasted approximately 40 seconds, leaving no time for calculated decisions. Cross-examination focused on payment, but credentials and analysis were not effectively impeached.",
+                         "AdmittedAt":  "2024-04-10T09:00:00",
+                         "ExhibitNumber":  5,
+                         "EvidenceStrength":  0.52,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "Strong defense evidence. Expert credentials are solid. Prosecution cross-examination focused on the expert being paid and not being present at the scene.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "Corey Chirafisi",
+                         "PlaintiffSideExhibitNumber":  0,
+                         "DefenseSideExhibitNumber":  1,
+                         "IsOfferedByPlaintiffSide":  false
+                     },
+                     {
+                         "FileName":  "Prosecution Expert - Use of Force Rebuttal.pdf",
+                         "FilePath":  "",
+                         "Summary":  "Prosecution-retained expert (criminal justice professor) analyzed the same video and argued Miu could have retreated and used disproportionate force. However, on cross-examination, the expert conceded: (1) the river environment limited practical retreat options; (2) the 40-second timeframe allowed little deliberation; (3) Wisconsin law imposes no duty to retreat when facing imminent harm. The expert\u0027s analysis was weakened by these concessions.",
+                         "AdmittedAt":  "2024-04-10T14:00:00",
+                         "ExhibitNumber":  6,
+                         "EvidenceStrength":  0.48,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "Prosecution expert conceded key points on cross-examination. Wisconsin\u0027s no-duty-to-retreat law undercuts the core argument about retreat options. Less persuasive than the defense expert.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "District Attorney Karl Anderson",
+                         "IsOfferedByPlaintiffSide":  true
+                     },
+                     {
+                         "FileName":  "911 Call Recordings.mp3",
+                         "FilePath":  "",
+                         "Summary":  "Multiple 911 calls placed immediately after the stabbings. One caller states \u0027this guy just stabbed a bunch of people but they were attacking him first.\u0027 This is a contemporaneous, spontaneous witness statement supporting self-defense — made before anyone could coordinate stories. The call\u0027s immediacy gives it high credibility as an unbiased account of what the witness perceived in the moment.",
+                         "AdmittedAt":  "2024-04-08T13:00:00",
+                         "ExhibitNumber":  7,
+                         "EvidenceStrength":  0.5,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "The spontaneous \u0027they were attacking him first\u0027 911 call is powerful for the defense — a contemporaneous witness statement made without time for fabrication. Highly credible.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "District Attorney Karl Anderson",
+                         "IsOfferedByPlaintiffSide":  true
+                     },
+                     {
+                         "FileName":  "Miu Character Witness Statements.pdf",
+                         "FilePath":  "",
+                         "Summary":  "Written statements from Miu\u0027s employer (mechanical engineer, 20-year career), multiple coworkers, his wife, and his pastor. All describe Miu as consistently peaceful, non-confrontational, a devoted family man, and someone who regularly carried a pocket knife for utility — never as a weapon. Zero prior criminal record. No history of violence whatsoever. His pastor describes him as \u0027a gentle man who volunteers at church events.\u0027 The State introduced no evidence contradicting this character portrayal.",
+                         "AdmittedAt":  "2024-04-10T16:00:00",
+                         "ExhibitNumber":  8,
+                         "EvidenceStrength":  0.51,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "Strong character evidence for defense. No prior bad acts. Humanizes the defendant. Prosecution did not dispute these characterizations but argued character evidence does not outweigh the video.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "Corey Chirafisi",
+                         "PlaintiffSideExhibitNumber":  0,
+                         "DefenseSideExhibitNumber":  2,
+                         "IsOfferedByPlaintiffSide":  false
+                     },
+                     {
+                         "FileName":  "Scene Diagram - Apple River.pdf",
+                         "FilePath":  "",
+                         "Summary":  "Annotated aerial diagram of the Apple River showing the river at approximately 40 feet wide, water depth 3-5 feet, and Miu positioned upstream from his group. The diagram shows Miu was cornered between the hostile group and deeper water. The river current (1-2 mph) and uneven riverbed limited practical movement. Defense argues the river environment made retreat dangerous — wading backward in moving water while being physically attacked is not a viable escape.",
+                         "AdmittedAt":  "2024-04-09T14:00:00",
+                         "ExhibitNumber":  9,
+                         "EvidenceStrength":  0.49,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "River environment analysis favors defense — deep water behind Miu made retreat impractical. Physical layout supports the argument that Miu was trapped.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "District Attorney Karl Anderson",
+                         "IsOfferedByPlaintiffSide":  true
+                     },
+                     {
+                         "FileName":  "Witness Statement - Miu\u0027s Wife.pdf",
+                         "FilePath":  "",
+                         "Summary":  "Statement from Miu\u0027s wife, who witnessed the incident. She confirms Miu lost his phone tubing and went back to search for it — establishing the innocent reason for his proximity to the other group. She saw the group become hostile toward him, heard yelling, and saw her husband pushed. She became terrified. Her account corroborates Miu\u0027s version of events on every material point. She confirms the pocket knife was always carried for utility. While the State noted her bias as Miu\u0027s spouse, her testimony aligns with the video evidence and other witness accounts.",
+                         "AdmittedAt":  "2024-04-11T09:00:00",
+                         "ExhibitNumber":  10,
+                         "EvidenceStrength":  0.5,
+                         "IsDiscoveryComplete":  true,
+                         "ClerkNotes":  "Supportive of defense but credibility challenged due to spousal relationship. Corroborates the lost-phone narrative and hostile group dynamic.",
+                         "MediaType":  "Document",
+                         "OfferingAttorney":  "Corey Chirafisi",
+                         "PlaintiffSideExhibitNumber":  0,
+                         "DefenseSideExhibitNumber":  3,
+                         "IsOfferedByPlaintiffSide":  false
+                     }
+                 ],
+    "Pleadings":  [
+                      {
+                          "FileName":  "Criminal Complaint.pdf",
+                          "FilePath":  "",
+                          "Summary":  "Formal criminal complaint charging Nicolae Miu with First-Degree Reckless Homicide (one count) and First-Degree Recklessly Endangering Safety (four counts). The complaint alleges that on July 30, 2022, on the Apple River in St. Croix County, Wisconsin, the defendant did recklessly cause the death of Isaac Schuman and recklessly endanger the safety of four other individuals under circumstances showing utter disregard for human life.",
+                          "AdmittedAt":  "2024-04-01T08:00:00",
+                          "IsDiscoveryComplete":  true,
+                          "MediaType":  "Document",
+                          "IsOfferedByPlaintiffSide":  true
+                      },
+                      {
+                          "FileName":  "Defense Notice of Self-Defense Claim.pdf",
+                          "FilePath":  "",
+                          "Summary":  "Formal notice from defense counsel asserting that Nicolae Miu acted in lawful self-defense under Wisconsin Statute � 939.48. The notice states that Miu reasonably believed deadly force was necessary to prevent imminent death or great bodily harm to himself when he was surrounded, physically assaulted, and shoved underwater by a group of intoxicated individuals.",
+                          "AdmittedAt":  "2024-04-01T08:00:00",
+                          "IsDiscoveryComplete":  true,
+                          "MediaType":  "Document",
+                          "IsOfferedByPlaintiffSide":  false
+                      }
+                  ],
+    "EventLog":  [
+
+                 ],
+    "Agents":  [
+                   {
+                       "AgentId":  "a1000001-0000-0000-0000-000000000001",
+                       "Name":  "Judge Patricia Reynolds",
+                       "Role":  "Judge",
+                       "Sentiment":  0.5,
+                       "Bias":  0.0,
+                       "VerdictLean":  0.5,
+                       "IsOccupied":  true,
+                       "SystemPrompt":  "You are Judge Patricia Reynolds, presiding over the criminal trial of State v. Nicolae Miu in St. Croix County Circuit Court. You are fair, impartial, and experienced. You ensure proper procedure, rule on objections, and maintain courtroom decorum. You have a reputation for being thorough in your jury instructions and patient with both sides.",
+                       "Profile":  "Judge Reynolds, 58, has served on the bench for 18 years. Former prosecutor. Appointed by a Democratic governor. Known for fairness and thorough legal reasoning.",
+                       "PoliticalAffiliation":  "Independent",
+                       "Gender":  "Female",
+                       "Age":  58,
+                       "Race":  "White",
+                       "Occupation":  "Circuit Court Judge",
+                       "EducationLevel":  "Doctorate",
+                       "IncomeLevel":  "Upper Middle Class",
+                       "SpecializedKnowledge":  "Criminal Law Expert",
+                       "CommunicationTeam":  "Neutral",
+                       "SelectedModel":  ""
+                   },
+                   {
+                       "AgentId":  "a1000002-0000-0000-0000-000000000002",
+                       "Name":  "Court Reporter Sarah Kim",
+                       "Role":  "Reporter",
+                       "Sentiment":  0.5,
+                       "Bias":  0.0,
+                       "VerdictLean":  0.5,
+                       "IsOccupied":  true,
+                       "SystemPrompt":  "You are Sarah Kim, the official court reporter. You maintain the official transcript of all proceedings. You are neutral and professional.",
+                       "Profile":  "Certified court reporter, 34, meticulous and professional. 10 years of experience.",
+                       "PoliticalAffiliation":  "Independent",
+                       "Gender":  "Female",
+                       "Age":  34,
+                       "Race":  "Asian",
+                       "Occupation":  "Court Reporter",
+                       "EducationLevel":  "Associate Degree",
+                       "IncomeLevel":  "Middle Class",
+                       "CommunicationTeam":  "Neutral",
+                       "SelectedModel":  ""
+                   },
+                   {
+                       "AgentId":  "a1000003-0000-0000-0000-000000000003",
+                       "Name":  "Atty Corey Chirafisi",
+                       "Role":  "Lawyer",
+                       "Sentiment":  0.2,
+                       "Bias":  -0.3,
+                       "VerdictLean":  0.15,
+                       "IsOccupied":  true,
+                       "SystemPrompt":  "You are Attorney Corey Chirafisi, lead defense counsel. You are passionate, strategic, and genuinely believe Miu acted in self-defense. You see this as a case of a terrified man defending himself against a mob.",
+                       "Profile":  "Defense attorney, 50, 22 years in criminal defense. Known for winning difficult self-defense cases. Former public defender.",
+                       "PoliticalAffiliation":  "Independent",
+                       "Gender":  "Male",
+                       "Age":  50,
+                       "Race":  "White",
+                       "Occupation":  "Defense Attorney",
+                       "EducationLevel":  "Doctorate",
+                       "IncomeLevel":  "Upper Middle Class",
+                       "CommunicationTeam":  "Defendant",
+                       "SelectedModel":  ""
+                   },
+                   {
+                       "AgentId":  "a1000004-0000-0000-0000-000000000004",
+                       "Name":  "DA Karl Anderson",
+                       "Role":  "Lawyer",
+                       "Sentiment":  0.8,
+                       "Bias":  0.3,
+                       "VerdictLean":  0.85,
+                       "IsOccupied":  true,
+                       "SystemPrompt":  "You are District Attorney Karl Anderson, lead prosecutor. You are aggressive, thorough, and believe strongly in this case. You see Miu as a man who let anger overcome reason and now refuses to take responsibility for taking a teenager�s life.",
+                       "Profile":  "District Attorney, 45, 15 years as prosecutor. Tough on violent crime. High conviction rate. Ambitious, eyeing a judgeship.",
+                       "PoliticalAffiliation":  "Democrat",
+                       "Gender":  "Male",
+                       "Age":  45,
+                       "Race":  "White",
+                       "Occupation":  "District Attorney",
+                       "EducationLevel":  "Doctorate",
+                       "IncomeLevel":  "Upper Middle Class",
+                       "CommunicationTeam":  "Plaintiff",
+                       "SelectedModel":  ""
+                   }
+               ],
+    "AvailableModels":  [
+                            {
+                                "FriendlyName":  "OpenAI GPT-4o",
+                                "Provider":  "OpenAI",
+                                "ModelId":  "gpt-4o"
+                            },
+                            {
+                                "FriendlyName":  "Claude 3.5 Sonnet",
+                                "Provider":  "Anthropic",
+                                "ModelId":  "claude-3-5-sonnet-20240620"
+                            },
+                            {
+                                "FriendlyName":  "Google Gemini 1.5 Pro",
+                                "Provider":  "Google",
+                                "ModelId":  "gemini-1.5-pro"
+                            }
+                        ]
+}

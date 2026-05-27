@@ -49,7 +49,7 @@ public class HuggingFaceProvider : HuggingFaceModelBase
         var results = new List<string>();
         foreach (var dir in Directory.GetDirectories(modelsRoot))
         {
-            var ggufFiles = Directory.GetFiles(dir, "*.gguf", SearchOption.TopDirectoryOnly);
+            var ggufFiles = Directory.GetFiles(dir, "*.gguf", SearchOption.AllDirectories);
             if (ggufFiles.Length > 0)
             {
                 var dirName = Path.GetFileName(dir);
@@ -58,6 +58,139 @@ public class HuggingFaceProvider : HuggingFaceModelBase
             }
         }
         return results;
+    }
+
+    /// <summary>
+    /// Returns structured model entries for GGUF models — scans local directories
+    /// for .gguf files and provides size + architecture metadata.
+    /// </summary>
+    public new async Task<List<ModelListItem>> GetAvailableModelItemsAsync(AIModelConfiguration config)
+    {
+        var items = new List<ModelListItem>();
+        string modelsRoot = ResolveModelsRoot(config, DefaultModelsRoot);
+
+        // ── Local GGUF models with metadata ──
+        if (Directory.Exists(modelsRoot))
+        {
+            foreach (var dir in Directory.GetDirectories(modelsRoot))
+            {
+                var ggufFiles = Directory.GetFiles(dir, "*.gguf", SearchOption.AllDirectories);
+                if (ggufFiles.Length == 0) continue;
+
+                var dirInfo = new DirectoryInfo(dir);
+                long totalSize = ggufFiles.Sum(f => new FileInfo(f).Length);
+
+                // Detect architecture from filename
+                string arch = "";
+                var fname = Path.GetFileNameWithoutExtension(ggufFiles[0]).ToLowerInvariant();
+                if (fname.Contains("q2_k") || fname.Contains("q2k")) arch = "Q2_K";
+                else if (fname.Contains("q3_k") || fname.Contains("q3k")) arch = "Q3_K";
+                else if (fname.Contains("q4_k") || fname.Contains("q4k")) arch = "Q4_K";
+                else if (fname.Contains("q5_k") || fname.Contains("q5k")) arch = "Q5_K";
+                else if (fname.Contains("q6_k") || fname.Contains("q6k")) arch = "Q6_K";
+                else if (fname.Contains("q8_0") || fname.Contains("q8o")) arch = "Q8_0";
+                else if (fname.Contains("f16") || fname.Contains("fp16")) arch = "FP16";
+                else if (fname.Contains("f32") || fname.Contains("fp32")) arch = "FP32";
+
+                items.Add(new ModelListItem
+                {
+                    DisplayName = dirInfo.Name,
+                    ModelId = ggufFiles[0], // Full path to the GGUF file
+                    Source = "Local",
+                    SizeBytes = totalSize,
+                    SizeFormatted = FormatItemSize(totalSize),
+                    Architecture = arch
+                });
+            }
+        }
+
+        if (items.Count == 0)
+        {
+            items.Add(new ModelListItem { DisplayName = "Popular GGUF Models (enter ID below)", IsHeader = true });
+        }
+
+        // ── Cached remote models ──
+        var cached = LoadCachedModelList(config);
+        if (cached.Count > 0)
+        {
+            foreach (var entry in cached)
+            {
+                var sep = " - ";
+                var lastSep = entry.LastIndexOf(sep, StringComparison.Ordinal);
+                if (lastSep < 0) continue;
+
+                var modelId = entry[(lastSep + sep.Length)..];
+                var display = entry[..lastSep];
+
+                items.Add(new ModelListItem
+                {
+                    DisplayName = display,
+                    ModelId = modelId,
+                    Source = "HuggingFace"
+                });
+            }
+            return items;
+        }
+
+        // ── Fetch from HuggingFace API ──
+        try
+        {
+            var seen = new HashSet<string>();
+            var remoteEntries = new List<string>();
+
+            foreach (var query in SearchQueries)
+            {
+                var url = $"https://huggingface.co/api/models?search={Uri.EscapeDataString(query)}&sort=downloads&direction=-1&limit=20";
+                var response = await _httpClient.GetAsync(url);
+                if (!response.IsSuccessStatusCode) continue;
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+
+                foreach (var el in doc.RootElement.EnumerateArray())
+                {
+                    var modelId = el.TryGetProperty("modelId", out var mid) ? mid.GetString() ?? "" : "";
+                    if (string.IsNullOrEmpty(modelId) || !seen.Add(modelId)) continue;
+
+                    var pipelineTag = el.TryGetProperty("pipeline_tag", out var pt) ? pt.GetString() ?? "" : "";
+                    if (!string.IsNullOrEmpty(pipelineTag) &&
+                        !pipelineTag.StartsWith("text-generation", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var name = modelId.Split('/').LastOrDefault() ?? modelId;
+                    var remoteEntry = FormatRemoteModelEntry(modelId, name, 0, 0);
+                    remoteEntries.Add(remoteEntry);
+
+                    items.Add(new ModelListItem
+                    {
+                        DisplayName = name,
+                        ModelId = modelId,
+                        Source = "HuggingFace"
+                    });
+                }
+            }
+
+            SaveCachedModelList(config, remoteEntries);
+        }
+        catch
+        {
+            var fallback = LoadCachedModelList(config);
+            if (fallback.Count > 0 && !items.Any(i => i.Source == "HuggingFace"))
+            {
+                items.Add(new ModelListItem { DisplayName = "⚠ Cached (offline)", IsHeader = true });
+            }
+        }
+
+        return items;
+    }
+
+    private static string FormatItemSize(long bytes)
+    {
+        if (bytes <= 0) return "";
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        if (bytes < 1024 * 1024 * 1024) return $"{bytes / (1024.0 * 1024):F1} MB";
+        return $"{bytes / (1024.0 * 1024 * 1024):F1} GB";
     }
 
     protected override string FormatRemoteModelEntry(string modelId, string name, long downloads, long sizeOnDisk)
@@ -107,12 +240,36 @@ public class HuggingFaceProvider : HuggingFaceModelBase
         };
 
         long totalBytesDownloaded = 0;
+        var failedFiles = new List<string>();
 
         for (int i = 0; i < ggufFiles.Count; i++)
         {
             var filename = ggufFiles[i];
             var fileUrl = $"https://huggingface.co/{modelId}/resolve/main/{filename}";
             var destPath = Path.Combine(destinationDir, filename);
+
+            // Ensure nested subdirectories exist (e.g., BF16/, Q4_K_M/, etc.)
+            var destDir = Path.GetDirectoryName(destPath);
+            if (!string.IsNullOrEmpty(destDir))
+                Directory.CreateDirectory(destDir);
+
+            // Resume: skip files that already exist and are substantial (>100KB)
+            if (File.Exists(destPath) && new FileInfo(destPath).Length > 100_000)
+            {
+                var existingSize = new FileInfo(destPath).Length;
+                totalBytesDownloaded += existingSize;
+                progressInfo.BytesDownloaded = totalBytesDownloaded;
+                progressInfo.FilesCompleted = i + 1;
+                progressInfo.CurrentFile = $"Skipped (exists): {filename}";
+                progress?.Report(progressInfo);
+                continue;
+            }
+
+            // Delete partial/stub file before re-downloading
+            if (File.Exists(destPath))
+            {
+                try { File.Delete(destPath); } catch { }
+            }
 
             progressInfo.CurrentFile = filename;
             progressInfo.FilesCompleted = i;
@@ -144,9 +301,16 @@ public class HuggingFaceProvider : HuggingFaceModelBase
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error downloading {filename}: {ex.Message}");
-                throw new Exception($"Failed to download {filename}: {ex.Message}");
+                failedFiles.Add(filename);
+                if (File.Exists(destPath))
+                {
+                    try { File.Delete(destPath); } catch { }
+                }
             }
         }
+
+        if (failedFiles.Count > 0)
+            throw new Exception($"Failed to download {failedFiles.Count} file(s): {string.Join(", ", failedFiles.Take(5))}{(failedFiles.Count > 5 ? "..." : "")}");
 
         progressInfo.FilesCompleted = ggufFiles.Count;
         progressInfo.CurrentFile = "Complete";
@@ -228,14 +392,14 @@ public class HuggingFaceProvider : HuggingFaceModelBase
 
             if (Directory.Exists(modelDir))
             {
-                var ggufFiles = Directory.GetFiles(modelDir, "*.gguf", SearchOption.TopDirectoryOnly);
+                var ggufFiles = Directory.GetFiles(modelDir, "*.gguf", SearchOption.AllDirectories);
                 if (ggufFiles.Length > 0)
                     return ggufFiles[0];
             }
 
             await DownloadModelFilesAsync(modelId, modelDir, progress, ct);
 
-            var downloadedFiles = Directory.GetFiles(modelDir, "*.gguf", SearchOption.TopDirectoryOnly);
+            var downloadedFiles = Directory.GetFiles(modelDir, "*.gguf", SearchOption.AllDirectories);
             if (downloadedFiles.Length == 0)
                 throw new Exception($"No GGUF files were downloaded for model {modelId}");
 
@@ -247,7 +411,7 @@ public class HuggingFaceProvider : HuggingFaceModelBase
 
         if (Directory.Exists(modelId))
         {
-            var ggufFiles = Directory.GetFiles(modelId, "*.gguf", SearchOption.TopDirectoryOnly);
+            var ggufFiles = Directory.GetFiles(modelId, "*.gguf", SearchOption.AllDirectories);
             if (ggufFiles.Length > 0)
                 return ggufFiles[0];
         }

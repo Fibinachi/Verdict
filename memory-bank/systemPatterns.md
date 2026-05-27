@@ -4,15 +4,11 @@
 Verdict follows a strict **MVVM (Model-View-ViewModel)** pattern with a **delegated service architecture**.
 
 ### Layer Structure
-```
+```raw
 Views (XAML) → ViewModels → Services → Models
                               ↓
                           Providers (LLM)
 ```
-
-### Key Pattern: Delegated Services
-`MainViewModel` owns the agent collections and case state, but delegates all domain logic to dedicated injected services. This makes each domain concept independently testable.
-
 ## Service Architecture
 
 | Service | Interface | Responsibility |
@@ -27,17 +23,15 @@ Views (XAML) → ViewModels → Services → Models
 | `CaseEntityMapper` | `ICaseEntityMapper` | Maps extracted entities (charges/evidence/witnesses) onto CaseFile |
 | `AgentAssignmentService` | `IAgentAssignmentService` | Case analysis and dynamic role assignment |
 | `JuryDemographicsService` | `IJuryDemographicsService` | Generates jury panels based on county/state demographics |
+| `MemoryDecayService` | — | Progressive memory strength decay and content fuzzification (static) |
+| `BurdenOfProof` | — | Mode-aware conviction thresholds (criminal 0.85, civil 0.50) and verdict classification (static) |
 | `CharacterManager` | — | Save/load .vcs character profiles (static class) |
 | `LegalDatabaseService` | — | Query legal citations (IPC sections, U.S. Federal Law) |
 | `ReportGenerationService` | `IReportGenerationService` | PDF report rendering with QuestPDF |
 | `ProviderDiscoveryService` | — | Discovers installed LLM providers and their metadata (static class) |
 | `AgentInteractionService` | `IAgentInteractionService` | Manages agent-to-agent conversations and deliberation |
 | `Logger` | — | Static logging utility |
-
-## Component Relationships
-
-### Courtroom Layout
-```
+```raw
 JudgeArea (ObservableCollection<Agent>):
   - Reporter (occupied by default)
   - Judge (empty slot)
@@ -82,7 +76,7 @@ Gallery (ObservableCollection<Agent>):
 - **Trial**: Add to Evidence collection + BroadcastEvent + ApplyEvidenceInfluence
 
 ### Debate Stage Progression
-```
+```raw
 OpeningStatements → WitnessTestimony → CrossExamination → ClosingArguments → VerdictAnnouncement
 ```
 

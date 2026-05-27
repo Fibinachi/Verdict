@@ -34,8 +34,8 @@ public class OnnxProvider : HuggingFaceModelBase
         new ProviderField
         {
             Key = "ModelId",
-            Label = "Model Path or HF Model ID",
-            Description = "e.g., llmware/llama-3.2-1b-instruct-onnx or C:\\Models\\my-model",
+            Label = "HF Model ID or Local Path",
+            Description = "Recommended: 'llmware/llama-3.2-1b-instruct-onnx' (1.8GB) or 'onnx-community/Phi-4-mini-instruct-onnx' (2.5GB INT4). Also: local path to model directory.",
             DefaultValue = ""
         },
         new ProviderField
@@ -53,11 +53,34 @@ public class OnnxProvider : HuggingFaceModelBase
     protected override string[] SearchQueries => ["onnx instruct"];
     protected override string[] ModelFilePatterns => ["*.onnx", "*.json"];
 
+    /// <summary>
+    /// ONNX-specific validation: uses ModelDownloadService.IsValidModelDirectory
+    /// which checks for both .onnx files AND genai_config.json, plus validates
+    /// that the .onnx files are self-contained or have their data files present.
+    /// </summary>
+    protected override bool IsModelDownloadComplete(string modelDir)
+    {
+        return ModelDownloadService.IsValidModelDirectory(modelDir);
+    }
+
     protected override List<string> FindLocalModels(string modelsRoot)
     {
-        return ModelDownloadService.ScanForModels(modelsRoot)
+        var models = ModelDownloadService.ScanForModels(modelsRoot)
             .Select(m => $"[LOCAL] {m}")
             .ToList();
+
+        // If no models found, add recommended models users can download
+        if (models.Count == 0)
+        {
+            models.Add("--- Recommended ONNX GenAI Models (enter ID below) ---");
+            models.Add("llmware/llama-3.2-1b-instruct-onnx (1.8 GB, fast)");
+            models.Add("onnx-community/Phi-4-mini-instruct-onnx (2.5 GB INT4, strong)");
+            models.Add("llmware/llama-3.2-3b-instruct-onnx (6 GB, balanced)");
+            models.Add("onnx-community/DeepSeek-R1-Distill-Llama-8B-ONNX-DirectML-GenAI-INT4 (5 GB)");
+            models.Add("onnx-community/Meta-Llama-3.1-8B-Instruct-ONNX-DirectML-GenAI-INT4 (5 GB)");
+        }
+
+        return models;
     }
 
     protected override string FormatRemoteModelEntry(string modelId, string name, long downloads, long sizeOnDisk)
@@ -88,31 +111,39 @@ public class OnnxProvider : HuggingFaceModelBase
                 await _downloadService.DownloadModelAsync(modelId, modelDir, null);
             }
 
-            return modelDir;
+            // Find the actual model subdirectory (handles nested onnx-community structure)
+            var actualModelPath = ModelDownloadService.FindModelDirectory(modelDir);
+            if (actualModelPath == null)
+                throw new DirectoryNotFoundException($"No valid ONNX GenAI model found in: {modelDir}. The model may not be compatible with OnnxRuntimeGenAI. Try downloading a model from onnx-community or llmware on HuggingFace.");
+
+            return actualModelPath;
         }
 
-        // If it's a local path, use it directly
+        // If it's a local path, resolve the actual model directory
+        string resolvedPath = modelId;
+
+        // If it's a file path, get the directory containing the model
         if (File.Exists(modelId))
         {
-            // If it's a file path, get the directory containing the model
-            string modelDir = Path.GetDirectoryName(modelId);
-            if (string.IsNullOrEmpty(modelDir))
-                return modelId;
-
-            // Ensure the directory exists
-            if (!Directory.Exists(modelDir))
-                throw new DirectoryNotFoundException($"Model directory not found: {modelDir}");
-
-            return modelDir;
+            resolvedPath = Path.GetDirectoryName(modelId) ?? string.Empty;
+            if (string.IsNullOrEmpty(resolvedPath))
+                throw new DirectoryNotFoundException($"Cannot determine directory from file path: {modelId}");
         }
 
-        // If it's a directory path, use it directly
-        if (Directory.Exists(modelId))
+        // If it's a directory, try to find the actual model subdirectory within it
+        if (Directory.Exists(resolvedPath))
         {
-            return modelId;
+            var actualModelPath = ModelDownloadService.FindModelDirectory(resolvedPath);
+            if (actualModelPath != null) return actualModelPath;
+
+            throw new DirectoryNotFoundException(
+                $"No valid ONNX GenAI model found in: {resolvedPath}. " +
+                "A valid model directory must contain both a .onnx file and genai_config.json. " +
+                "For onnx-community models, select the specific variant subdirectory (e.g., cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4). " +
+                "Try downloading a compatible model like 'llmware/llama-3.2-1b-instruct-onnx' or 'onnx-community/Phi-4-mini-instruct-onnx'.");
         }
 
-        throw new FileNotFoundException($"Model path not found: {modelId}");
+        throw new FileNotFoundException($"Model path not found: {modelId}. Enter a HuggingFace model ID (e.g., 'llmware/llama-3.2-1b-instruct-onnx') or a local directory containing ONNX model files.");
     }
 
     public override async Task<string> GenerateResponseAsync(AIModelConfiguration config, string systemPrompt, string userPrompt, CancellationToken ct = default)
@@ -146,28 +177,36 @@ public class OnnxProvider : HuggingFaceModelBase
         if (!Directory.Exists(modelPath))
             throw new DirectoryNotFoundException($"Model directory not found: {modelPath}");
 
-        using var model = new Model(modelPath);
-        using var tokenizer = new Tokenizer(model);
-        using var generatorParams = new GeneratorParams(model);
+        return await Task.Run(() =>
+        {
+            using var model = new Model(modelPath);
+            using var tokenizer = new Tokenizer(model);
+            using var generatorParams = new GeneratorParams(model);
 
-        generatorParams.SetSearchOption("max_length", config.GetMaxTokens(2048));
-        generatorParams.SetSearchOption("temperature", config.GetTemperature());
+            generatorParams.SetSearchOption("max_length", config.GetMaxTokens(2048));
+            generatorParams.SetSearchOption("temperature", config.GetTemperature());
 
-        string fullPrompt = string.IsNullOrWhiteSpace(systemPrompt)
-            ? $"<|user|>{userPrompt}<|assistant|>"
-            : $"<|system|>{systemPrompt}<|user|>{userPrompt}<|assistant|>";
+            // Build the prompt using the model's chat template
+            string fullPrompt = BuildChatPrompt(modelPath, systemPrompt, userPrompt);
 
-        using var generator = new Generator(model, generatorParams);
-        var sequences = tokenizer.Encode(fullPrompt);
-        generator.AppendTokenSequences(sequences);
+            using var generator = new Generator(model, generatorParams);
+            var sequences = tokenizer.Encode(fullPrompt);
+            generator.AppendTokenSequences(sequences);
 
-        while (!generator.IsDone())
-            generator.GenerateNextToken();
+            while (!generator.IsDone())
+                generator.GenerateNextToken();
 
-        var outputSequence = generator.GetSequence(0);
-        var response = tokenizer.Decode(outputSequence);
+            var outputSequence = generator.GetSequence(0);
+            var response = tokenizer.Decode(outputSequence);
 
-        return response?.Trim() ?? string.Empty;
+            // Strip the input prompt from the response if the model echoes it
+            if (!string.IsNullOrEmpty(response))
+            {
+                response = StripPromptFromResponse(fullPrompt, response);
+            }
+
+            return response?.Trim() ?? string.Empty;
+        }, ct);
     }
 
     public override async Task<string> TestConnectionAsync(AIModelConfiguration config, CancellationToken ct = default)
@@ -216,50 +255,57 @@ public class OnnxProvider : HuggingFaceModelBase
                 Log("No genai_config.json found, creating default one");
                 var defaultConfig = new
                 {
-                    model_type = "onnx",
-                    architectures = new[] { "OnnxModel" },
-                    max_position_embeddings = 2048
+                    model = new
+                    {
+                        decoder = new
+                        {
+                            session_options = new
+                            {
+                                enable_cpu_mem_arena = false
+                            }
+                        }
+                    }
                 };
                 var configJson = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions { WriteIndented = true });
                 await File.WriteAllTextAsync(genaiConfigPath, configJson, ct);
             }
 
-            // Try to load the model
-            Log("Attempting to load ONNX model...");
-            using var model = new Model(modelPath);
-            Log("Model loaded successfully");
+            // Try to load the model and generate a simple test response
+            return await Task.Run(() =>
+            {
+                using var model = new Model(modelPath);
+                Log("Model loaded successfully");
 
-            // Try to create tokenizer
-            Log("Attempting to create tokenizer...");
-            using var tokenizer = new Tokenizer(model);
-            Log("Tokenizer created successfully");
+                using var tokenizer = new Tokenizer(model);
+                Log("Tokenizer created successfully");
 
-            // Try to generate a response
-            Log("Attempting to generate response...");
-            using var generatorParams = new GeneratorParams(model);
-            generatorParams.SetSearchOption("max_length", 50);
-            generatorParams.SetSearchOption("temperature", 0.1);
+                using var generatorParams = new GeneratorParams(model);
+                generatorParams.SetSearchOption("max_length", 50);
+                generatorParams.SetSearchOption("temperature", 0.1);
 
-            using var generator = new Generator(model, generatorParams);
-            var sequences = tokenizer.Encode("Say exactly the word 'Connected' and nothing else.");
-            generator.AppendTokenSequences(sequences);
+                string testPrompt = BuildChatPrompt(modelPath, "", "Say exactly the word 'Connected' and nothing else.");
 
-            while (!generator.IsDone())
-                generator.GenerateNextToken();
+                using var generator = new Generator(model, generatorParams);
+                var sequences = tokenizer.Encode(testPrompt);
+                generator.AppendTokenSequences(sequences);
 
-            var outputSequence = generator.GetSequence(0);
-            var response = tokenizer.Decode(outputSequence);
+                while (!generator.IsDone())
+                    generator.GenerateNextToken();
 
-            if (string.IsNullOrEmpty(response))
-                return "Error: Empty response from model";
+                var outputSequence = generator.GetSequence(0);
+                var response = tokenizer.Decode(outputSequence);
 
-            response = response.Trim();
-            Log($"Model response: '{response}'");
+                if (string.IsNullOrEmpty(response))
+                    return "Error: Empty response from model";
 
-            if (response.Contains("Connected", StringComparison.OrdinalIgnoreCase))
-                return "Connected";
-            else
+                response = StripPromptFromResponse(testPrompt, response).Trim();
+                Log($"Model response: '{response}'");
+
+                if (response.Contains("Connected", StringComparison.OrdinalIgnoreCase))
+                    return $"Connected (Model: {onnxFiles[0].Split(Path.DirectorySeparatorChar).Last()})";
+
                 return $"Model loaded but unexpected response: '{response}'";
+            }, ct);
         }
         catch (DllNotFoundException ex)
         {
@@ -275,6 +321,172 @@ public class OnnxProvider : HuggingFaceModelBase
             Log($"Stack trace: {ex.StackTrace}");
             return $"Error testing connection: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    /// Detects the model architecture from its config.json to use the correct chat template.
+    /// </summary>
+    private static string DetectModelArchitecture(string modelPath)
+    {
+        try
+        {
+            var configPath = Path.Combine(modelPath, "config.json");
+            if (!File.Exists(configPath))
+            {
+                // Check parent directory
+                configPath = Path.Combine(Path.GetDirectoryName(modelPath) ?? modelPath, "config.json");
+                if (!File.Exists(configPath)) return "generic";
+            }
+
+            var configJson = File.ReadAllText(configPath);
+            using var doc = JsonDocument.Parse(configJson);
+            var root = doc.RootElement;
+
+            // Check model_type field
+            if (root.TryGetProperty("model_type", out var modelType))
+            {
+                var type = modelType.GetString()?.ToLowerInvariant() ?? "";
+                if (type.Contains("phi")) return "phi";
+                if (type.Contains("llama")) return "llama3";
+                if (type.Contains("mistral")) return "mistral";
+                if (type.Contains("qwen")) return "qwen";
+                if (type.Contains("gemma")) return "gemma";
+            }
+
+            // Check architectures field
+            if (root.TryGetProperty("architectures", out var architectures) &&
+                architectures.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var arch in architectures.EnumerateArray())
+                {
+                    var archName = arch.GetString()?.ToLowerInvariant() ?? "";
+                    if (archName.Contains("phi")) return "phi";
+                    if (archName.Contains("llama")) return "llama3";
+                    if (archName.Contains("mistral")) return "mistral";
+                    if (archName.Contains("qwen")) return "qwen";
+                    if (archName.Contains("gemma")) return "gemma";
+                }
+            }
+        }
+        catch { /* fall through to generic */ }
+
+        return "generic";
+    }
+
+    /// <summary>
+    /// Builds a chat prompt using the correct template for the detected model architecture.
+    /// </summary>
+    private static string BuildChatPrompt(string modelPath, string systemPrompt, string userPrompt)
+    {
+        var architecture = DetectModelArchitecture(modelPath);
+
+        // Try to detect template from tokenizer_config.json first
+        var template = LoadChatTemplate(modelPath);
+        if (!string.IsNullOrEmpty(template))
+        {
+            return template
+                .Replace("{system}", systemPrompt)
+                .Replace("{user}", userPrompt);
+        }
+
+        // Fall back to architecture-specific templates
+        bool hasSystem = !string.IsNullOrWhiteSpace(systemPrompt);
+
+        return architecture switch
+        {
+            "phi" => hasSystem
+                ? $"<|system|>{systemPrompt}<|end|>\n<|user|>{userPrompt}<|end|>\n<|assistant|>"
+                : $"<|user|>{userPrompt}<|end|>\n<|assistant|>",
+
+            "llama3" => hasSystem
+                ? $"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n{userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+                : $"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n{userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n",
+
+            "mistral" => hasSystem
+                ? $"<s>[INST] {systemPrompt}\n\n{userPrompt} [/INST]"
+                : $"<s>[INST] {userPrompt} [/INST]",
+
+            "gemma" => hasSystem
+                ? $"<bos><start_of_turn>system\n{systemPrompt}<end_of_turn>\n<start_of_turn>user\n{userPrompt}<end_of_turn>\n<start_of_turn>model\n"
+                : $"<bos><start_of_turn>user\n{userPrompt}<end_of_turn>\n<start_of_turn>model\n",
+
+            // Generic: use the simple Phi-like format which works for many models
+            _ => hasSystem
+                ? $"<|system|>{systemPrompt}<|end|>\n<|user|>{userPrompt}<|end|>\n<|assistant|>"
+                : $"<|user|>{userPrompt}<|end|>\n<|assistant|>",
+        };
+    }
+
+    /// <summary>
+    /// Attempts to load the chat_template from tokenizer_config.json.
+    /// </summary>
+    private static string? LoadChatTemplate(string modelPath)
+    {
+        try
+        {
+            var tokenizerConfigPath = Path.Combine(modelPath, "tokenizer_config.json");
+            if (!File.Exists(tokenizerConfigPath))
+            {
+                // Check parent directory
+                var parentDir = Path.GetDirectoryName(modelPath);
+                if (parentDir != null)
+                {
+                    tokenizerConfigPath = Path.Combine(parentDir, "tokenizer_config.json");
+                    if (!File.Exists(tokenizerConfigPath)) return null;
+                }
+                else return null;
+            }
+
+            var configJson = File.ReadAllText(tokenizerConfigPath);
+            using var doc = JsonDocument.Parse(configJson);
+            if (doc.RootElement.TryGetProperty("chat_template", out var ct) &&
+                ct.ValueKind == JsonValueKind.String)
+            {
+                var template = ct.GetString();
+                if (!string.IsNullOrEmpty(template) && template.Contains("{user"))
+                    return template;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[OnnxProvider] Failed to read chat template from tokenizer_config.json: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Strips the input prompt prefix from the response if the model echoed it back.
+    /// </summary>
+    private static string StripPromptFromResponse(string prompt, string response)
+    {
+        if (string.IsNullOrEmpty(response)) return response;
+
+        // Try to find where the assistant response starts
+        string[] markers = [
+            "<|assistant|>",
+            "<|start_header_id|>assistant<|end_header_id|>",
+            "[/INST]",
+            "<start_of_turn>model\n",
+            "assistant\n",
+        ];
+
+        foreach (var marker in markers)
+        {
+            int idx = response.LastIndexOf(marker, StringComparison.Ordinal);
+            if (idx >= 0)
+            {
+                var afterMarker = response.Substring(idx + marker.Length).Trim();
+                if (!string.IsNullOrEmpty(afterMarker))
+                    return afterMarker;
+            }
+        }
+
+        // If the response contains the prompt, try to remove it
+        if (response.StartsWith(prompt.Trim(), StringComparison.Ordinal))
+            return response.Substring(prompt.Trim().Length).Trim();
+
+        return response;
     }
 
     private static void Log(string message)

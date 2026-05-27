@@ -27,7 +27,7 @@
     <div class="container">
         <h1>Evidence Management</h1>
 
-        <p>Evidence is a core component of any case. Verdict supports submitting documents and images as evidence, with AI-powered analysis to extract insights and assess strength.</p>
+        <p>Evidence is a core component of any case. Verdict supports submitting documents, images, videos, and audio files as evidence, with AI-powered analysis to extract insights, assess strength, and calculate probative value.</p>
 
         <h2>Submitting Evidence</h2>
         <p>There are two ways to submit evidence:</p>
@@ -58,15 +58,61 @@
             <span class="filetype">.PNG</span>
             <span class="filetype">.GIF</span>
             <span class="filetype">.BMP</span>
+            <span class="filetype">.MP4</span>
+            <span class="filetype">.MOV</span>
+            <span class="filetype">.AVI</span>
+            <span class="filetype">.WMV</span>
+            <span class="filetype">.MKV</span>
+            <span class="filetype">.MP3</span>
+            <span class="filetype">.WAV</span>
+            <span class="filetype">.OGG</span>
         </p>
 
         <h2>Media Type Classification</h2>
-        <p>When evidence is submitted, Verdict automatically classifies it into one of two media types:</p>
+        <p>When evidence is submitted, Verdict automatically classifies it into one of four media types:</p>
         <ul>
             <li><strong>"Document"</strong> &mdash; For text-based files: PDF, TXT, DOCX, RTF.</li>
-            <li><strong>"Image"</strong> &mdash; For image files: JPG, JPEG, PNG, GIF, BMP.</li>
+            <li><strong>"Image"</strong> &mdash; For image files: JPG, JPEG, PNG, GIF, BMP, WEBP.</li>
+            <li><strong>"Video"</strong> &mdash; For video files: MP4, MOV, AVI, WMV, MKV, WEBM.</li>
+            <li><strong>"Audio"</strong> &mdash; For audio files: MP3, WAV, OGG, WMA, M4A, FLAC.</li>
         </ul>
-        <p>This classification is stored in the <code>MediaType</code> property of the <code>EvidenceDocument</code> object and affects how the evidence is analyzed and displayed.</p>
+        <p>This classification is stored in the <code>MediaType</code> property and is used for display and reporting.</p>
+
+        <h2>Evidence Category &amp; Probative Weighting</h2>
+        <p>Beyond simple media type, Verdict assigns each piece of evidence an <strong>Evidence Category</strong> that determines its probative weight in the simulation:</p>
+        <ul>
+            <li><strong>"Document"</strong> &mdash; Written documents: contracts, reports, correspondence. Baseline impact (1.0&times;).</li>
+            <li><strong>"Image"</strong> &mdash; Photographs and images. Higher impact (1.4&times;) &mdash; visual evidence is compelling.</li>
+            <li><strong>"Video"</strong> &mdash; Video recordings. Highest impact (1.6&times;) &mdash; seeing is believing.</li>
+            <li><strong>"Audio"</strong> &mdash; Audio recordings. Moderate-high impact (1.3&times;) &mdash; hearing a voice adds authenticity.</li>
+            <li><strong>"Physical"</strong> &mdash; Physical/tangible evidence: weapons, DNA, fingerprints. High impact (1.5&times;).</li>
+            <li><strong>"Testimony"</strong> &mdash; Witness statements, depositions, affidavits. Base impact (1.0&times;) scaled by witness credibility.</li>
+        </ul>
+        <p>Verdict automatically determines the category from the file type and content analysis. Testimony is detected by keywords like "witness statement," "deposition," or "affidavit."</p>
+
+        <h2>Probative Value vs. Evidence Strength</h2>
+        <p>Verdict distinguishes two separate metrics for each piece of evidence:</p>
+        <ul>
+            <li><strong>Evidence Strength</strong> (<code>EvidenceStrength</code>) &mdash; The <em>raw persuasive impact</em> of the evidence. Influenced by media type (videos and images have higher impact), keyword analysis, and legal multipliers. Displayed as a percentage in the exhibit list.</li>
+            <li><strong>Probative Value</strong> (<code>ProbativeValue</code>) &mdash; The <em>legal weight</em> of the evidence. Accounts for reliability (chain of custody), direct vs. circumstantial nature, hearsay concerns, and witness credibility. This is the value used by jurors when updating their verdict lean.</li>
+        </ul>
+        <div class="note">
+            <strong>Key distinction:</strong> A graphic video may have high <em>impact</em> (Evidence Strength) but limited <em>legal weight</em> (Probative Value) if it's unreliable or hearsay. Conversely, a dry contract may have low impact but high probative value if it's authenticated and directly relevant.
+        </div>
+
+        <h2>Witness Credibility</h2>
+        <p>For testimonial evidence (witness statements, depositions, affidavits), Verdict assesses <strong>Witness Credibility</strong> (<code>WitnessCredibility</code>) on a 0.0&ndash;1.0 scale:</p>
+        <ul>
+            <li><strong>Expert witnesses</strong> (forensic experts, medical examiners) start at 0.85 credibility.</li>
+            <li><strong>Eyewitnesses</strong> start at 0.60 (eyewitness testimony is notoriously unreliable in real trials).</li>
+            <li><strong>Law enforcement</strong> witnesses start at 0.75 credibility.</li>
+            <li><strong>Character witnesses</strong> start at 0.45 credibility.</li>
+            <li><strong>Red flags</strong> like inconsistent statements, prior convictions, or bias allegations reduce credibility.</li>
+        </ul>
+        <p><strong>Critical:</strong> Each juror then assesses credibility <em>through their own biases</em> — a juror's age, education, political affiliation, and current attentiveness all affect how credible they find a given witness. See <a href="juror-behavior.html#credibility">Juror Credibility Assessment</a> for details.</p>
+
+        <h2>Reliability Score</h2>
+        <p>Each piece of evidence has a <strong>Reliability Score</strong> (<code>ReliabilityScore</code>, default 0.8) that reflects chain of custody and authenticity. This score directly scales the probative value. Evidence flagged as unauthenticated or unverified receives a lower reliability score, reducing its probative weight.</p>
 
         <h2>AI Analysis</h2>
         <p>When evidence is submitted, Verdict performs an AI-powered analysis that includes:</p>
@@ -74,8 +120,12 @@
             <li><strong>Summary</strong> &mdash; A concise summary of the evidence content.</li>
             <li><strong>Key Points</strong> &mdash; Important facts and details extracted from the evidence.</li>
             <li><strong>Relevance Assessment</strong> &mdash; How relevant the evidence is to the current case.</li>
-            <li><strong>Strength Rating</strong> &mdash; An assessment of how strong or compelling the evidence is.</li>
-            <li><strong>Detailed Analysis</strong> &mdash; A comprehensive analysis stored in the <code>DetailedAnalysis</code> field of the <code>EvidenceDocument</code> for full LLM analysis storage.</li>
+            <li><strong>Evidence Category</strong> &mdash; Automatic classification (Document, Image, Video, Audio, Physical, Testimony).</li>
+            <li><strong>Evidence Strength</strong> &mdash; Raw persuasive impact, weighted by media type.</li>
+            <li><strong>Probative Value</strong> &mdash; Legal weight after reliability, hearsay, and credibility assessment.</li>
+            <li><strong>Witness Credibility</strong> &mdash; For testimony, the assessed credibility of the witness.</li>
+            <li><strong>Detailed Analysis</strong> &mdash; A comprehensive analysis stored in the <code>DetailedAnalysis</code> field for full LLM analysis storage.</li>
+            <li><strong>Damages Estimation</strong> &mdash; Parsed dollar amounts and legal multipliers (treble damages, punitive multipliers).</li>
         </ul>
 
         <div class="note">

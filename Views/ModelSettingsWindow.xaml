@@ -44,13 +44,16 @@
 
         <!-- Model List and Actions -->
         <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- Model List -->
-            <GroupBox Header="Configured Models" Margin="0,0,10,0">
+            <GroupBox Header="Configured Models" Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
                 <ListBox ItemsSource="{Binding Models}" SelectedItem="{Binding SelectedModel}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
@@ -67,108 +70,127 @@
                         </Style>
                     </ListBox.ItemContainerStyle>
                 </ListBox>
-        </GroupBox>
+            </GroupBox>
 
-        <!-- Bias Settings Section -->
-        <GroupBox Header="Bias Weight Configuration" Grid.Row="1" Margin="0,10,0,10">
-            <Grid Margin="5">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <Grid Grid.Row="0" Grid.Column="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Age:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding AgeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding AgeBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Gender:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding GenderBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding GenderBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Education Level:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding EducationBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding EducationBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Income Level:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding IncomeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding IncomeBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Political Affiliation:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding PoliticalBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding PoliticalBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="Ethnicity:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding EthnicityBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding EthnicityBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="Religion:" VerticalAlignment="Center" Margin="0,0,10,5"/>
-                <Slider Grid.Row="6" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
-                        Value="{Binding ReligionBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="6" Grid.Column="2" Text="{Binding ReligionBiasWeight, StringFormat={}{0:F2}}"
-                           VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
-
-                <StackPanel Grid.Row="7" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                    <Button Content="Set Defaults" Click="SetBiasDefaults_Click" Width="100" Margin="0,0,10,0"/>
-                    <Button Content="Reset to Defaults" Click="ResetBiasDefaults_Click" Width="120"/>
-                </StackPanel>
-            </Grid>
-        </GroupBox>
-
-
-            <!-- Actions -->
-            <StackPanel Grid.Column="1" VerticalAlignment="Top">
-                <Button Content="Add Model..." Click="AddModel_Click" Margin="0,0,0,5" Padding="10,5"/>
-                <Button Content="Configure..." Click="ConfigureModel_Click" Margin="0,0,0,5" Padding="10,5"
-                        IsEnabled="{Binding SelectedModel, Converter={StaticResource NullToBoolConverter}}"/>
-                <Button Content="Delete Model" Click="DeleteModel_Click" Margin="0,0,0,5" Padding="10,5" 
-                        IsEnabled="{Binding SelectedModel, Converter={StaticResource NullToBoolConverter}}"/>
-                <Separator Margin="0,10,0,10"/>
-                <Button Content="🔄 Refresh Folder" Click="RefreshFolder_Click" Margin="0,0,0,5" Padding="10,5" Background="#3498DB" Foreground="White"/>
-                <Button Content="_Model Weights..." Click="OpenWeights_Click" Margin="0,0,0,5" Padding="10,5"/>
-                <Button Content="💾 Save Selected" Click="SaveToFolder_Click" Margin="0,0,0,20" Padding="10,5" 
-                        IsEnabled="{Binding SelectedModel, Converter={StaticResource NullToBoolConverter}}" Background="#27AE60" Foreground="White"/>
+                <!-- Actions -->
+                <StackPanel Grid.Row="0" VerticalAlignment="Top">
+                    <Button Content="Add Model..." Click="AddModel_Click" Margin="0,0,0,5" Padding="10,5"/>
+                    <Button Content="Configure..." Click="ConfigureModel_Click" Margin="0,0,0,5" Padding="10,5"
+                            IsEnabled="{Binding SelectedModel, Converter={StaticResource NullToBoolConverter}}"/>
+                    <Button Content="Delete Model" Click="DeleteModel_Click" Margin="0,0,0,5" Padding="10,5" 
+                            IsEnabled="{Binding SelectedModel, Converter={StaticResource NullToBoolConverter}}"/>
+                    <Separator Margin="0,10,0,10"/>
+                    <Button Content="🔄 Refresh Folder" Click="RefreshFolder_Click" Margin="0,0,0,5" Padding="10,5" Background="#3498DB" Foreground="White"/>
+                    <Button Content="_Model Weights..." Click="OpenWeights_Click" Margin="0,0,0,5" Padding="10,5"/>
+                    <Button Content="💾 Save Selected" Click="SaveToFolder_Click" Margin="0,0,0,20" Padding="10,5" 
+                            IsEnabled="{Binding SelectedModel, Converter={StaticResource NullToBoolConverter}}" Background="#27AE60" Foreground="White"/>
                 
-                <TextBlock Text="Quick Summary:" FontWeight="Bold" Margin="0,0,0,5"/>
-                <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="10" Background="White" 
-                        IsEnabled="{Binding SelectedModel, Converter={StaticResource NullToBoolConverter}}">
-                    <StackPanel>
-                        <TextBlock Text="{Binding SelectedModel.FriendlyName}" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding SelectedModel.Provider}" Margin="0,2,0,5"/>
-                        <TextBlock Text="Status:" FontSize="10" Foreground="Gray"/>
-                        <TextBlock Text="{Binding SelectedModel.Status}" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                    <TextBlock Text="Quick Summary:" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="10" Background="White" 
+                            IsEnabled="{Binding SelectedModel, Converter={StaticResource NullToBoolConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SelectedModel.FriendlyName}" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding SelectedModel.Provider}" Margin="0,2,0,5"/>
+                            <TextBlock Text="Status:" FontSize="10" Foreground="Gray"/>
+                            <TextBlock Text="{Binding SelectedModel.Status}" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                
+                    <TextBlock Text="Default Juror Model:" FontWeight="Bold" Margin="0,12,0,3"/>
+                    <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="FriendlyName"
+                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultJurorModel}"
+                              Margin="0,0,0,5" Padding="4,2">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="4,2"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+                    <TextBlock Text="New jurors will use this model by default." FontSize="10" Foreground="#888888" 
+                               TextWrapping="Wrap" Margin="0,0,0,5"/>
+                </StackPanel>
+
+                <!-- Bias Settings Section (right column) -->
+                <GroupBox Header="Bias Weight Configuration" Grid.Row="1" Margin="0,10,0,0">
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Age:" VerticalAlignment="Center" Margin="0,0,10,5"/>
+                        <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                Value="{Binding AgeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                                IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding AgeBiasWeight, StringFormat={}{0:F2}}"
+                                   VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Gender:" VerticalAlignment="Center" Margin="0,0,10,5"/>
+                        <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                Value="{Binding GenderBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                                IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding GenderBiasWeight, StringFormat={}{0:F2}}"
+                                   VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Education Level:" VerticalAlignment="Center" Margin="0,0,10,5"/>
+                        <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                Value="{Binding EducationBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                                IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding EducationBiasWeight, StringFormat={}{0:F2}}"
+                                   VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Income Level:" VerticalAlignment="Center" Margin="0,0,10,5"/>
+                        <Slider Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                Value="{Binding IncomeBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                                IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding IncomeBiasWeight, StringFormat={}{0:F2}}"
+                                   VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Political Affiliation:" VerticalAlignment="Center" Margin="0,0,10,5"/>
+                        <Slider Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                Value="{Binding PoliticalBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                                IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding PoliticalBiasWeight, StringFormat={}{0:F2}}"
+                                   VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Ethnicity:" VerticalAlignment="Center" Margin="0,0,10,5"/>
+                        <Slider Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                Value="{Binding EthnicityBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                                IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding EthnicityBiasWeight, StringFormat={}{0:F2}}"
+                                   VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
+
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Religion:" VerticalAlignment="Center" Margin="0,0,10,5"/>
+                        <Slider Grid.Row="6" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1"
+                                Value="{Binding ReligionBiasWeight}" TickFrequency="0.1" TickPlacement="BottomRight"
+                                IsSnapToTickEnabled="False" Margin="0,0,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="6" Grid.Column="2" Text="{Binding ReligionBiasWeight, StringFormat={}{0:F2}}"
+                                   VerticalAlignment="Center" Width="40" Margin="0,0,0,5"/>
+
+                        <StackPanel Grid.Row="7" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                            <Button Content="Set Defaults" Click="SetBiasDefaults_Click" Width="100" Margin="0,0,10,0"/>
+                            <Button Content="Reset to Defaults" Click="ResetBiasDefaults_Click" Width="120"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+            </Grid>
         </Grid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">

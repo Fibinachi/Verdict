@@ -17,6 +17,7 @@ public class ModelTests : BaseTestClass
         ResetCounters();
         
         TestAgentModel();
+        TestDeliberationAlternates();
         TestCaseFileModel();
         TestAddDefaultModels();
         TestEvidenceDocumentModel();
@@ -29,6 +30,10 @@ public class ModelTests : BaseTestClass
         TestAgentInteractionModels();
         TestChargeAndCauseOfAction();
         TestObservableObject();
+        TestAgentDemographicsModel();
+        TestBiasDimensionWeightsModel();
+        TestAgentModelOverridesModel();
+        TestMemoryDecayService();
 
         return GetResults();
     }
@@ -176,6 +181,32 @@ public class ModelTests : BaseTestClass
         Assert(string.IsNullOrEmpty(defaultAgent.SelectedModel), "Default selected model is empty");
     }
 
+    private static void TestDeliberationAlternates()
+    {
+        Console.WriteLine("\n─── Deliberation Alternates ───");
+
+        var delibService = new DeliberationService();
+        var fullPanel = new List<Agent>();
+        for (int i = 0; i < 12; i++)
+            fullPanel.Add(new Agent { AgentId = Guid.NewGuid(), Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.5 });
+        for (int i = 0; i < 2; i++)
+            fullPanel.Add(new Agent { AgentId = Guid.NewGuid(), Role = AgentRole.AlternateJuror, IsOccupied = true, VerdictLean = 0.5 });
+
+        var fullActive = delibService.GetDeliberatingJurors(fullPanel).ToList();
+        Assert(fullActive.Count == 12, "Alternates excluded when full jury panel is seated");
+        Assert(fullActive.All(j => j.Role == AgentRole.Juror), "Only regular jurors deliberate when full panel is seated");
+
+        var reducedPanel = new List<Agent>();
+        for (int i = 0; i < 10; i++)
+            reducedPanel.Add(new Agent { AgentId = Guid.NewGuid(), Role = AgentRole.Juror, IsOccupied = true, VerdictLean = 0.5 });
+        for (int i = 0; i < 2; i++)
+            reducedPanel.Add(new Agent { AgentId = Guid.NewGuid(), Role = AgentRole.AlternateJuror, IsOccupied = true, VerdictLean = 0.5 });
+
+        var reducedActive = delibService.GetDeliberatingJurors(reducedPanel).ToList();
+        Assert(reducedActive.Count == 12, "Alternates join deliberation when fewer than 12 seated jurors exist");
+        Assert(reducedActive.Count(j => j.Role == AgentRole.AlternateJuror) == 2, "Alternate jurors included when panel is incomplete");
+    }
+
     private static void TestCaseFileModel()
     {
         Console.WriteLine("\n─── CaseFile Model ───");
@@ -250,16 +281,16 @@ public class ModelTests : BaseTestClass
         var cf = new CaseFile();
         Assert(cf.AvailableModels.Count == 0, "Fresh CaseFile has no models");
 
-        // Calling AddDefaultModels adds 3 default models
+        // Calling AddDefaultModels adds ONNX + HuggingFace (always) plus any with API keys
         cf.AddDefaultModels();
-        Assert(cf.AvailableModels.Count == 3, "AddDefaultModels adds 3 models");
-        Assert(cf.AvailableModels[0].FriendlyName == "OpenAI GPT-4o", "First default model is OpenAI GPT-4o");
-        Assert(cf.AvailableModels[1].FriendlyName == "Claude 3.5 Sonnet", "Second default model is Claude 3.5 Sonnet");
-        Assert(cf.AvailableModels[2].FriendlyName == "Google Gemini 1.5 Pro", "Third default model is Google Gemini 1.5 Pro");
+        Assert(cf.AvailableModels.Count >= 2, "AddDefaultModels adds at least ONNX + HuggingFace models");
+        Assert(cf.AvailableModels.Any(m => m.Provider == "ONNX"), "ONNX provider included in defaults");
+        Assert(cf.AvailableModels.Any(m => m.Provider == "Hugging Face"), "HuggingFace provider included in defaults");
 
         // Calling AddDefaultModels again should NOT duplicate
+        var countAfterFirst = cf.AvailableModels.Count;
         cf.AddDefaultModels();
-        Assert(cf.AvailableModels.Count == 3, "AddDefaultModels is idempotent (no duplicates)");
+        Assert(cf.AvailableModels.Count == countAfterFirst, "AddDefaultModels is idempotent (no duplicates)");
 
         // Pre-populated models should not be overwritten
         var cf2 = new CaseFile();
@@ -334,7 +365,7 @@ public class ModelTests : BaseTestClass
 
         var config = new AIModelConfiguration();
         Assert(config.FriendlyName == "New Model", "Default friendly name");
-        Assert(config.Provider == "OpenAI", "Default provider is OpenAI");
+        Assert(config.Provider == "DeepSeek", "Default provider is DeepSeek");
         Assert(string.IsNullOrEmpty(config.ModelId), "Default model ID is empty");
         Assert(string.IsNullOrEmpty(config.Endpoint), "Default endpoint is empty");
         Assert(string.IsNullOrEmpty(config.ApiKey), "Default API key is empty");
@@ -567,5 +598,329 @@ public class ModelTests : BaseTestClass
 
         config.Provider = "TestProvider";
         Assert(config.Provider == "TestProvider", "SetProperty works via Provider setter");
+    }
+
+    // ──────────────────────────────────────────────
+    //  Tests for new factored classes
+    // ──────────────────────────────────────────────
+
+    private static void TestAgentDemographicsModel()
+    {
+        Console.WriteLine("\n─── AgentDemographics Model ───");
+
+        var demo = new AgentDemographics();
+
+        // Default values
+        Assert(demo.Gender == "Unknown", "Default Gender is Unknown");
+        Assert(demo.Age == 18, "Default Age is 18");
+        Assert(demo.Race == "Unknown", "Default Race is Unknown");
+        Assert(demo.Occupation == "Unemployed", "Default Occupation is Unemployed");
+        Assert(demo.EducationLevel == "High School", "Default EducationLevel");
+        Assert(demo.IncomeLevel == "Middle Class", "Default IncomeLevel");
+        Assert(demo.MediaConsumption == "Mainstream News", "Default MediaConsumption");
+        Assert(demo.ConsumerSegment == "General", "Default ConsumerSegment");
+        Assert(demo.MaritalStatus == "Single", "Default MaritalStatus");
+        Assert(demo.ParentalStatus == "No Children", "Default ParentalStatus");
+        Assert(string.IsNullOrEmpty(demo.Hobbies), "Default Hobbies is empty");
+        Assert(demo.ReligiousAffiliation == "Non-religious", "Default ReligiousAffiliation");
+        Assert(demo.PoliticalAffiliation == "Independent", "Default PoliticalAffiliation");
+        Assert(demo.ZipCode == "00000", "Default ZipCode");
+        Assert(string.IsNullOrEmpty(demo.ViewingCharacteristics), "Default ViewingCharacteristics");
+        Assert(demo.CurrentStatus == "Attentive", "Default CurrentStatus");
+        Assert(demo.SpecializedKnowledge == "None (General Public)", "Default SpecializedKnowledge");
+
+        // Property setters
+        demo.Gender = "Female";
+        demo.Age = 35;
+        demo.Race = "Asian";
+        demo.Occupation = "Engineer";
+        demo.EducationLevel = "Master's";
+        demo.IncomeLevel = "Upper Class";
+        demo.MediaConsumption = "Social Media";
+        demo.ConsumerSegment = "Tech";
+        demo.MaritalStatus = "Married";
+        demo.ParentalStatus = "2 Children";
+        demo.Hobbies = "Reading, Hiking";
+        demo.ReligiousAffiliation = "Buddhist";
+        demo.PoliticalAffiliation = "Democrat";
+        demo.ZipCode = "90210";
+        demo.ViewingCharacteristics = "Prefers documentaries";
+        demo.CurrentStatus = "Skeptical";
+        demo.SpecializedKnowledge = "Engineering";
+
+        Assert(demo.Gender == "Female", "Gender setter works");
+        Assert(demo.Age == 35, "Age setter works");
+        Assert(demo.Race == "Asian", "Race setter works");
+        Assert(demo.Occupation == "Engineer", "Occupation setter works");
+        Assert(demo.EducationLevel == "Master's", "EducationLevel setter works");
+        Assert(demo.CurrentStatus == "Skeptical", "CurrentStatus setter works");
+        Assert(demo.SpecializedKnowledge == "Engineering", "SpecializedKnowledge setter works");
+
+        // CopyFrom
+        var source = new AgentDemographics
+        {
+            Gender = "Male",
+            Age = 50,
+            Race = "Black",
+            Occupation = "Doctor",
+            EducationLevel = "Doctorate",
+            IncomeLevel = "Upper Class",
+            CurrentStatus = "Focused",
+            SpecializedKnowledge = "Medical"
+        };
+        var target = new AgentDemographics();
+        target.CopyFrom(source);
+        Assert(target.Gender == "Male", "CopyFrom copies Gender");
+        Assert(target.Age == 50, "CopyFrom copies Age");
+        Assert(target.Race == "Black", "CopyFrom copies Race");
+        Assert(target.Occupation == "Doctor", "CopyFrom copies Occupation");
+        Assert(target.EducationLevel == "Doctorate", "CopyFrom copies EducationLevel");
+        Assert(target.CurrentStatus == "Focused", "CopyFrom copies CurrentStatus");
+        Assert(target.SpecializedKnowledge == "Medical", "CopyFrom copies SpecializedKnowledge");
+
+        // CopyFrom with null (should not throw)
+        target.CopyFrom(null);
+        Assert(target.Age == 50, "CopyFrom(null) preserves existing values");
+
+        // ToProfileSummary
+        var summary = demo.ToProfileSummary();
+        Assert(summary.Contains("Female"), "ToProfileSummary contains Gender");
+        Assert(summary.Contains("35"), "ToProfileSummary contains Age");
+        Assert(summary.Contains("Engineer"), "ToProfileSummary contains Occupation");
+    }
+
+    private static void TestBiasDimensionWeightsModel()
+    {
+        Console.WriteLine("\n─── BiasDimensionWeights Model ───");
+
+        var weights = new BiasDimensionWeights();
+
+        // Default values (all null)
+        Assert(weights.AgeBiasWeight == null, "Default AgeBiasWeight is null");
+        Assert(weights.GenderBiasWeight == null, "Default GenderBiasWeight is null");
+        Assert(weights.EducationBiasWeight == null, "Default EducationBiasWeight is null");
+        Assert(weights.IncomeBiasWeight == null, "Default IncomeBiasWeight is null");
+        Assert(weights.PoliticalBiasWeight == null, "Default PoliticalBiasWeight is null");
+        Assert(weights.EthnicityBiasWeight == null, "Default EthnicityBiasWeight is null");
+        Assert(weights.ReligionBiasWeight == null, "Default ReligionBiasWeight is null");
+        Assert(weights.JurorExperienceWeight == null, "Default JurorExperienceWeight is null");
+        Assert(weights.LegalKnowledgeWeight == null, "Default LegalKnowledgeWeight is null");
+        Assert(weights.ProfessionalBackgroundWeight == null, "Default ProfessionalBackgroundWeight is null");
+        Assert(weights.CommunityTiesWeight == null, "Default CommunityTiesWeight is null");
+
+        // Set individual weights with clamping
+        weights.AgeBiasWeight = 0.75;
+        weights.GenderBiasWeight = -0.5; // Should clamp to 0
+        weights.EducationBiasWeight = 1.5; // Should clamp to 1
+        Assert(weights.AgeBiasWeight == 0.75, "AgeBiasWeight set");
+        Assert(weights.GenderBiasWeight == 0.0, "GenderBiasWeight clamped to 0 from negative");
+        Assert(weights.EducationBiasWeight == 1.0, "EducationBiasWeight clamped to 1 from over");
+
+        // SetAll
+        weights.SetAll(0.5);
+        Assert(weights.AgeBiasWeight == 0.5, "SetAll sets AgeBiasWeight to 0.5");
+        Assert(weights.PoliticalBiasWeight == 0.5, "SetAll sets PoliticalBiasWeight to 0.5");
+        Assert(weights.CommunityTiesWeight == 0.5, "SetAll sets CommunityTiesWeight to 0.5");
+
+        // ResetAll
+        weights.ResetAll();
+        Assert(weights.AgeBiasWeight == null, "ResetAll nulls AgeBiasWeight");
+        Assert(weights.GenderBiasWeight == null, "ResetAll nulls GenderBiasWeight");
+        Assert(weights.LegalKnowledgeWeight == null, "ResetAll nulls LegalKnowledgeWeight");
+
+        // CopyFrom
+        var source = new BiasDimensionWeights();
+        source.SetAll(0.8);
+        var target = new BiasDimensionWeights();
+        target.CopyFrom(source);
+        Assert(target.AgeBiasWeight == 0.8, "CopyFrom copies AgeBiasWeight");
+        Assert(target.IncomeBiasWeight == 0.8, "CopyFrom copies IncomeBiasWeight");
+        Assert(target.ProfessionalBackgroundWeight == 0.8, "CopyFrom copies ProfessionalBackgroundWeight");
+
+        // CopyFrom with null
+        target.CopyFrom(null);
+        Assert(target.AgeBiasWeight == 0.8, "CopyFrom(null) preserves existing values");
+    }
+
+    private static void TestAgentModelOverridesModel()
+    {
+        Console.WriteLine("\n─── AgentModelOverrides Model ───");
+
+        var overrides = new AgentModelOverrides();
+
+        // Default values
+        Assert(string.IsNullOrEmpty(overrides.SelectedModel), "Default SelectedModel is empty");
+        Assert(overrides.ModelTemperatureOverride == null, "Default ModelTemperatureOverride is null");
+        Assert(overrides.ModelMaxTokensOverride == null, "Default ModelMaxTokensOverride is null");
+        Assert(!overrides.HasOverrides, "HasOverrides is false when all are default");
+
+        // Set properties
+        overrides.SelectedModel = "GPT-4o";
+        overrides.ModelTemperatureOverride = 0.7;
+        overrides.ModelMaxTokensOverride = 2048;
+        Assert(overrides.SelectedModel == "GPT-4o", "SelectedModel set");
+        Assert(overrides.ModelTemperatureOverride == 0.7, "ModelTemperatureOverride set");
+        Assert(overrides.ModelMaxTokensOverride == 2048, "ModelMaxTokensOverride set");
+        Assert(overrides.HasOverrides, "HasOverrides is true when overrides are set");
+
+        // Clamping
+        overrides.ModelTemperatureOverride = 3.0; // Should clamp to 2.0
+        Assert(overrides.ModelTemperatureOverride == 2.0, "ModelTemperatureOverride clamped to 2.0");
+        overrides.ModelTemperatureOverride = -1.0; // Should clamp to 0.0
+        Assert(overrides.ModelTemperatureOverride == 0.0, "ModelTemperatureOverride clamped to 0.0");
+
+        overrides.ModelMaxTokensOverride = 32; // Below minimum of 64
+        Assert(overrides.ModelMaxTokensOverride == 64, "ModelMaxTokensOverride clamped to min 64");
+
+        // CopyFrom
+        var source = new AgentModelOverrides
+        {
+            SelectedModel = "Claude-3",
+            ModelTemperatureOverride = 0.3,
+            ModelMaxTokensOverride = 4096
+        };
+        var target = new AgentModelOverrides();
+        target.CopyFrom(source);
+        Assert(target.SelectedModel == "Claude-3", "CopyFrom copies SelectedModel");
+        Assert(target.ModelTemperatureOverride == 0.3, "CopyFrom copies ModelTemperatureOverride");
+        Assert(target.ModelMaxTokensOverride == 4096, "CopyFrom copies ModelMaxTokensOverride");
+
+        // CopyFrom null
+        target.CopyFrom(null);
+        Assert(target.SelectedModel == "Claude-3", "CopyFrom(null) preserves existing values");
+    }
+
+    private static void TestMemoryDecayService()
+    {
+        Console.WriteLine("\n─── MemoryDecayService ───");
+
+        // --- Number parsing ---
+        Assert(MemoryDecayService.TryParseCleanNumber("1,234", out double v1) && v1 == 1234,
+            "TryParseCleanNumber strips commas");
+        Assert(MemoryDecayService.TryParseCleanNumber("42", out double v2) && v2 == 42,
+            "TryParseCleanNumber parses plain number");
+        Assert(!MemoryDecayService.TryParseCleanNumber("abc", out _),
+            "TryParseCleanNumber rejects non-numeric");
+
+        // --- RoundToSignificant ---
+        Assert(MemoryDecayService.RoundToSignificant(1234, 2) == 1200,
+            "RoundToSignificant rounds 1234 to 2 sig figs → 1200");
+        Assert(MemoryDecayService.RoundToSignificant(0, 3) == 0,
+            "RoundToSignificant handles zero");
+
+        // --- ApproximateNumber ---
+        Assert(MemoryDecayService.ApproximateNumber("2,546").Contains("about"),
+            "ApproximateNumber prefixes with 'about'");
+        Assert(MemoryDecayService.ApproximateNumber("xyz") == "xyz",
+            "ApproximateNumber passes through non-numeric");
+
+        // --- RangeNumber ---
+        var range = MemoryDecayService.RangeNumber("42");
+        Assert(range.Contains("-"), "RangeNumber produces a range");
+        Assert(MemoryDecayService.RangeNumber("xyz") == "xyz",
+            "RangeNumber passes through non-numeric");
+
+        // --- VagueNumber ---
+        Assert(MemoryDecayService.VagueNumber("5") == "a few",
+            "VagueNumber: 5 → 'a few'");
+        Assert(MemoryDecayService.VagueNumber("1") == "a single",
+            "VagueNumber: 1 → 'a single'");
+        Assert(MemoryDecayService.VagueNumber("50") == "dozens",
+            "VagueNumber: 50 → 'dozens'");
+        Assert(MemoryDecayService.VagueNumber("500") == "hundreds",
+            "VagueNumber: 500 → 'hundreds'");
+        Assert(MemoryDecayService.VagueNumber("5000") == "thousands",
+            "VagueNumber: 5000 → 'thousands'");
+        Assert(MemoryDecayService.VagueNumber("500000") == "a large amount",
+            "VagueNumber: 500K → 'a large amount'");
+        Assert(MemoryDecayService.VagueNumber("5000000") == "a very large amount",
+            "VagueNumber: 5M → 'a very large amount'");
+
+        // --- FuzzifyContent ---
+        var crisp = new MemoryEntry { Content = "The damage was $2,500", Strength = 0.8 };
+        MemoryDecayService.FuzzifyContent(crisp);
+        Assert(crisp.Content == "The damage was $2,500",
+            "FuzzifyContent preserves crisp content at strength >= 0.70");
+
+        var medium = new MemoryEntry { Content = "The damage was $2,500", Strength = 0.5 };
+        MemoryDecayService.FuzzifyContent(medium);
+        Assert(medium.Content.Contains("about"),
+            "FuzzifyContent approximates numbers at strength 0.40-0.70");
+
+        var weak = new MemoryEntry { Content = "The damage was $2,500", Strength = 0.3 };
+        MemoryDecayService.FuzzifyContent(weak);
+        Assert(weak.Content.Contains("-"),
+            "FuzzifyContent ranges numbers at strength 0.20-0.40");
+
+        var veryWeak = new MemoryEntry { Content = "The damage was 5 dollars", Strength = 0.1 };
+        MemoryDecayService.FuzzifyContent(veryWeak);
+        Assert(!veryWeak.Content.Contains("5"),
+            "FuzzifyContent replaces numbers with vague terms at strength < 0.20");
+
+        // --- DecayMemories ---
+        var memories = new ObservableCollection<MemoryEntry>();
+        var trialEvents = new ObservableCollection<MemoryEntry>();
+        memories.Add(new MemoryEntry { Content = "Memory 1", Strength = 0.1 });
+        memories.Add(new MemoryEntry { Content = "Memory 2", Strength = 0.03 }); // Will be pruned
+        trialEvents.Add(new MemoryEntry { Content = "Event 1", Strength = 0.8 });
+
+        MemoryDecayService.DecayMemories(memories, trialEvents, 0.5);
+
+        Assert(memories.Count == 1, "Very weak memory is pruned after decay");
+        Assert(memories[0].Strength == 0.05, "Remaining memory strength is decayed by factor");
+        Assert(trialEvents[0].Strength == 0.4, "Trial event strength is decayed by factor");
+
+        // --- RecordTrialEvent ---
+        var events = new ObservableCollection<MemoryEntry>();
+        MemoryDecayService.RecordTrialEvent(events, "New event", 0.2);
+        Assert(events.Count == 1, "RecordTrialEvent adds new event");
+        Assert(events[0].Strength == 1.2, "RecordTrialEvent applies bias influence to strength");
+
+        // Reinforce existing
+        MemoryDecayService.RecordTrialEvent(events, "New event", 0.3);
+        Assert(events.Count == 1, "RecordTrialEvent does not duplicate");
+        Assert(events[0].Strength > 1.2, "RecordTrialEvent reinforces existing event strength");
+
+        // --- ReinforceMemory ---
+        var mems = new ObservableCollection<MemoryEntry>();
+        MemoryDecayService.ReinforceMemory(mems, "Background", 0.1);
+        Assert(mems.Count == 1, "ReinforceMemory adds new memory");
+        MemoryDecayService.ReinforceMemory(mems, "Background", 0.1);
+        Assert(mems.Count == 1, "ReinforceMemory does not duplicate");
+        Assert(mems[0].Strength > 1.1, "ReinforceMemory reinforces existing memory");
+
+        // --- ReinforceRelatedMemories (exhibit refresh) ---
+        var rMemories = new ObservableCollection<MemoryEntry>();
+        var rEvents = new ObservableCollection<MemoryEntry>();
+        rMemories.Add(new MemoryEntry { Content = "Saw Exhibit 1: the contract", Strength = 0.3 });
+        rEvents.Add(new MemoryEntry { Content = "Ex. A was admitted", Strength = 0.5 });
+        rEvents.Add(new MemoryEntry { Content = "Unrelated event", Strength = 0.5 });
+
+        MemoryDecayService.ReinforceRelatedMemories(rMemories, rEvents,
+            "Let's review Exhibit 1 and Ex. A again");
+
+        Assert(rMemories[0].Strength > 0.3, "Memory referencing Exhibit 1 is refreshed");
+        Assert(rEvents[0].Strength > 0.5, "TrialEvent referencing Ex. A is refreshed");
+        Assert(rEvents[1].Strength == 0.5, "Unrelated memory is NOT refreshed");
+
+        // Edge: no exhibit references
+        MemoryDecayService.ReinforceRelatedMemories(rMemories, rEvents, "Just a regular statement");
+        Assert(rMemories[0].Strength > 0.3, "Memories unchanged when no exhibit refs in statement");
+
+        // --- Agent delegation (smoke test) ---
+        var agent = new Agent();
+        agent.Memories.Add(new MemoryEntry { Content = "Test", Strength = 1.0 });
+        agent.TrialEvents.Add(new MemoryEntry { Content = "Event", Strength = 1.0 });
+        agent.DecayMemories(0.8);
+        Assert(agent.Memories[0].Strength == 0.8, "Agent.DecayMemories delegates to MemoryDecayService");
+        Assert(agent.TrialEvents[0].Strength == 0.8, "Agent.DecayMemories decays TrialEvents too");
+
+        agent.RecordTrialEvent("Agent event", 0.0);
+        Assert(agent.TrialEvents.Any(e => e.Content == "Agent event"),
+            "Agent.RecordTrialEvent delegates to MemoryDecayService");
+
+        agent.ReinforceMemory("Agent memory", 0.0);
+        Assert(agent.Memories.Any(m => m.Content == "Agent memory"),
+            "Agent.ReinforceMemory delegates to MemoryDecayService");
     }
 }

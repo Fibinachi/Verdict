@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -13,6 +14,7 @@ namespace Verdict.Views;
 public partial class ModelDetailsDialog : Window
 {
     private readonly ILLMProviderModule _module;
+    private volatile bool _isClosed;
     public AIModelConfiguration Model => (AIModelConfiguration)DataContext;
 
     public ModelDetailsDialog(AIModelConfiguration model, ILLMProviderModule module)
@@ -23,12 +25,13 @@ public partial class ModelDetailsDialog : Window
         BuildDynamicFields();
         UpdateApiKeyLink();
         SetupLoadModelsButton();
+        Closed += (_, _) => _isClosed = true;
     }
 
         private void UpdateApiKeyLink()
         {
             // Set the API key URL based on the provider
-            if (_module.ProviderName == "ONNX")
+            if (_module.ProviderName == "Hugging Face")
             {
                 ApiKeyLink.NavigateUri = null;
                 ApiKeyLink.Inlines.Clear();
@@ -53,10 +56,37 @@ public partial class ModelDetailsDialog : Window
             ApiKeyLink.NavigateUri = new Uri(apiKeyUrl);
         }
 
+    private void UpdateDownloadButtonVisibility()
+    {
+        bool isHfModel = !string.IsNullOrWhiteSpace(Model.ModelId) && Model.ModelId.Contains("/");
+        bool isDownloadable = _module.ProviderName == "Hugging Face" || _module.ProviderName == "ONNX";
+        DownloadButton.Visibility = (isHfModel && isDownloadable) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void Download_Click(object sender, RoutedEventArgs e)
+    {
+        DownloadButton.IsEnabled = false;
+        DownloadButton.Content = "Downloading...";
+        try
+        {
+            await DownloadSelectedModelAsync();
+            Model.Status = "Ready - download complete";
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Download failed: {ex.Message}");
+            Model.Status = "Download failed";
+        }
+        finally
+        {
+            DownloadButton.IsEnabled = true;
+            DownloadButton.Content = "Download";
+        }
+    }
+
     private void SetupLoadModelsButton()
     {
-        // Show the Load Models button for providers that support model listing
-        // Currently implemented for Google Gemini and Grok (which uses OpenAI-compatible API)
+        // Show the Load Models button for providers that support model listing/download
         if (_module.ProviderName == "Google Gemini" || _module.ProviderName == "Grok" || 
             _module.ProviderName == "OpenAI" || _module.ProviderName == "Anthropic" ||
             _module.ProviderName == "DeepSeek" || _module.ProviderName == "Alibaba Cloud" ||
@@ -171,7 +201,7 @@ public partial class ModelDetailsDialog : Window
     private async void LoadModels_Click(object sender, RoutedEventArgs e)
     {
         // Only validate API key for providers that need it (ONNX and HuggingFace download from HF with no key)
-        if (_module.ProviderName != "ONNX" && _module.ProviderName != "Hugging Face" && string.IsNullOrWhiteSpace(Model.ApiKey))
+        if (_module.ProviderName != "Hugging Face" && _module.ProviderName != "ONNX" && string.IsNullOrWhiteSpace(Model.ApiKey))
         {
             MessageBox.Show("Please enter your API key first.", "API Key Required", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -183,8 +213,8 @@ public partial class ModelDetailsDialog : Window
             ErrorMessage.Visibility = Visibility.Collapsed;
             ErrorTextBox.Visibility = Visibility.Collapsed;
 
-            // Get available models from the provider
-            var availableModels = await _module.GetAvailableModelsAsync(Model);
+            // Get available models from the provider (structured with metadata)
+            var availableModels = await _module.GetAvailableModelItemsAsync(Model);
 
             // Show model selection dialog
             var modelSelectionDialog = new ModelSelectionDialog(availableModels) { Owner = this };
@@ -192,31 +222,31 @@ public partial class ModelDetailsDialog : Window
             {
                 var selected = modelSelectionDialog.SelectedModelId;
 
-                // The list entries are formatted as "Name (info) - repo-id".
-                // Extract just the repo ID (everything after the last " - " separator).
-                var separator = " - ";
-                var lastSepIndex = selected.LastIndexOf(separator, StringComparison.Ordinal);
-                if (lastSepIndex >= 0)
-                {
-                    selected = selected[(lastSepIndex + separator.Length)..];
-                }
-
                 Model.ModelId = selected;
 
-                // Update the friendly name to reflect the actual model name
-                var modelName = selected.Split('/').LastOrDefault() ?? selected;
-                if (!string.IsNullOrWhiteSpace(modelName))
+                // Derive a clean friendly name from the selected model
+                string friendlyName;
+                if (selected.Contains(':')) // Local file path (e.g., C:\..., or /home/...)
                 {
-                    Model.FriendlyName = modelName;
+                    var dirName = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(selected));
+                    friendlyName = !string.IsNullOrWhiteSpace(dirName) ? dirName : System.IO.Path.GetFileNameWithoutExtension(selected);
+                }
+                else if (selected.Contains("/")) // HuggingFace model ID
+                {
+                    friendlyName = selected.Split('/').LastOrDefault() ?? selected;
+                }
+                else
+                {
+                    friendlyName = selected;
+                }
+                if (!string.IsNullOrWhiteSpace(friendlyName))
+                {
+                    Model.FriendlyName = friendlyName;
                 }
             }
 
-            // After selecting a model, start background download for HF/ONNX providers
-            if (!string.IsNullOrWhiteSpace(Model.ModelId) && Model.ModelId.Contains("/") &&
-                (_module.ProviderName == "Hugging Face" || _module.ProviderName == "ONNX"))
-            {
-                _ = DownloadSelectedModelAsync();
-            }
+            // Show Download button if a HF model ID was selected
+            UpdateDownloadButtonVisibility();
         }
         catch (Exception ex)
         {
@@ -231,39 +261,53 @@ public partial class ModelDetailsDialog : Window
 
     private async Task DownloadSelectedModelAsync()
     {
-        ShowDownloadProgress("Downloading model...", 0, "Starting...");
+        if (_isClosed) return;
+
+        Dispatcher.Invoke(() =>
+        {
+            if (!_isClosed) ShowDownloadProgress("Downloading model...", 0, "Starting...");
+        });
 
         var progress = new Progress<DownloadProgressInfo>(info =>
         {
-            var percent = info.TotalBytes > 0
-                ? Math.Min(100.0, (double)info.BytesDownloaded / info.TotalBytes * 100)
-                : 0.0;
-            var status = info.FilesCompleted > 0
-                ? $"Downloading {info.CurrentFile} ({info.FilesCompleted}/{info.TotalFiles})"
-                : "Downloading model...";
-            Dispatcher.Invoke(() => ShowDownloadProgress(status, percent, info.CurrentFile));
+            if (_isClosed) return;
+            try
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (_isClosed) return;
+                    var percent = info.TotalBytes > 0
+                        ? Math.Min(100.0, (double)info.BytesDownloaded / info.TotalBytes * 100)
+                        : 0.0;
+                    var fileLabel = info.CurrentFile.Length > 50
+                        ? "..." + info.CurrentFile[^47..]
+                        : info.CurrentFile;
+                    var status = info.FilesCompleted > 0
+                        ? $"Downloading ({info.FilesCompleted}/{info.TotalFiles}) {fileLabel}"
+                        : "Downloading model...";
+                    ShowDownloadProgress(status, percent, fileLabel);
+                });
+            }
+            catch (TaskCanceledException) { }
+            catch (InvalidOperationException) { /* dialog closed */ }
         });
 
-        try
+        if (_module is Providers.HuggingFaceModelBase hfBase)
         {
-            if (_module is Providers.HuggingFaceModelBase hfBase)
-            {
-                await hfBase.DownloadModelAsync(Model, progress);
-            }
-
-            Dispatcher.Invoke(() =>
-            {
-                HideDownloadProgress();
-                Model.Status = "Ready - download complete";
-            });
+            await hfBase.DownloadModelAsync(Model, progress);
         }
-        catch (Exception ex)
+
+        if (!_isClosed)
         {
-            Dispatcher.Invoke(() =>
+            try
             {
-                HideDownloadProgress();
-                ShowError($"Download failed: {ex.Message}");
-            });
+                Dispatcher.Invoke(() =>
+                {
+                    if (!_isClosed) HideDownloadProgress();
+                });
+            }
+            catch (TaskCanceledException) { }
+            catch (InvalidOperationException) { }
         }
     }
 

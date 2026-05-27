@@ -56,7 +56,7 @@ namespace Verdict.Services
         };
 
         // Required files for OnnxRuntimeGenAI compatibility
-        private static readonly string[] RequiredExtensions = { ".onnx", ".json", ".txt" };
+        private static readonly string[] RequiredExtensions = { ".onnx", ".json", ".txt", ".data", ".onnx_data" };
         
         // Files that indicate a model is compatible with OnnxRuntimeGenAI
         private const string GenaiConfigFile = "genai_config.json";
@@ -212,7 +212,7 @@ namespace Verdict.Services
             Directory.CreateDirectory(destinationDir);
 
             // Ensure LFS files are included - many ONNX repos store .onnx in LFS
-            var lfsFiles = new[] { "model.onnx", "model.safetensors", "model.onnx.data" };
+            var lfsFiles = new[] { "model.onnx", "model.onnx_data" };
             foreach (var lfsFile in lfsFiles)
             {
                 if (!modelInfo.FileList.Contains(lfsFile))
@@ -239,6 +239,26 @@ namespace Verdict.Services
                 var destDir = Path.GetDirectoryName(destPath);
                 if (!string.IsNullOrEmpty(destDir))
                     Directory.CreateDirectory(destDir);
+
+                // Resume: skip files that already exist and are substantial
+                // ONNX model files should be >500KB, config files >100 bytes
+                if (File.Exists(destPath))
+                {
+                    var existingSize = new FileInfo(destPath).Length;
+                    bool isOnnxStub = filename.EndsWith(".onnx", StringComparison.OrdinalIgnoreCase) && existingSize < 500_000;
+                    bool isTiny = existingSize < 100;
+                    if (!isOnnxStub && !isTiny)
+                    {
+                        totalBytesDownloaded += existingSize;
+                        progress.BytesDownloaded = totalBytesDownloaded;
+                        progress.FilesCompleted = i + 1;
+                        progress.CurrentFile = $"Skipped: {filename}";
+                        onProgress?.Invoke(progress);
+                        continue;
+                    }
+                    // Delete stub/tiny file before re-downloading
+                    try { File.Delete(destPath); } catch { }
+                }
 
                 progress.CurrentFile = filename;
                 progress.FilesCompleted = i;
@@ -283,7 +303,7 @@ namespace Verdict.Services
                 }
             }
 
-            var criticalExtensions = new[] { ".onnx", ".safetensors" };
+            var criticalExtensions = new[] { ".onnx", ".data", ".onnx_data" };
             var criticalFailed = failedFiles.Where(f => criticalExtensions.Any(ext => f.EndsWith(ext, StringComparison.OrdinalIgnoreCase))).ToList();
             if (criticalFailed.Count > 0)
                 throw new Exception($"Failed to download critical model files: {string.Join(", ", criticalFailed)}");
@@ -308,14 +328,64 @@ namespace Verdict.Services
 
         /// <summary>
         /// Checks if a directory contains a valid ONNX model for OnnxRuntimeGenAI.
+        /// Searches recursively because some models (e.g., onnx-community) nest
+        /// the actual model files inside cpu_and_mobile/ or gpu/ subdirectories.
         /// </summary>
         public static bool IsValidModelDirectory(string directoryPath)
         {
             if (!Directory.Exists(directoryPath)) return false;
-            
+
+            // Check top-level first
+            if (HasOnnxModelFiles(directoryPath)) return true;
+
+            // Search one level deep for model subdirectories (cpu_and_mobile/*, gpu/*, etc.)
+            foreach (var subDir in Directory.GetDirectories(directoryPath))
+            {
+                if (HasOnnxModelFiles(subDir)) return true;
+
+                // Search second level (e.g., cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4/)
+                foreach (var nestedDir in Directory.GetDirectories(subDir))
+                {
+                    if (HasOnnxModelFiles(nestedDir)) return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Finds the actual directory containing genai_config.json and model.onnx,
+        /// handling nested structures from onnx-community model repositories.
+        /// Returns the directory path, or null if not found.
+        /// </summary>
+        public static string? FindModelDirectory(string baseDirectory)
+        {
+            if (!Directory.Exists(baseDirectory)) return null;
+
+            // Check top-level first
+            if (HasOnnxModelFiles(baseDirectory)) return baseDirectory;
+
+            // Search for nested model directories
+            foreach (var subDir in Directory.GetDirectories(baseDirectory))
+            {
+                if (HasOnnxModelFiles(subDir)) return subDir;
+
+                foreach (var nestedDir in Directory.GetDirectories(subDir))
+                {
+                    if (HasOnnxModelFiles(nestedDir)) return nestedDir;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool HasOnnxModelFiles(string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath)) return false;
+
             var hasOnnxFile = Directory.GetFiles(directoryPath, "*.onnx", SearchOption.TopDirectoryOnly).Length > 0;
             var hasGenaiConfig = File.Exists(Path.Combine(directoryPath, GenaiConfigFile));
-            
+
             return hasOnnxFile && hasGenaiConfig;
         }
 

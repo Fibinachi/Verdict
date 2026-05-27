@@ -8,6 +8,27 @@ namespace Verdict.Services;
 
 public class ProviderDiscoveryService
 {
+    /// <summary>
+    /// Whitelist of active provider names. Only these providers are available at runtime.
+    /// All other providers remain in the codebase for future development but are deactivated.
+    /// Add provider names here to re-enable them.
+    /// </summary>
+    private static readonly HashSet<string> ActiveProviders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "DeepSeek",
+        "Google Gemini",
+        "ONNX",
+        "Hugging Face",
+        // "OpenAI",          // deactivated - re-add to enable
+        // "Anthropic",       // deactivated - re-add to enable
+        // "Grok",            // deactivated - re-add to enable
+        // "Alibaba Cloud",   // deactivated - re-add to enable
+        // "Ollama",          // deactivated - re-add to enable
+        // "Hugging Face",    // deactivated - re-add to enable
+        // "NVIDIA",          // deactivated - re-add to enable
+        // "Intel",           // deactivated - re-add to enable
+    };
+
     private static List<ILLMProviderModule>? _providers;
 
     public static List<ILLMProviderModule> GetAvailableProviders()
@@ -25,7 +46,9 @@ public class ProviderDiscoveryService
             {
                 if (Activator.CreateInstance(type) is ILLMProviderModule provider)
                 {
-                    _providers.Add(provider);
+                    // Only register active providers
+                    if (ActiveProviders.Contains(provider.ProviderName))
+                        _providers.Add(provider);
                 }
             }
             

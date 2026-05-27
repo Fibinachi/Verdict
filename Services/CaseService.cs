@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Verdict.Models;
 
 namespace Verdict.Services;
@@ -29,6 +30,18 @@ public interface ICaseService
 
 public class CaseService : ICaseService
 {
+    private static readonly JsonSerializerOptions _saveOptions = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
+    private static readonly JsonSerializerOptions _loadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     public void SaveCase(string filePath, CaseFile currentCase, IEnumerable<Agent> allAgents)
     {
         ArgumentNullException.ThrowIfNull(currentCase);
@@ -39,7 +52,7 @@ public class CaseService : ICaseService
         currentCase.Agents.Clear();
         currentCase.Agents.AddRange(allAgents);
 
-        string json = JsonSerializer.Serialize(currentCase, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(currentCase, _saveOptions);
         File.WriteAllText(filePath, json);
 
         // Create assets folder
@@ -72,15 +85,25 @@ public class CaseService : ICaseService
     {
         if (!File.Exists(filePath)) return null;
 
-        string json = File.ReadAllText(filePath);
-        var caseFile = JsonSerializer.Deserialize<CaseFile>(json);
-        
-        if (caseFile != null)
+        try
         {
-            caseFile.LastSaved = File.GetLastWriteTime(filePath);
-        }
+            string json = File.ReadAllText(filePath);
+            var caseFile = JsonSerializer.Deserialize<CaseFile>(json, _loadOptions);
+            
+            if (caseFile != null)
+            {
+                caseFile.LastSaved = File.GetLastWriteTime(filePath);
+            }
 
-        return caseFile;
+            return caseFile;
+        }
+        catch (JsonException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CaseService] JSON deserialization error loading '{filePath}': {ex.Message}");
+            throw new InvalidOperationException(
+                $"The case file '{Path.GetFileName(filePath)}' is corrupted or has an unsupported format. " +
+                $"Details: {ex.Message}", ex);
+        }
     }
 
     /// <summary>

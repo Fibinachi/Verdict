@@ -1,0 +1,335 @@
+{
+    "CaseName": "State v. Andre Walker",
+    "CaseNumber": "2025-CF-2041",
+    "CourtName": "San Bernardino County Superior Court",
+    "Mode": "Criminal",
+    "Jurisdiction": "State",
+    "JurisdictionSpecifics": "California Penal Code Section 187 defines murder as the unlawful killing of a human being with malice aforethought. First-degree murder requires premeditation and deliberation, or the killing of a person during the commission of certain felonies. Self-defense is a legal privilege when the defendant reasonably believes deadly force is necessary to prevent imminent death or great bodily harm.",
+    "JurorCount": 12,
+    "TrialPhase": "Trial",
+    "CurrentDebateStage": "JuryDeliberation",
+    "InsuranceReserve": 0.0,
+    "EstimatedSettlement": 0.0,
+    "GlobalTemperature": 0.7,
+    "GlobalMaxTokens": 4096,
+    "DefaultBiasWeight": 0.0,
+    "DeliberationRounds": 20,
+    "Plaintiffs": [
+        "State of California"
+    ],
+    "Defendants": [
+        "Andre Walker"
+    ],
+    "PlaintiffAttorney": "District Attorney Mara Castillo",
+    "DefenseAttorney": "Atty. Darius King",
+    "ProsecutionPlaintiffPrompt": "You are District Attorney Mara Castillo, prosecuting Andre Walker in the Apple Juice Murders. The defendant is a retired NFL star whose celebrity status has created intense public scrutiny. Your theory: Walker drove to the Bel Air estate of his ex-wife, Lena Hart, confronted her and her friend Daniel Price, and killed them in a violent frenzy. He later attempted to mislead police by staging evidence and offering inconsistent statements. This is a deliberate, planned murder; the myths of freeway pursuit and self-defense are distractions.
+
+KEY ARGUMENTS:
+1. The glove recovered outside the estate matches Walker's reported clothing and contains the victims' blood.
+2. The defendant's sock with blood on it shows he tried to discard evidence after the killings.
+3. Walker's mobile phone data places him at the scene during the critical hour, contradicting his earlier account.
+4. The autopsy shows two stab wounds delivered with force, inconsistent with a defensive withdrawal.
+5. Witness statements place him in the house shortly before the victims were killed.
+6. The defendant's own statements to police changed over time and reveal consciousness of guilt.
+
+RHETORICAL APPROACH: Emphasize that this is not a tragic accident or a celebrity's self-defense claim. Focus on the evidence chain, motive, and the defendant's actions before and after the killings. Anchor jurors in reasonable doubt by showing that the alternative narrative is unsupported and the defendant's behavior is inconsistent with an innocent person.",
+    "DefensePrompt": "You are Atty. Darius King, defending Andre Walker in the Apple Juice Murders. The defendant is a former professional football player who believed his life was in danger. Your theory: Walker arrived at his ex-wife's home intending to negotiate a custody matter, was ambushed by her friend and a small mob, and acted to protect himself from imminent deadly harm. The State's case is built on a rush to judgment against a celebrity and a flawed interpretation of evidence.
+
+KEY ARGUMENTS:
+1. Walker was in the house to retrieve personal property and discuss custody; he never intended violence.
+2. The surveillance and 911 recordings show a chaotic, aggressive confrontation and make a defensive reaction plausible.
+3. The blood evidence can also be explained by a scuffle and by Walker's attempt to flee a dangerous situation.
+4. Walker was intoxicated, tired, and emotionally overwhelmed by the confrontation; his recollection may be inconsistent without being guilty.
+5. The State's expert conceded there is no clear proof of premeditation; the evidence is consistent with a sudden fight.
+6. The police timeline is compressed and the prosecution's narrative depends on inferences, not direct proof.
+
+RHETORICAL APPROACH: Humanize Walker as a frightened man cornered by an angry, unpredictable group. Stress the burden on the State to eliminate every reasonable doubt. Frame the incident as an accident fueled by fear, not a planned murder.",
+    "GeneralPrompt": "This scenario is a close celebrity homicide trial nicknamed the Apple Juice Murders. Evidence is deliberately balanced so that jury composition and juror bias swing the outcome. The case is designed to test reasonable doubt dynamics, celebrity bias, and the effect of life experience on juror decision-making.
+
+EVIDENCE DESIGN:
+Most exhibits are close to neutral (0.48-0.52). The prosecution and defense both have credible evidence, but neither side has a decisive advantage. The case will often resolve differently depending on juror demographics, personal experience with domestic conflict, familiarity with celebrity culture, and attitudes toward law enforcement.
+
+HOW JURY COMPOSITION CHANGES THE OUTCOME:
+- Jurors with family members in law enforcement or athletics may give Walker the benefit of the doubt.
+- Jurors sensitive to domestic violence or vulnerable friends may lean toward conviction.
+- Older jurors often favor self-defense narratives; younger jurors may distrust celebrity privilege and favor the prosecution.
+- Jurors with high education may scrutinize the forensic evidence more closely and can break a tie in either direction.
+
+EXPECTED BEHAVIOR:
+Run deliberation with different jury profiles and observe varied outcomes. Strong mixed panels should produce extended deliberation and close final tallies. The scenario is ideal for exploring narrative framing and jury persuasion.",
+    "DefaultBiasFactors": [
+        { "Name": "Age", "Weight": 0.55 },
+        { "Name": "Gender", "Weight": 0.45 },
+        { "Name": "Education Level", "Weight": 0.80 },
+        { "Name": "Income Level", "Weight": 0.50 },
+        { "Name": "Political Affiliation", "Weight": 0.90 },
+        { "Name": "Ethnicity", "Weight": 0.60 },
+        { "Name": "Religion", "Weight": 0.40 },
+        { "Name": "Juror Experience", "Weight": 0.70 },
+        { "Name": "Legal Knowledge", "Weight": 0.75 },
+        { "Name": "Professional Background", "Weight": 0.55 },
+        { "Name": "Community Ties", "Weight": 0.65 },
+        { "Name": "Communication Style", "Weight": 0.35 }
+    ],
+    "Instructions": {
+        "Text": "Ladies and gentlemen of the jury, you are instructed as follows:\n\nThe defendant, Andre Walker, is charged with two counts of First-Degree Murder under California Penal Code Section 187. The People must prove beyond a reasonable doubt that:\n\n1. The defendant unlawfully killed another human being.\n2. The defendant acted with malice aforethought.\n3. The killing was willful, deliberate, and premeditated.\n\nIf you find the prosecution has not proven each of these elements beyond a reasonable doubt for a given count, you must find the defendant not guilty on that count.\n\nSelf-defense is a complete defense if the defendant reasonably believed that he was in imminent danger of being killed or suffering great bodily injury and used no more force than was necessary. Once self-defense is raised, the People must prove beyond a reasonable doubt that the defendant did not act in lawful self-defense.\n\nYou are the sole judges of the credibility of witnesses and the weight to be given to the evidence. Your verdict must be based solely on the evidence presented and the law as I give it to you.\n\nYou must reach a unanimous verdict on each count.",
+        "Standard": "BeyondReasonableDoubt"
+    },
+    "Verdict": {
+        "Charges": [
+            {
+                "Name": "First-Degree Murder (Lena Hart)",
+                "Elements": [
+                    { "Name": "Unlawful Killing", "Description": "The defendant unlawfully killed Lena Hart.", "IsProven": true },
+                    { "Name": "Malice Aforethought", "Description": "The defendant acted with malice aforethought.", "IsProven": false },
+                    { "Name": "Premeditation", "Description": "The killing was willful, deliberate, and premeditated.", "IsProven": false },
+                    { "Name": "No Self-Defense", "Description": "The People have proven beyond a reasonable doubt that the defendant did not act in lawful self-defense.", "IsProven": false }
+                ],
+                "IsGuilty": false
+            },
+            {
+                "Name": "First-Degree Murder (Daniel Price)",
+                "Elements": [
+                    { "Name": "Unlawful Killing", "Description": "The defendant unlawfully killed Daniel Price.", "IsProven": true },
+                    { "Name": "Malice Aforethought", "Description": "The defendant acted with malice aforethought.", "IsProven": false },
+                    { "Name": "Premeditation", "Description": "The killing was willful, deliberate, and premeditated.", "IsProven": false },
+                    { "Name": "No Self-Defense", "Description": "The People have proven beyond a reasonable doubt that the defendant did not act in lawful self-defense.", "IsProven": false }
+                ],
+                "IsGuilty": false
+            }
+        ],
+        "CausesOfAction": [],
+        "DamagesAwarded": 0
+    },
+    "Evidence": [
+        {
+            "FileName": "Estate Surveillance Video.mp4",
+            "FilePath": "",
+            "Summary": "Video from the driveway security camera shows Andre Walker arriving at his ex-wife Lena Hart's estate at 11:42 p.m., carrying a duffel bag. It captures him entering the home for a brief period, leaving again near midnight, and then a second, shorter exit after 12:05 a.m. The footage does not clearly show the interior confrontation, but Walker's comings and goings are consistent with the prosecution's timeline.",
+            "AdmittedAt": "2025-05-12T10:00:00",
+            "ExhibitNumber": 1,
+            "EvidenceStrength": 0.50,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "The video proves Walker was at the scene, but it does not show the killings themselves. Useful for timeline arguments on both sides.",
+            "MediaType": "Document",
+            "OfferingAttorney": "District Attorney Mara Castillo",
+            "IsOfferedByPlaintiffSide": true
+        },
+        {
+            "FileName": "Blood-Stained Glove.pdf",
+            "FilePath": "",
+            "Summary": "A leather glove found in a trash can at the estate contains the victim's blood and microscopic fibers matching Walker's jacket. The glove appeared after Walker's first exit and was recovered by officers before it could be processed by the defense. Walker's DNA was also found on the glove.",
+            "AdmittedAt": "2025-05-12T11:30:00",
+            "ExhibitNumber": 2,
+            "EvidenceStrength": 0.51,
+            "EstimatedDamages": 0.0,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "Strong physical evidence tying Walker to the scene and the victims. Defense argues it may have been planted or mistakenly discarded during the struggle.",
+            "MediaType": "Document",
+            "OfferingAttorney": "District Attorney Mara Castillo",
+            "IsOfferedByPlaintiffSide": true
+        },
+        {
+            "FileName": "Autopsy Report - Lena Hart.pdf",
+            "FilePath": "",
+            "Summary": "The autopsy shows Lena Hart died from two deep stab wounds to the chest and a fatal penetration of the heart. The pathologist found defensive wounds on her arms consistent with a sudden, violent attack. No gunshot residue was present.",
+            "AdmittedAt": "2025-05-13T09:15:00",
+            "ExhibitNumber": 3,
+            "EvidenceStrength": 0.52,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "Victim injuries are severe and consistent with an assault from close range. Useful for prosecution to establish violence and for defense to argue a chaotic struggle.",
+            "MediaType": "Document",
+            "OfferingAttorney": "District Attorney Mara Castillo",
+            "IsOfferedByPlaintiffSide": true
+        },
+        {
+            "FileName": "Autopsy Report - Daniel Price.pdf",
+            "FilePath": "",
+            "Summary": "The autopsy finds Daniel Price died from a single stab wound to the abdomen that severed the aorta. There are multiple defensive bruises on his forearms and signs of a rapid, intense physical engagement. Toxicology reveals a blood alcohol content of 0.18%.",
+            "AdmittedAt": "2025-05-13T10:45:00",
+            "ExhibitNumber": 4,
+            "EvidenceStrength": 0.50,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "Price's injuries support the prosecution's claim of fatal force, while the alcohol level supports the defense narrative of an unpredictable confrontation.",
+            "MediaType": "Document",
+            "OfferingAttorney": "District Attorney Mara Castillo",
+            "IsOfferedByPlaintiffSide": true
+        },
+        {
+            "FileName": "325 East Oak Lane 911 Recording.mp3",
+            "FilePath": "",
+            "Summary": "A neighbor's 911 call made at 12:07 a.m. reports hearing screaming, a crash, and someone shouting \"get out of my house!\" before the line went silent. The caller later told detectives he heard two separate voices arguing loudly in the house.",
+            "AdmittedAt": "2025-05-13T12:00:00",
+            "ExhibitNumber": 5,
+            "EvidenceStrength": 0.49,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "The 911 call supports the existence of a violent confrontation, but it does not identify the participants or the ultimate cause of death.",
+            "MediaType": "Document",
+            "OfferingAttorney": "District Attorney Mara Castillo",
+            "IsOfferedByPlaintiffSide": true
+        },
+        {
+            "FileName": "Cell Phone Location Data.pdf",
+            "FilePath": "",
+            "Summary": "Walker’s phone ping data places him at the Hart estate between 11:41 p.m. and 12:15 a.m. It also shows a brief departure and return, consistent with his claim of going to his car. The data establishes Walker's presence during the time period when the murders occurred.",
+            "AdmittedAt": "2025-05-12T14:00:00",
+            "ExhibitNumber": 6,
+            "EvidenceStrength": 0.50,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "Strong timeline evidence. Defense argues the phone could have been left at the house earlier or moved by another person during the chaotic events.",
+            "MediaType": "Document",
+            "OfferingAttorney": "District Attorney Mara Castillo",
+            "IsOfferedByPlaintiffSide": true
+        },
+        {
+            "FileName": "Defense Use-of-Force Report.pdf",
+            "FilePath": "",
+            "Summary": "A defense expert with prior law enforcement experience reviewed the scene and concluded that Walker was likely overwhelmed by multiple people in a confined space. The report states that sudden, defensive stab wounds during a fight can appear severe without indicating premeditation.",
+            "AdmittedAt": "2025-05-14T09:30:00",
+            "ExhibitNumber": 7,
+            "EvidenceStrength": 0.50,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "Useful defense material that casts doubt on the prosecution's narrative. The expert’s credibility is carefully balanced by the prosecution's cross-examination potential.",
+            "MediaType": "Document",
+            "OfferingAttorney": "Atty. Darius King",
+            "PlaintiffSideExhibitNumber": 0,
+            "DefenseSideExhibitNumber": 1,
+            "IsOfferedByPlaintiffSide": false
+        },
+        {
+            "FileName": "Character Witness Statements.pdf",
+            "FilePath": "",
+            "Summary": "Statements from Walker's longtime trainer, former teammates, and a charity director depict him as a calm, disciplined family man with no history of violent behavior. The statements also emphasize his reliance on a close-knit support network and his shock at the allegations.",
+            "AdmittedAt": "2025-05-14T11:00:00",
+            "ExhibitNumber": 8,
+            "EvidenceStrength": 0.51,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "Strong humanizing defense evidence. The prosecution will argue that character evidence cannot erase the physical evidence of the murders.",
+            "MediaType": "Document",
+            "OfferingAttorney": "Atty. Darius King",
+            "PlaintiffSideExhibitNumber": 0,
+            "DefenseSideExhibitNumber": 2,
+            "IsOfferedByPlaintiffSide": false
+        },
+        {
+            "FileName": "Crime Scene Diagram.pdf",
+            "FilePath": "",
+            "Summary": "An annotated diagram of the Hart estate living room and hallway. It shows the positions of the victims, the location of the discarded glove, and the path Walker would have taken when leaving. The diagram is used to argue whether retreat was possible and how the altered blood pattern supports one version of events over another.",
+            "AdmittedAt": "2025-05-13T16:00:00",
+            "ExhibitNumber": 9,
+            "EvidenceStrength": 0.49,
+            "IsDiscoveryComplete": true,
+            "ClerkNotes": "Scene layout evidence can support either the prosecution's theory of a deliberate attack or the defense's claim of a dynamic struggle.",
+            "MediaType": "Document",
+            "OfferingAttorney": "District Attorney Mara Castillo",
+            "IsOfferedByPlaintiffSide": true
+        }
+    ],
+    "Pleadings": [
+        {
+            "FileName": "Criminal Complaint.pdf",
+            "FilePath": "",
+            "Summary": "Formal complaint charging Andre Walker with two counts of First-Degree Murder under California Penal Code Section 187 for the deaths of Lena Hart and Daniel Price on the night of April 22, 2025.",
+            "AdmittedAt": "2025-04-25T08:00:00",
+            "IsDiscoveryComplete": true,
+            "MediaType": "Document",
+            "IsOfferedByPlaintiffSide": true
+        },
+        {
+            "FileName": "Defense Notice of Self-Defense Claim.pdf",
+            "FilePath": "",
+            "Summary": "Formal notice asserting that Andre Walker acted in self-defense. The notice states that he reasonably believed deadly force was necessary to protect himself from imminent death or serious bodily injury after being attacked inside the home.",
+            "AdmittedAt": "2025-04-25T08:15:00",
+            "IsDiscoveryComplete": true,
+            "MediaType": "Document",
+            "IsOfferedByPlaintiffSide": false
+        }
+    ],
+    "EventLog": [],
+    "Agents": [
+        {
+            "AgentId": "b1000001-0000-0000-0000-000000000001",
+            "Name": "Judge Marcus Delgado",
+            "Role": "Judge",
+            "Sentiment": 0.5,
+            "Bias": 0.0,
+            "VerdictLean": 0.5,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Judge Marcus Delgado, presiding over the criminal trial of State v. Andre Walker. You are fair, methodical, and focused on ensuring the jury understands the law and the evidence.",
+            "Profile": "Judge Delgado, 54, has served on the bench for 12 years and was previously a prosecutor. Known for calm courtroom management and precise legal rulings.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Male",
+            "Age": 54,
+            "Race": "Hispanic",
+            "Occupation": "Superior Court Judge",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "SpecializedKnowledge": "Criminal Procedure Expert",
+            "CommunicationTeam": "Neutral",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b1000002-0000-0000-0000-000000000002",
+            "Name": "Court Reporter Lila Norton",
+            "Role": "Reporter",
+            "Sentiment": 0.5,
+            "Bias": 0.0,
+            "VerdictLean": 0.5,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Lila Norton, the official court reporter. Maintain a neutral record of testimony and evidence with professionalism.",
+            "Profile": "Experienced court reporter, 31, known for precise and impartial transcripts.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Female",
+            "Age": 31,
+            "Race": "White",
+            "Occupation": "Court Reporter",
+            "EducationLevel": "Associate Degree",
+            "IncomeLevel": "Middle Class",
+            "SpecializedKnowledge": "Legal Transcription",
+            "CommunicationTeam": "Neutral",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b1000003-0000-0000-0000-000000000003",
+            "Name": "Atty. Darius King",
+            "Role": "Lawyer",
+            "Sentiment": 0.2,
+            "Bias": -0.3,
+            "VerdictLean": 0.15,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Atty. Darius King, lead defense counsel. You believe Walker acted reasonably to protect himself from an assault. Your goal is to highlight reasonable doubt and the weakness of the prosecution's narrative.",
+            "Profile": "Defense attorney, 47, 20 years in criminal defense. Known for high-profile cases and persuasive closing arguments.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Male",
+            "Age": 47,
+            "Race": "Black",
+            "Occupation": "Defense Attorney",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "SpecializedKnowledge": "Self-Defense Law",
+            "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b1000004-0000-0000-0000-000000000004",
+            "Name": "District Attorney Mara Castillo",
+            "Role": "Lawyer",
+            "Sentiment": 0.8,
+            "Bias": 0.3,
+            "VerdictLean": 0.85,
+            "IsOccupied": true,
+            "SystemPrompt": "You are District Attorney Mara Castillo, lead prosecutor. You are determined to hold Andre Walker accountable for the murders of Lena Hart and Daniel Price.",
+            "Profile": "Prosecutor, 42, 14 years in the DA's office. Tough on violent crime and experienced with media-covered cases.",
+            "PoliticalAffiliation": "Democrat",
+            "Gender": "Female",
+            "Age": 42,
+            "Race": "Latina",
+            "Occupation": "District Attorney",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "SpecializedKnowledge": "Homicide Prosecution",
+            "CommunicationTeam": "Plaintiff",
+            "SelectedModel": ""
+        }
+    ]
+}

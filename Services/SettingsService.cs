@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Verdict.Models;
 
 namespace Verdict.Services;
@@ -30,6 +31,18 @@ public class SettingsService : ISettingsService
 
     private const int MaxRecentFiles = 10;
 
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
+    private static readonly JsonSerializerOptions _jsonWriteOptions = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     public CaseFile GetDefaultCaseSettings()
     {
         if (File.Exists(SettingsPath))
@@ -37,7 +50,7 @@ public class SettingsService : ISettingsService
             try
             {
                 string json = File.ReadAllText(SettingsPath);
-                var defaults = JsonSerializer.Deserialize<CaseFile>(json);
+                var defaults = JsonSerializer.Deserialize<CaseFile>(json, _jsonOptions);
                 if (defaults != null) return defaults;
             }
             catch
@@ -65,7 +78,7 @@ public class SettingsService : ISettingsService
             Directory.CreateDirectory(directory);
         }
 
-        string json = JsonSerializer.Serialize(caseFile, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(caseFile, _jsonWriteOptions);
         File.WriteAllText(SettingsPath, json);
     }
 

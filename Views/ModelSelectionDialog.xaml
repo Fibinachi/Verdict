@@ -4,9 +4,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Verdict.Views"
+        xmlns:models="clr-namespace:Verdict.Models"
         mc:Ignorable="d"
-        Title="Select Model" Height="400" Width="500"
-        WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
+        Title="Select Model" Height="480" Width="720"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
+        MinHeight="350" MinWidth="550">
+    <Window.Resources>
+        <Style x:Key="HeaderStyle" TargetType="ListViewItem">
+            <Setter Property="IsEnabled" Value="False"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Focusable" Value="False"/>
+        </Style>
+        <local:HeaderRowStyleSelector x:Key="HeaderRowStyleSelector"
+            HeaderStyle="{StaticResource HeaderStyle}"/>
+    </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -14,7 +28,19 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
-        <TextBlock Text="Available Models:" FontWeight="Bold" Margin="0,0,0,10"/>
+        <TextBlock Text="Available Models:" FontWeight="Bold" Margin="0,0,0,5"/>
+        
+        <TextBox x:Name="SearchBox" Margin="0,0,0,8"
+                 TextChanged="SearchBox_TextChanged"
+                 ToolTip="Type to filter models, or enter a HuggingFace model ID to download">
+            <TextBox.Resources>
+                <VisualBrush x:Key="HintBrush" Opacity="0.5" Stretch="None" AlignmentX="Left">
+                    <VisualBrush.Visual>
+                        <TextBlock Text="Search or enter HuggingFace model ID to download..." FontStyle="Italic"/>
+                    </VisualBrush.Visual>
+                </VisualBrush>
+            </TextBox.Resources>
+        </TextBox>
         
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
@@ -22,7 +48,20 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             
-            <ListBox x:Name="ModelList" Margin="0,0,0,10"/>
+            <ListView x:Name="ModelList" Margin="0,0,0,10"
+                      SelectionMode="Single"
+                      ItemContainerStyleSelector="{StaticResource HeaderRowStyleSelector}"
+                      MouseDoubleClick="ModelList_MouseDoubleClick">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Name" Width="240" DisplayMemberBinding="{Binding DisplayName}"/>
+                        <GridViewColumn Header="Source" Width="100" DisplayMemberBinding="{Binding Source}"/>
+                        <GridViewColumn Header="Size" Width="100" DisplayMemberBinding="{Binding SizeFormatted}"/>
+                        <GridViewColumn Header="Arch" Width="70" DisplayMemberBinding="{Binding Architecture}"/>
+                        <GridViewColumn Header="Model ID / Path" Width="180" DisplayMemberBinding="{Binding ModelId}"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
             
             <TextBlock x:Name="ErrorMessage" Foreground="Red" Visibility="Collapsed" 
                        Grid.Row="1" TextAlignment="Center"/>

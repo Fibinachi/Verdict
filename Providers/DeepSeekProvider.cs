@@ -20,7 +20,7 @@ public class DeepSeekProvider : ILLMProviderModule
     public List<ProviderField> ConfigFields => new()
     {
         new ProviderField { Key = "ModelId", Label = "Model ID", DefaultValue = "deepseek-chat" },
-        new ProviderField { Key = "ApiKey", Label = "API Key", IsPassword = true, DefaultValue = "sk-" },
+        new ProviderField { Key = "ApiKey", Label = "API Key", IsPassword = true, DefaultValue = "" },
         new ProviderField { Key = "Endpoint", Label = "API Base URL", DefaultValue = "https://api.deepseek.com/v1" }
     };
 

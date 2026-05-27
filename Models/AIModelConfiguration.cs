@@ -5,7 +5,7 @@ namespace Verdict.Models;
 public class AIModelConfiguration : ObservableObject
 {
     private string _friendlyName = "New Model";
-    private string _provider = "OpenAI";
+    private string _provider = "DeepSeek";
     private string _modelId = string.Empty;
     private string _endpoint = string.Empty;
     private string _apiKey = string.Empty;

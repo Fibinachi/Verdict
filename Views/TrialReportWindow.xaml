@@ -1,0 +1,34 @@
+<Window x:Class="Verdict.Views.TrialReportWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Trial Report" Height="700" Width="900"
+        WindowStartupLocation="CenterOwner" Background="#1E1E1E">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="VERDICT Trial Report" FontSize="18" FontWeight="Bold" Foreground="#E67E22" VerticalAlignment="Center"/>
+            <TextBlock x:Name="CaseNameLabel" Text="" FontSize="14" Foreground="#BDC3C7" VerticalAlignment="Center" Margin="12,0,0,0"/>
+        </StackPanel>
+
+        <TextBox Grid.Row="1" x:Name="ReportTextBox" 
+                 IsReadOnly="True" TextWrapping="Wrap" 
+                 AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Auto"
+                 Background="#2D2D2D" Foreground="#D4D4D4" 
+                 FontFamily="Consolas" FontSize="12"
+                 BorderBrush="#555555" BorderThickness="1"
+                 Padding="8"/>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Copy to Clipboard" Click="Copy_Click" Width="140" Margin="0,0,8,0" Padding="8,4"/>
+            <Button Content="Export to .txt" Click="Export_Click" Width="120" Margin="0,0,8,0" Padding="8,4" 
+                    Background="#27AE60" Foreground="White" FontWeight="Bold"/>
+            <Button Content="Close" IsCancel="True" Width="75" Padding="8,4"/>
+        </StackPanel>
+    </Grid>
+</Window>

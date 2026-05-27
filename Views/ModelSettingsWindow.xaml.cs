@@ -53,7 +53,32 @@ public partial class ModelSettingsWindow : Window
             if (provider != null)
             {
                 var detailsDialog = new ModelDetailsDialog(ViewModel.SelectedModel, provider) { Owner = this };
-                detailsDialog.ShowDialog();
+                if (detailsDialog.ShowDialog() == true)
+                {
+                    // Persist immediately so test status and edits survive even if user cancels parent dialog
+                    var settingsService = new SettingsService();
+                    var currentDefaults = settingsService.GetDefaultCaseSettings();
+                    // Replace or update the model in defaults
+                    var existing = currentDefaults.AvailableModels
+                        .FirstOrDefault(m => m.Provider == ViewModel.SelectedModel.Provider 
+                                          && m.ModelId == ViewModel.SelectedModel.ModelId);
+                    if (existing != null)
+                    {
+                        existing.FriendlyName = ViewModel.SelectedModel.FriendlyName;
+                        existing.Status = ViewModel.SelectedModel.Status;
+                        existing.ApiKey = ViewModel.SelectedModel.ApiKey;
+                        existing.Endpoint = ViewModel.SelectedModel.Endpoint;
+                        existing.ModelId = ViewModel.SelectedModel.ModelId;
+                        existing.CustomSettings = ViewModel.SelectedModel.CustomSettings;
+                    }
+                    else if (!currentDefaults.AvailableModels.Any(m => 
+                        m.Provider == ViewModel.SelectedModel.Provider && m.ModelId == ViewModel.SelectedModel.ModelId))
+                    {
+                        currentDefaults.AvailableModels.Add(ViewModel.SelectedModel);
+                    }
+                    currentDefaults.EnsureCollectionsInitialized();
+                    settingsService.SaveDefaultCaseSettings(currentDefaults);
+                }
             }
             else
             {
@@ -116,11 +141,6 @@ public partial class ModelSettingsWindow : Window
 
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
-        // Auto-save selected model on OK
-        if (ViewModel.SelectedModel != null)
-        {
-            ViewModel.SaveSelectedToFolder();
-        }
         DialogResult = true;
     }
 }

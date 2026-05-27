@@ -82,10 +82,40 @@ public class AgentInteractionService : IAgentInteractionService
     private ILLMProviderModule? GetProvider(AIModelConfiguration? modelConfig)
     {
         if (modelConfig == null) return _defaultProvider;
-        
-        return _providers.FirstOrDefault(p => 
-            p?.ProviderName.Equals(modelConfig.Provider, StringComparison.OrdinalIgnoreCase) == true) 
-            ?? _defaultProvider;
+
+        // Try exact match first
+        var match = _providers.FirstOrDefault(p =>
+            p?.ProviderName.Equals(modelConfig.Provider, StringComparison.OrdinalIgnoreCase) == true);
+        if (match != null) return match;
+
+        // Try lenient match (ignore spaces and hyphens) for backward compatibility
+        var normalizedConfig = NormalizeProviderName(modelConfig.Provider);
+        match = _providers.FirstOrDefault(p =>
+            p != null && NormalizeProviderName(p.ProviderName) == normalizedConfig);
+
+        // Try prefix match (e.g., "Google" matches "Google Gemini", "Alibaba" matches "Alibaba Cloud")
+        if (match == null)
+        {
+            match = _providers.FirstOrDefault(p =>
+                p != null && NormalizeProviderName(p.ProviderName).StartsWith(normalizedConfig));
+        }
+
+        if (match != null)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[AgentInteraction] Provider name mismatch corrected: '{modelConfig.Provider}' -> '{match.ProviderName}'");
+            return match;
+        }
+
+        // Last resort: use default provider
+        System.Diagnostics.Debug.WriteLine(
+            $"[AgentInteraction] No provider found for '{modelConfig.Provider}', falling back to default: {_defaultProvider?.ProviderName ?? "null"}");
+        return _defaultProvider;
+    }
+
+    private static string NormalizeProviderName(string name)
+    {
+        return (name ?? "").Replace(" ", "").Replace("-", "").ToLowerInvariant();
     }
 
     public async Task<InteractionResult> GenerateStatementAsync(StatementRequest request)

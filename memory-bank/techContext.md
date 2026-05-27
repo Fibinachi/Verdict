@@ -18,18 +18,18 @@
 - **Clean**: `dotnet clean`
 
 ## Project Structure
-```
+```raw
 Verdict/
-├── Models/           # 20 entity classes
+├── Models/           # 24 entity classes (20 core + AgentDemographics, BiasDimensionWeights, AgentModelOverrides, BurdenOfProof)
 ├── ViewModels/       # MainViewModel, CaseSettingsViewModel, ModelSettingsViewModel
 ├── Views/            # XAML windows and user controls (10 files)
-├── Services/         # 15 service classes + interfaces
+├── Services/         # 17 service classes + interfaces (added MemoryDecayService, BurdenOfProof)
 ├── Providers/        # 9 LLM provider implementations
 ├── Resources/        # LegalDatabase.json
-├── Tests/            # TestHarness.cs, Program.cs
+├── Tests/            # 577 tests across TestHarness, ModelTests, ServiceTests, ProviderTests, ViewModelTests, SimulationTests
 ├── memory-bank/      # Project documentation
 ├── specs/            # Specification documents
-└── docs/             # Additional documentation
+└── docs/             # Additional documentation (math.md with burden-of-proof section)
 ```
 
 ## Technical Constraints

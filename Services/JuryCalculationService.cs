@@ -65,9 +65,9 @@ public class JuryCalculationService : IJuryCalculationService
 
         string consensus;
         if ((double)pro / total > 0.75)
-            consensus = "Strong";
+            consensus = "Strong Pro-Plaintiff";
         else if (pro > def)
-            consensus = "Leaning";
+            consensus = "Leaning Plaintiff";
         else if (def > pro && (double)def / total > 0.75)
             consensus = "Strongly Defense";
         else if (def > pro)
@@ -75,7 +75,7 @@ public class JuryCalculationService : IJuryCalculationService
         else
             consensus = "Split";
 
-        return $"{pro} for Prosecution, {def} for Defense ({consensus})";
+        return $"{pro} Pro-Plaintiff, {def} Pro-Defense ({consensus})";
     }
 
     public void ApplyEvidenceInfluence(IEnumerable<Agent> allAgents, EvidenceDocument doc, double jurorWeight = 0.02, double otherWeight = 0.01)
@@ -85,24 +85,41 @@ public class JuryCalculationService : IJuryCalculationService
             // Calculate a per-juror weight based on their background demographics.
             // Each juror interprets evidence differently depending on who they are.
             double backgroundWeight = CalculateBackgroundWeight(juror, doc);
-            double totalWeight = jurorWeight * backgroundWeight;
-            juror.UpdateVerdictLean(doc.EvidenceStrength * totalWeight);
+
+            // Each juror assesses witness credibility through their own biases
+            double perJurorCredibility = JurorCredibilityService.CalculatePerJurorCredibility(juror, doc);
+
+            // Probative value is adjusted by the juror's perception of credibility
+            double perceivedProbative = doc.ProbativeValue;
+            if (doc.IsTestimonial)
+            {
+                // Blend objective credibility with juror's biased perception
+                perceivedProbative *= 0.5 + perJurorCredibility * 0.5;
+            }
+
+            // Media-type sensitivity: some jurors are more swayed by certain evidence types
+            double mediaSensitivity = JurorCredibilityService.CalculateMediaTypeSensitivity(juror, doc.EvidenceCategory);
+
+            // Total weight combines background, credibility perception, and media sensitivity
+            double totalWeight = jurorWeight * backgroundWeight * mediaSensitivity;
+            juror.UpdateVerdictLean(perceivedProbative * totalWeight);
 
             // Update the juror's considered damages based on the evidence
             // Each juror arrives at a different amount based on their background
-            UpdateConsideredDamages(juror, doc, backgroundWeight);
+            UpdateConsideredDamages(juror, doc, backgroundWeight, perJurorCredibility);
         }
 
         foreach (var agent in allAgents.Where(a => a.IsOccupied && a.HasOpinion && a.Role != AgentRole.Reporter
                                                     && a.Role != AgentRole.Juror && a.Role != AgentRole.AlternateJuror))
-            agent.UpdateVerdictLean(doc.EvidenceStrength * otherWeight);
+            agent.UpdateVerdictLean(doc.ProbativeValue * otherWeight);
     }
 
     /// <summary>
     /// Updates a juror's personal considered damages amount based on new evidence.
-    /// Each juror arrives at a different number based on their background, bias, and the evidence strength.
+    /// Each juror arrives at a different number based on their background, bias,
+    /// the evidence strength, and their perception of witness credibility.
     /// </summary>
-    private static void UpdateConsideredDamages(Agent juror, EvidenceDocument doc, double backgroundWeight)
+    private static void UpdateConsideredDamages(Agent juror, EvidenceDocument doc, double backgroundWeight, double perJurorCredibility)
     {
         // Base damages from the evidence document
         double baseDamages = doc.EstimatedDamages;
@@ -113,11 +130,18 @@ public class JuryCalculationService : IJuryCalculationService
         // Apply background weight (more susceptible jurors award more)
         double backgroundFactor = 0.5 + (backgroundWeight * 0.5); // Maps 0-2 weight to 0.5-1.5 factor
 
-        // Apply evidence strength (stronger evidence = higher damages)
-        double strengthFactor = 0.5 + (doc.EvidenceStrength * 0.5); // Maps 0-1 strength to 0.5-1.0 factor
+        // Apply probative value (jurors weigh evidence they find probative more heavily)
+        double probativeFactor = 0.5 + (doc.ProbativeValue * 0.5); // Maps 0-1 probative to 0.5-1.0 factor
+
+        // For testimonial evidence, credibility perception affects damages
+        double credibilityFactor = 1.0;
+        if (doc.IsTestimonial)
+        {
+            credibilityFactor = 0.5 + perJurorCredibility * 0.5;
+        }
 
         // Calculate the juror's considered damages for this piece of evidence
-        double evidenceDamages = baseDamages * biasFactor * backgroundFactor * strengthFactor;
+        double evidenceDamages = baseDamages * biasFactor * backgroundFactor * probativeFactor * credibilityFactor;
 
         // Blend with existing considered damages (weighted average, new evidence has 30% weight)
         if (juror.ConsideredDamages > 0)

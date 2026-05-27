@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using Verdict.Models;
@@ -8,20 +9,87 @@ namespace Verdict.Views;
 
 public partial class AgentProfileWindow : Window
 {
+    private readonly JuryDemographicsService _demoService = new();
+    private Agent? _targetAgent;
+
     public AgentProfileWindow(Agent agent, IEnumerable<AIModelConfiguration>? availableModels = null)
     {
         InitializeComponent();
         
-        // If available models are provided, create a wrapper that combines the agent with the available models
         if (availableModels != null)
         {
             var wrapper = new AgentWithAvailableModels(agent, availableModels.ToList());
             DataContext = wrapper;
+            _targetAgent = wrapper;
         }
         else
         {
             DataContext = agent;
+            _targetAgent = agent;
         }
+
+        // Listen for property changes to regenerate prompt/profile
+        if (_targetAgent is INotifyPropertyChanged notifier)
+        {
+            notifier.PropertyChanged += OnAgentPropertyChanged;
+        }
+
+        // Generate initial prompt/profile if empty
+        if (string.IsNullOrWhiteSpace(_targetAgent.SystemPrompt) || string.IsNullOrWhiteSpace(_targetAgent.Profile))
+        {
+            RegeneratePrompt(_targetAgent);
+        }
+    }
+
+    private void OnAgentPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_targetAgent == null) return;
+
+        var promptRelevant = new HashSet<string>
+        {
+            nameof(Agent.Age), nameof(Agent.Gender), nameof(Agent.Race),
+            nameof(Agent.Occupation), nameof(Agent.EducationLevel), nameof(Agent.IncomeLevel),
+            nameof(Agent.MaritalStatus), nameof(Agent.ParentalStatus),
+            nameof(Agent.ReligiousAffiliation), nameof(Agent.PoliticalAffiliation),
+            nameof(Agent.Hobbies), nameof(Agent.ConsumerSegment),
+            nameof(Agent.SpecializedKnowledge), nameof(Agent.MediaConsumption)
+        };
+
+        if (e.PropertyName != null && promptRelevant.Contains(e.PropertyName))
+        {
+            RegeneratePrompt(_targetAgent);
+        }
+    }
+
+    private void RegeneratePrompt(Agent agent)
+    {
+        agent.Profile = BuildProfile(agent);
+        agent.SystemPrompt = BuildPrompt(agent);
+    }
+
+    private static string BuildProfile(Agent agent)
+    {
+        string hobbiesText = string.IsNullOrWhiteSpace(agent.Hobbies) ? "Reading, Walking" : agent.Hobbies;
+        string knowledgeText = string.IsNullOrWhiteSpace(agent.SpecializedKnowledge) ? "General public knowledge" : agent.SpecializedKnowledge;
+
+        return $"A {agent.Age}-year-old {agent.Race} {agent.Gender}. " +
+               $"Education: {agent.EducationLevel}. Occupation: {agent.Occupation}. " +
+               $"Marital: {agent.MaritalStatus}. Parental: {agent.ParentalStatus}. " +
+               $"Income: {agent.IncomeLevel}. Politics: {agent.PoliticalAffiliation}. " +
+               $"Religion: {agent.ReligiousAffiliation}. Media: {agent.MediaConsumption}. " +
+               $"Consumer: {agent.ConsumerSegment}. " +
+               $"Hobbies: {hobbiesText}. Knowledge: {knowledgeText}.";
+    }
+
+    private static string BuildPrompt(Agent agent)
+    {
+        return $"You are a juror named {agent.Name}. {agent.Profile} " +
+               $"Your hobbies include {agent.Hobbies}. " +
+               $"As a {agent.Occupation}, you have specialized knowledge in {agent.SpecializedKnowledge}. " +
+               "You are participating in a courtroom simulation. " +
+               "Consider the evidence and arguments presented, and form an opinion based on your " +
+               "background, experiences, and the facts of the case. " +
+               "Your verdict lean should reflect your genuine assessment.";
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)

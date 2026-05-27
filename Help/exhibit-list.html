@@ -57,23 +57,43 @@
                 </tr>
                 <tr>
                     <td><strong>File Name</strong></td>
-                    <td>The original filename of the submitted evidence document or image.</td>
+                    <td>The original filename of the submitted evidence document, image, video, or audio file.</td>
                 </tr>
                 <tr>
                     <td><strong>Summary</strong></td>
                     <td>A brief AI-generated summary of the evidence content.</td>
                 </tr>
                 <tr>
+                    <td><strong>Category</strong></td>
+                    <td>Evidence category: Document, Image, Video, Audio, Physical, or Testimony. Determines the media impact multiplier.</td>
+                </tr>
+                <tr>
+                    <td><strong>Strength</strong></td>
+                    <td>Raw persuasive impact (0&ndash;100%), weighted by media type. Videos and images have higher strength than documents.</td>
+                </tr>
+                <tr>
+                    <td><strong>Probative</strong></td>
+                    <td>Legal probative value (0&ndash;100%), accounting for reliability, hearsay, direct vs. circumstantial, and witness credibility.</td>
+                </tr>
+                <tr>
+                    <td><strong>Reliability</strong></td>
+                    <td>Chain of custody and authenticity score (0&ndash;100%). Lower for unauthenticated or unverified evidence.</td>
+                </tr>
+                <tr>
+                    <td><strong>Credibility</strong></td>
+                    <td>Witness credibility rating (0&ndash;100%) for testimonial evidence. Expert witnesses rate higher; eyewitnesses and character witnesses rate lower.</td>
+                </tr>
+                <tr>
                     <td><strong>Clerk Notes</strong></td>
                     <td>Any notes added by the clerk or user regarding the evidence.</td>
                 </tr>
                 <tr>
-                    <td><strong>Strength</strong></td>
-                    <td>An AI-assessed strength rating indicating how compelling the evidence is.</td>
+                    <td><strong>Damages</strong></td>
+                    <td>Estimated damages extracted from the evidence content, including legal multipliers.</td>
                 </tr>
                 <tr>
                     <td><strong>Admitted</strong></td>
-                    <td>A checkbox or indicator showing whether the evidence has been formally admitted into the case.</td>
+                    <td>The date and time the evidence was formally admitted into the case.</td>
                 </tr>
             </tbody>
         </table>

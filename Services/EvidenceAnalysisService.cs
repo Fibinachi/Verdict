@@ -23,6 +23,20 @@ public interface IEvidenceAnalysisService
 
 public class EvidenceAnalysisService : IEvidenceAnalysisService
 {
+    // ── Probative value methods delegated to EvidenceProbativeService ──
+
+    /// <inheritdoc cref="EvidenceProbativeService.GetMediaImpactMultiplier"/>
+    public static double GetMediaImpactMultiplier(string evidenceCategory)
+        => EvidenceProbativeService.GetMediaImpactMultiplier(evidenceCategory);
+
+    /// <inheritdoc cref="EvidenceProbativeService.DetermineEvidenceCategory"/>
+    public static string DetermineEvidenceCategory(string? mediaType, string summary, string fileContent)
+        => EvidenceProbativeService.DetermineEvidenceCategory(mediaType, summary, fileContent);
+
+    /// <inheritdoc cref="EvidenceProbativeService.AssessProbativeValue"/>
+    public static void AssessProbativeValue(EvidenceDocument doc, string summary, string fileContent)
+        => EvidenceProbativeService.AssessProbativeValue(doc, summary, fileContent);
+
     public void AssessStrength(EvidenceDocument doc, string summary, string fileContent = "")
     {
         // Combine summary and file content for analysis
@@ -30,6 +44,12 @@ public class EvidenceAnalysisService : IEvidenceAnalysisService
         string lower = combined.ToLower();
         double strength = 0.5;   // Default neutral
         double damages = 50000;  // Default moderate estimate
+
+        // --- Determine evidence category if not already set ---
+        if (string.IsNullOrEmpty(doc.EvidenceCategory) || doc.EvidenceCategory == "Document")
+        {
+            doc.EvidenceCategory = DetermineEvidenceCategory(doc.MediaType, summary, fileContent);
+        }
 
         // --- Parse actual dollar amounts from the content first ---
         double parsedDamages = ParseDollarAmounts(combined);
@@ -100,8 +120,20 @@ public class EvidenceAnalysisService : IEvidenceAnalysisService
         if (lower.Contains("expired") || lower.Contains("old") || lower.Contains("outdated"))
             strength *= 0.5;
 
+        // --- Apply media-type impact multiplier ---
+        double mediaMultiplier = GetMediaImpactMultiplier(doc.EvidenceCategory);
+        // For testimony, impact is further scaled by credibility
+        if (doc.IsTestimonial)
+        {
+            mediaMultiplier *= 0.5 + doc.WitnessCredibility * 0.5;
+        }
+        strength *= mediaMultiplier;
+
         doc.EvidenceStrength = Math.Clamp(strength, 0.0, 1.0);
         doc.EstimatedDamages = damages;
+
+        // --- Assess probative value (legal weight, distinct from impact) ---
+        AssessProbativeValue(doc, summary, fileContent);
     }
 
     /// <summary>

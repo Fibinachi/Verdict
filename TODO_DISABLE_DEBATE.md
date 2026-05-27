@@ -3,6 +3,5 @@
 - [x] Lock `MainViewModel.CurrentDebateStage` to `CourtPhase.JuryDeliberation`
 - [x] Remove transcript influence and any stage-triggered LLM responses
 - [x] Disable court-phase UI handlers in `MainWindow.xaml.cs` (force deliberation)
-- [ ] Fix build error in `Views/ExhibitListWindow.xaml` by implementing missing `ExhibitListItem_MouseDoubleClick` handler
-- [ ] Re-run `dotnet build`
-
+- [x] Fix build error in `Views/ExhibitListWindow.xaml` — handler already exists and builds clean
+- [x] `dotnet build` succeeds (577/577 tests passing)

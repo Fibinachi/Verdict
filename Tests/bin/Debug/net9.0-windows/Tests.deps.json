@@ -101,7 +101,7 @@
       "LLamaSharp/0.20.0": {
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "9.0.0",
-          "Microsoft.Extensions.AI.Abstractions": "9.8.0",
+          "Microsoft.Extensions.AI.Abstractions": "9.1.0-preview.1.25064.3",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.7",
           "System.Numerics.Tensors": "9.0.0"
         },
@@ -416,7 +416,7 @@
           }
         }
       },
-      "Microsoft.AI.DirectML/1.15.4": {},
+      "Microsoft.AI.DirectML/1.15.2": {},
       "Microsoft.Bcl.AsyncInterfaces/9.0.0": {
         "runtime": {
           "lib/netstandard2.1/Microsoft.Bcl.AsyncInterfaces.dll": {
@@ -443,11 +443,11 @@
           }
         }
       },
-      "Microsoft.Extensions.AI.Abstractions/9.8.0": {
+      "Microsoft.Extensions.AI.Abstractions/9.1.0-preview.1.25064.3": {
         "runtime": {
           "lib/net9.0/Microsoft.Extensions.AI.Abstractions.dll": {
-            "assemblyVersion": "9.8.0.0",
-            "fileVersion": "9.800.25.41206"
+            "assemblyVersion": "9.1.0.0",
+            "fileVersion": "9.100.25.6403"
           }
         }
       },
@@ -619,16 +619,55 @@
           }
         }
       },
-      "Microsoft.ML.OnnxRuntime.DirectML/1.23.0": {
+      "Microsoft.ML.OnnxRuntime/1.20.1": {
         "dependencies": {
-          "Microsoft.AI.DirectML": "1.15.4",
-          "Microsoft.ML.OnnxRuntime.Managed": "1.23.0"
+          "Microsoft.ML.OnnxRuntime.Managed": "1.20.1"
         },
         "runtimeTargets": {
+          "runtimes/android/native/onnxruntime.aar": {
+            "rid": "android",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/ios/native/onnxruntime.xcframework.zip": {
+            "rid": "ios",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libonnxruntime.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libonnxruntime_providers_shared.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libonnxruntime.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libonnxruntime_providers_shared.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-arm64/native/libonnxruntime.dylib": {
+            "rid": "osx-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-x64/native/libonnxruntime.dylib": {
+            "rid": "osx-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
           "runtimes/win-arm64/native/onnxruntime.dll": {
             "rid": "win-arm64",
             "assetType": "native",
-            "fileVersion": "1.23.25.926"
+            "fileVersion": "1.20.24.1119"
           },
           "runtimes/win-arm64/native/onnxruntime.lib": {
             "rid": "win-arm64",
@@ -638,12 +677,17 @@
           "runtimes/win-arm64/native/onnxruntime_providers_shared.dll": {
             "rid": "win-arm64",
             "assetType": "native",
-            "fileVersion": "1.23.25.926"
+            "fileVersion": "1.20.24.1119"
+          },
+          "runtimes/win-arm64/native/onnxruntime_providers_shared.lib": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
           },
           "runtimes/win-x64/native/onnxruntime.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "1.23.25.926"
+            "fileVersion": "1.20.24.1119"
           },
           "runtimes/win-x64/native/onnxruntime.lib": {
             "rid": "win-x64",
@@ -653,32 +697,87 @@
           "runtimes/win-x64/native/onnxruntime_providers_shared.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "1.23.25.926"
+            "fileVersion": "1.20.24.1119"
+          },
+          "runtimes/win-x64/native/onnxruntime_providers_shared.lib": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x86/native/onnxruntime.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "1.20.24.1119"
+          },
+          "runtimes/win-x86/native/onnxruntime.lib": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x86/native/onnxruntime_providers_shared.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "1.20.24.1119"
+          },
+          "runtimes/win-x86/native/onnxruntime_providers_shared.lib": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
           }
         }
       },
-      "Microsoft.ML.OnnxRuntime.Managed/1.23.0": {
+      "Microsoft.ML.OnnxRuntime.DirectML/1.20.1": {
         "dependencies": {
-          "System.Memory": "4.5.5",
-          "System.Numerics.Tensors": "9.0.0"
+          "Microsoft.AI.DirectML": "1.15.2",
+          "Microsoft.ML.OnnxRuntime.Managed": "1.20.1"
+        }
+      },
+      "Microsoft.ML.OnnxRuntime.Managed/1.20.1": {
+        "dependencies": {
+          "System.Memory": "4.5.5"
         },
         "runtime": {
           "lib/net8.0/Microsoft.ML.OnnxRuntime.dll": {
-            "assemblyVersion": "1.23.0.0",
-            "fileVersion": "1.23.0.0"
+            "assemblyVersion": "1.20.1.0",
+            "fileVersion": "1.20.1.0"
           }
         }
       },
-      "Microsoft.ML.OnnxRuntimeGenAI.DirectML/0.13.2": {
+      "Microsoft.ML.OnnxRuntimeGenAI/0.6.0": {
         "dependencies": {
-          "Microsoft.ML.OnnxRuntime.DirectML": "1.23.0",
-          "Microsoft.ML.OnnxRuntimeGenAI.Managed": "0.13.2"
+          "Microsoft.ML.OnnxRuntime": "1.20.1",
+          "Microsoft.ML.OnnxRuntimeGenAI.Managed": "0.6.0"
         },
         "runtimeTargets": {
+          "runtimes/android/native/onnxruntime-genai.aar": {
+            "rid": "android",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/ios/native/onnxruntime-genai.xcframework.zip": {
+            "rid": "ios",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libonnxruntime-genai.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-arm64/native/libonnxruntime-genai.dylib": {
+            "rid": "osx-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-x64/native/libonnxruntime-genai.dylib": {
+            "rid": "osx-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
           "runtimes/win-arm64/native/onnxruntime-genai.dll": {
             "rid": "win-arm64",
             "assetType": "native",
-            "fileVersion": "0.13.2.0"
+            "fileVersion": "0.6.0.0"
           },
           "runtimes/win-arm64/native/onnxruntime-genai.lib": {
             "rid": "win-arm64",
@@ -688,7 +787,7 @@
           "runtimes/win-x64/native/onnxruntime-genai.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "0.13.2.0"
+            "fileVersion": "0.6.0.0"
           },
           "runtimes/win-x64/native/onnxruntime-genai.lib": {
             "rid": "win-x64",
@@ -697,10 +796,14 @@
           }
         }
       },
-      "Microsoft.ML.OnnxRuntimeGenAI.Managed/0.13.2": {
+      "Microsoft.ML.OnnxRuntimeGenAI.DirectML/0.6.0": {
         "dependencies": {
-          "Microsoft.Extensions.AI.Abstractions": "9.8.0"
-        },
+          "Microsoft.AI.DirectML": "1.15.2",
+          "Microsoft.ML.OnnxRuntime.DirectML": "1.20.1",
+          "Microsoft.ML.OnnxRuntimeGenAI.Managed": "0.6.0"
+        }
+      },
+      "Microsoft.ML.OnnxRuntimeGenAI.Managed/0.6.0": {
         "runtime": {
           "lib/net8.0/Microsoft.ML.OnnxRuntimeGenAI.dll": {
             "assemblyVersion": "0.0.0.0",
@@ -1398,8 +1501,8 @@
           "LLamaSharp": "0.20.0",
           "LLamaSharp.Backend.Cpu": "0.20.0",
           "Microsoft.Extensions.Http": "10.0.7",
-          "Microsoft.ML.OnnxRuntimeGenAI.DirectML": "0.13.2",
-          "Microsoft.ML.OnnxRuntimeGenAI.Managed": "0.13.2",
+          "Microsoft.ML.OnnxRuntimeGenAI": "0.6.0",
+          "Microsoft.ML.OnnxRuntimeGenAI.DirectML": "0.6.0",
           "QuestPDF": "2026.2.4",
           "System.Text.Json": "10.0.7",
           "itext7": "9.6.0"
@@ -1454,12 +1557,12 @@
       "path": "llamasharp.backend.cpu/0.20.0",
       "hashPath": "llamasharp.backend.cpu.0.20.0.nupkg.sha512"
     },
-    "Microsoft.AI.DirectML/1.15.4": {
+    "Microsoft.AI.DirectML/1.15.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-UblWBtQxcXcxwcn+jh0pfbq4zv2b6w7ThJ35qUV9gd8niGofrFWzVqZ6yqYDMiE+IJf8LRpG+H1cZpswceOeiA==",
-      "path": "microsoft.ai.directml/1.15.4",
-      "hashPath": "microsoft.ai.directml.1.15.4.nupkg.sha512"
+      "sha512": "sha512-FVvIJWnT14L5cTEr8uc40mY2lAdtzcAcgsas4i4HF7EcZMr8RJyLWTCxQj1K7fi7DNykBufQe1K5HDh/oIBz0g==",
+      "path": "microsoft.ai.directml/1.15.2",
+      "hashPath": "microsoft.ai.directml.1.15.2.nupkg.sha512"
     },
     "Microsoft.Bcl.AsyncInterfaces/9.0.0": {
       "type": "package",
@@ -1475,12 +1578,12 @@
       "path": "microsoft.dotnet.platformabstractions/1.1.0",
       "hashPath": "microsoft.dotnet.platformabstractions.1.1.0.nupkg.sha512"
     },
-    "Microsoft.Extensions.AI.Abstractions/9.8.0": {
+    "Microsoft.Extensions.AI.Abstractions/9.1.0-preview.1.25064.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-0++t+lPqX5amr7Kgh+ZFm1C5hhzMmFc5Dhoc6siNZ4sPXxy0pLTFRk+4vHn0hZf7Xe8Y9OoqL2cL4oTdjt8STQ==",
-      "path": "microsoft.extensions.ai.abstractions/9.8.0",
-      "hashPath": "microsoft.extensions.ai.abstractions.9.8.0.nupkg.sha512"
+      "sha512": "sha512-qxGgo8ipnJz9viMQBMrnmYymi9cZWV0kep/wNTHgLhieYBCVvkMnOskaoNzRjCMl9hwEkXnZTQIwYk2WbpmmWA==",
+      "path": "microsoft.extensions.ai.abstractions/9.1.0-preview.1.25064.3",
+      "hashPath": "microsoft.extensions.ai.abstractions.9.1.0-preview.1.25064.3.nupkg.sha512"
     },
     "Microsoft.Extensions.Configuration/10.0.7": {
       "type": "package",
@@ -1580,33 +1683,47 @@
       "path": "microsoft.extensions.primitives/10.0.7",
       "hashPath": "microsoft.extensions.primitives.10.0.7.nupkg.sha512"
     },
-    "Microsoft.ML.OnnxRuntime.DirectML/1.23.0": {
+    "Microsoft.ML.OnnxRuntime/1.20.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-zABy69z74iSy05blZpfFsm+3IETjJniH1hDwzAkSyrjKW96yHnEQ1zd1P+LNmuQWqnLkx5LOKQQ487ndsxTX6g==",
-      "path": "microsoft.ml.onnxruntime.directml/1.23.0",
-      "hashPath": "microsoft.ml.onnxruntime.directml.1.23.0.nupkg.sha512"
+      "sha512": "sha512-NzUD79BC6R7TKROLyB3XCzXTpbNZ1YfOdVbult7hoFvd/xyRecOMiRO5HTzkPXvaFlcvZ91+WNCiroAPzUE7Dw==",
+      "path": "microsoft.ml.onnxruntime/1.20.1",
+      "hashPath": "microsoft.ml.onnxruntime.1.20.1.nupkg.sha512"
     },
-    "Microsoft.ML.OnnxRuntime.Managed/1.23.0": {
+    "Microsoft.ML.OnnxRuntime.DirectML/1.20.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-YsvYcS/Xp9QW/cN+FqC7iX66eIaV1hDeNLgCjNzY/4HU3J9+ABk5QVqpP1YgcSmOouVq0+/IBR0FYKvLYQi+4g==",
-      "path": "microsoft.ml.onnxruntime.managed/1.23.0",
-      "hashPath": "microsoft.ml.onnxruntime.managed.1.23.0.nupkg.sha512"
+      "sha512": "sha512-IQSqKIwOGJ8azkJxqT7h/xGkjw3AKdVd/f9BfnbwQVBRZ7W5vrv8nCirNYPO0Xr3XJ27RpSzXSKIRBkiQlhjyw==",
+      "path": "microsoft.ml.onnxruntime.directml/1.20.1",
+      "hashPath": "microsoft.ml.onnxruntime.directml.1.20.1.nupkg.sha512"
     },
-    "Microsoft.ML.OnnxRuntimeGenAI.DirectML/0.13.2": {
+    "Microsoft.ML.OnnxRuntime.Managed/1.20.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-DttGAw/NhQK2pvG5l1WLLbw20aTMwN0bWpstAGko7B3SOWQOlrsCixObvHjsVjvYw3llClN0STko49HTrxnsDg==",
-      "path": "microsoft.ml.onnxruntimegenai.directml/0.13.2",
-      "hashPath": "microsoft.ml.onnxruntimegenai.directml.0.13.2.nupkg.sha512"
+      "sha512": "sha512-+EVcEcKdq3gkw6iu8TYl2coJxfPnMi1YQc6eZ80BGNlw6mbBCxNGe6h4udDCwENYWsXFvYjoBc6412t40tl4ew==",
+      "path": "microsoft.ml.onnxruntime.managed/1.20.1",
+      "hashPath": "microsoft.ml.onnxruntime.managed.1.20.1.nupkg.sha512"
     },
-    "Microsoft.ML.OnnxRuntimeGenAI.Managed/0.13.2": {
+    "Microsoft.ML.OnnxRuntimeGenAI/0.6.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-wLjCMu+OLDWblMC12fnH5MrjqXUFtxNl+xI/Alg8yswoF7VcQZXqqIV8nI0LZnzBGUHlIMMwquR4qb+1TL6Buw==",
-      "path": "microsoft.ml.onnxruntimegenai.managed/0.13.2",
-      "hashPath": "microsoft.ml.onnxruntimegenai.managed.0.13.2.nupkg.sha512"
+      "sha512": "sha512-nvX9OAKYuUNQqwVFu0Sv43XMesTmUo7kXM71ytWiFthd0ki58cnv4RV7XWloWFbRNK8SqP8oR6H8oQ48nqDbMg==",
+      "path": "microsoft.ml.onnxruntimegenai/0.6.0",
+      "hashPath": "microsoft.ml.onnxruntimegenai.0.6.0.nupkg.sha512"
+    },
+    "Microsoft.ML.OnnxRuntimeGenAI.DirectML/0.6.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6eWkAdef++xIqiOoJ3ktNeEV/FR4h7xrK68NrBS81aLj36ri3YT0T244fG+iOAabNELQXH69ViPMqf8JgZIHOQ==",
+      "path": "microsoft.ml.onnxruntimegenai.directml/0.6.0",
+      "hashPath": "microsoft.ml.onnxruntimegenai.directml.0.6.0.nupkg.sha512"
+    },
+    "Microsoft.ML.OnnxRuntimeGenAI.Managed/0.6.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-s5LXrWrrcUpMag651gPNHYk9UIb+5xJDq2Ld75iVvlMxg34T+9vYl7MaOx84gp2dfrrTd5FDPCqjp/wO4d5ulw==",
+      "path": "microsoft.ml.onnxruntimegenai.managed/0.6.0",
+      "hashPath": "microsoft.ml.onnxruntimegenai.managed.0.6.0.nupkg.sha512"
     },
     "Microsoft.NETCore.Platforms/1.1.1": {
       "type": "package",

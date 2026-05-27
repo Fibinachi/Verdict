@@ -8,36 +8,46 @@ namespace Verdict.Services;
 /// <summary>
 /// Service for generating jury pools based on realistic demographic distributions
 /// derived from US Census data patterns for specific counties and regions.
-/// Default bias factor weights are based on juror bias research documented in
-/// docs/JurorBiasResearch.md
+/// Uses CountyDemographicsDatabase for jurisdiction-specific distributions.
 /// </summary>
 public interface IJuryDemographicsService
 {
     /// <summary>
     /// Generates a jury panel with the specified number of jurors and alternates.
+    /// Demographics are calibrated to the specified county/state.
     /// </summary>
     /// <param name="jurorCount">Number of regular jurors (typically 12)</param>
     /// <param name="alternateCount">Number of alternate jurors (typically 2)</param>
-    /// <param name="county">County name for demographic calibration (e.g., "Richland County")</param>
-    /// <param name="state">State for regional demographic patterns</param>
+    /// <param name="county">County name for demographic calibration (e.g., "St. Croix County")</param>
+    /// <param name="state">State name or abbreviation (e.g., "Wisconsin" or "WI")</param>
     /// <returns>List of Agent objects representing the jury panel</returns>
     List<Agent> GenerateJuryPanel(int jurorCount, int alternateCount, string county, string state = "South Carolina");
 
     /// <summary>
-    /// Generates a single juror with demographics drawn from population distributions.
+    /// Generates a single juror with demographics drawn from county/state population distributions.
     /// </summary>
     Agent GenerateJuror(string county, string state = "South Carolina");
 }
 
 /// <summary>
 /// Implementation of jury demographics generation using probabilistic models
-/// based on US Census data patterns.
+/// based on jurisdiction-specific census data from CountyDemographicsDatabase.
 /// </summary>
 public class JuryDemographicsService : IJuryDemographicsService
 {
     private static readonly Random _random = new();
 
-    // Name lists by ethnicity/race to make names match demographics
+    // Resolved demographics for the current generation batch (set per-call)
+    private CountyDemographics _demos = CountyDemographicsDatabase.GetNationalDefaults();
+
+    // ═══════════════════════════════════════════════════════════════
+    // NAME DATABASES (by ethnicity — names are culturally tied, not geographic)
+    // ═══════════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════
+    // NAME DATABASES (by ethnicity — names are culturally tied, not geographic)
+    // ═══════════════════════════════════════════════════════════════
+
     private static readonly Dictionary<string, string[]> FirstNameEthnicityMap = new()
     {
         { "White", new[] { "James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "William", "Elizabeth", 
@@ -96,160 +106,52 @@ public class JuryDemographicsService : IJuryDemographicsService
         "Russell", "Griffin", "Diaz", "Hayes", "Ford", "Hamilton", "Graham", "Sullivan", "Wallace", "Coleman"
     };
 
-    // Age group probabilities (weighted)
-    private static readonly (int min, int max, double weight)[] AgeRanges = new[]
-    {
-        (21, 29, 0.20),
-        (30, 39, 0.25),
-        (40, 49, 0.22),
-        (50, 59, 0.18),
-        (60, 70, 0.10),
-        (71, 85, 0.05)
-    };
+    // ═══════════════════════════════════════════════════════════════
+    // NON-GEOGRAPHIC FALLBACK DISTRIBUTIONS (used when county data is unavailable)
+    // ═══════════════════════════════════════════════════════════════
+    // These are only used as ultimate fallbacks. Primary data comes from CountyDemographicsDatabase.
 
-    // Gender distribution (approximate US population)
-    private static readonly (string gender, double weight)[] Genders = new[]
-    {
-        ("Male", 0.49),
-        ("Female", 0.50),
-        ("Non-binary/Other", 0.01)
-    };
-
-    // Race/ethnicity distribution (varies by region; using national averages as baseline)
-    private static readonly (string race, double weight)[] Races = new[]
-    {
-        ("White", 0.60),
-        ("Black", 0.13),
-        ("Hispanic/Latino", 0.18),
-        ("Asian", 0.06),
-        ("Native American", 0.02),
-        ("Pacific Islander", 0.005),
-        ("Middle Eastern", 0.005),
-        ("Multiracial", 0.025)
-    };
-
-    // Education level distribution (juror pool typically 25+)
-    private static readonly (string education, double weight)[] EducationLevels = new[]
-    {
-        ("High School", 0.28),
-        ("Some College", 0.28),
-        ("Associate Degree", 0.10),
-        ("Bachelor's Degree", 0.22),
-        ("Master's Degree", 0.08),
-        ("Doctorate", 0.02),
-        ("Trade School", 0.02)
-    };
-
-    // Income level distribution (household income)
-    private static readonly (string income, double weight)[] IncomeLevels = new[]
-    {
-        ("Lower Class", 0.15),
-        ("Working Class", 0.20),
-        ("Middle Class", 0.35),
-        ("Upper Middle Class", 0.20),
-        ("Upper Class", 0.10)
-    };
-
-    // Common occupations by category
-    private static readonly string[] OccupationsProfessional = new[]
-    {
-        "Accountant", "Engineer", "Teacher", "Nurse", "Manager", "Sales Representative",
-        "Administrator", "Analyst", "Consultant", "IT Professional"
-    };
-
-    private static readonly string[] OccupationsTrade = new[]
-    {
-        "Electrician", "Plumber", "Mechanic", "Carpenter", "Construction Worker", "Truck Driver",
-        "Police Officer", "Firefighter", "Security Guard", "Factory Worker"
-    };
-
-    private static readonly string[] OccupationsService = new[]
-    {
-        "Retail Worker", "Food Service", "Customer Service", "Administrative Assistant",
-        "Cashier", "Janitor", "Home Health Aide", "Childcare Worker"
-    };
-
-    private static readonly string[] OccupationsRetired = new[]
-    {
-        "Retired", "Retired Teacher", "Retired Engineer", "Retired Nurse", "Retired Manager"
-    };
-
-    private static readonly string[] OccupationsStudents = new[]
-    {
-        "Student", "Graduate Student", "University Student"
-    };
-
-    // Marital status distribution
+    // Marital status (age-dependent anyway)
     private static readonly (string status, double weight)[] MaritalStatuses = new[]
     {
-        ("Single", 0.30),
-        ("Married", 0.45),
-        ("Divorced", 0.15),
-        ("Widowed", 0.07),
-        ("Separated", 0.03)
+        ("Single", 0.30), ("Married", 0.45), ("Divorced", 0.15), ("Widowed", 0.07), ("Separated", 0.03)
     };
 
-    // Parental status (dependent on age)
+    // Parental status (age-dependent)
     private static readonly (string status, double weight)[] ParentalStatuses = new[]
     {
-        ("No Children", 0.35),
-        ("Has Children", 0.50),
-        ("Empty Nester", 0.15)
+        ("No Children", 0.35), ("Has Children", 0.50), ("Empty Nester", 0.15)
     };
 
-    // Religious affiliation
-    private static readonly (string religion, double weight)[] Religions = new[]
-    {
-        ("Protestant", 0.45),
-        ("Catholic", 0.22),
-        ("Jewish", 0.02),
-        ("Muslim", 0.01),
-        ("Buddhist", 0.01),
-        ("Hindu", 0.01),
-        ("Non-religious", 0.20),
-        ("Other Christian", 0.05),
-        ("Other Faith", 0.03)
-    };
-
-    // Political affiliation (moderate distribution)
-    private static readonly (string party, double weight)[] PoliticalAffiliation = new[]
-    {
-        ("Independent", 0.42),
-        ("Democratic", 0.30),
-        ("Republican", 0.27),
-        ("Other/None", 0.01)
-    };
-
-    // Media consumption patterns
+    // Media consumption (national patterns)
     private static readonly (string media, double weight)[] MediaConsumption = new[]
     {
-        ("Mainstream News (Cable)", 0.35),
-        ("Local News", 0.15),
-        ("Social Media", 0.25),
-        ("Online News Only", 0.15),
-        ("Alternative Media", 0.05),
-        ("Minimal News", 0.05)
+        ("Mainstream News (Cable)", 0.35), ("Local News", 0.15), ("Social Media", 0.25),
+        ("Online News Only", 0.15), ("Alternative Media", 0.05), ("Minimal News", 0.05)
     };
+
+    // ═══════════════════════════════════════════════════════════════
+    // PUBLIC API
+    // ═══════════════════════════════════════════════════════════════
 
     public List<Agent> GenerateJuryPanel(int jurorCount, int alternateCount, string county, string state = "South Carolina")
     {
+        // Resolve jurisdiction demographics once for the entire panel
+        _demos = CountyDemographicsDatabase.Resolve(county, state);
+
         var panel = new List<Agent>();
 
-        // Generate regular jurors
         for (int i = 0; i < jurorCount; i++)
         {
-            var juror = GenerateJuror(county, state);
+            var juror = GenerateJurorWithDemographics();
             juror.Role = AgentRole.Juror;
-            juror.Name = $"Juror {i + 1}";
             panel.Add(juror);
         }
 
-        // Generate alternates
         for (int i = 0; i < alternateCount; i++)
         {
-            var alternate = GenerateJuror(county, state);
+            var alternate = GenerateJurorWithDemographics();
             alternate.Role = AgentRole.AlternateJuror;
-            alternate.Name = $"Alt {i + 1}";
             panel.Add(alternate);
         }
 
@@ -258,44 +160,57 @@ public class JuryDemographicsService : IJuryDemographicsService
 
     public Agent GenerateJuror(string county, string state = "South Carolina")
     {
-        int age = SampleAge();
-        string race = SampleRace();
-        string gender = SampleGender();
-        
+        _demos = CountyDemographicsDatabase.Resolve(county, state);
+        return GenerateJurorWithDemographics();
+    }
+
+    /// <summary>
+    /// Core juror generator using the currently resolved _demos.
+    /// </summary>
+    private Agent GenerateJurorWithDemographics()
+    {
+        int age = SampleAge(_demos);
+        string race = SampleRace(_demos);
+        string gender = SampleGender(_demos);
+
         var juror = new Agent
         {
             IsOccupied = true,
             Role = AgentRole.Juror,
+            Name = GenerateName(gender, race),
             Gender = gender,
             Age = age,
             Race = race,
-            EducationLevel = SampleEducation(age),
-            IncomeLevel = SampleIncome(),
+            EducationLevel = SampleEducation(age, _demos),
+            IncomeLevel = SampleIncome(_demos),
             MaritalStatus = SampleMaritalStatus(age),
             ParentalStatus = SampleParentalStatus(age),
-            ReligiousAffiliation = SampleReligion(),
-            PoliticalAffiliation = SamplePolitics(),
+            ReligiousAffiliation = SampleReligion(_demos),
+            PoliticalAffiliation = SamplePolitics(_demos),
             MediaConsumption = SampleMedia(),
-            Occupation = SampleOccupation(age),
-            ZipCode = GenerateZipCode(county, state),
-            VerdictLean = 0.5, // Neutral starting point
-            Bias = _random.NextDouble() * 0.4 - 0.2, // Small random bias (-0.2 to +0.2)
-            Sentiment = 0.5,
+            Occupation = SampleOccupation(age, _demos),
+            Hobbies = SampleHobbies(age, gender),
+            ConsumerSegment = SampleConsumerSegment(age),
+            SpecializedKnowledge = SampleSpecializedKnowledge(age),
+            ZipCode = GenerateZipCode(_demos),
+            VerdictLean = ComputeInitialVerdictLean(age, race, gender),
+            Bias = _random.NextDouble() * 0.4 - 0.2,
+            Sentiment = 0.5 + (_random.NextDouble() * 0.2 - 0.1),
+            RiskPerception = _random.NextDouble(),
             CurrentStatus = "Attentive",
-            // Generate a realistic name based on demographics
-            Name = GenerateName(gender, race)
+            Valuation = "$0"
         };
 
-        // Generate a profile based on demographics
         juror.Profile = GenerateProfile(juror);
+        juror.EducationLevel = CoerceEducation(juror.EducationLevel, juror.Occupation, juror.Age);
         juror.SystemPrompt = BuildSystemPrompt(juror);
 
         return juror;
     }
 
-    /// <summary>
-    /// Generates a realistic name based on gender and race/ethnicity
-    /// </summary>
+    // ═══════════════════════════════════════════════════════════════
+    // NAME GENERATION
+    // ═══════════════════════════════════════════════════════════════
     private string GenerateName(string gender, string race)
     {
         // Determine which ethnic group to use based on race
@@ -345,10 +260,16 @@ public class JuryDemographicsService : IJuryDemographicsService
         return $"{firstName} {lastName}";
     }
 
-    private int SampleAge()
+    // ═══════════════════════════════════════════════════════════════
+    // DEMOGRAPHIC SAMPLING (jurisdiction-driven)
+    // ═══════════════════════════════════════════════════════════════
+
+    private int SampleAge(CountyDemographics demos)
     {
-        var ranges = AgeRanges;
-        double totalWeight = ranges.Sum(r => r.weight);
+        var ranges = demos.AgeRanges.Count > 0 ? demos.AgeRanges
+            : new() { (21,29,0.20),(30,39,0.25),(40,49,0.22),(50,59,0.18),(60,70,0.10),(71,85,0.05) };
+
+        double totalWeight = ranges.Sum(r => r.Weight);
         double roll = _random.NextDouble() * totalWeight;
 
         double cumulative = 0;
@@ -356,47 +277,241 @@ public class JuryDemographicsService : IJuryDemographicsService
         {
             cumulative += weight;
             if (roll <= cumulative)
-            {
                 return _random.Next(min, max + 1);
-            }
         }
         return _random.Next(30, 60);
     }
 
-    private string SampleGender() => WeightedChoice(Genders);
-    private string SampleRace() => WeightedChoice(Races);
-
-    private string SampleEducation(int age)
+    private string SampleGender(CountyDemographics demos)
     {
-        // Education correlated with age
-        var educationWeights = EducationLevels.ToArray();
-        if (age < 25)
+        if (demos.GenderDistribution.Count > 0)
+            return WeightedChoice(demos.GenderDistribution);
+        return WeightedChoice(("Male",0.49),("Female",0.50),("Non-binary/Other",0.01));
+    }
+
+    private string SampleRace(CountyDemographics demos)
+    {
+        if (demos.RaceDistribution.Count > 0)
+            return WeightedChoice(demos.RaceDistribution);
+        return WeightedChoice(("White",0.60),("Black",0.13),("Hispanic/Latino",0.18),("Asian",0.06));
+    }
+
+    /// <summary>
+    /// Computes a varied initial verdict lean (0=defense, 1=prosecution) based on demographics.
+    /// Uses wider random variance to ensure genuine juror disagreement drives deliberation.
+    /// </summary>
+    private double ComputeInitialVerdictLean(int age, string race, string gender)
+    {
+        double lean = 0.5;
+        lean += (age - 40) * 0.003;
+        // Subtle gender effect — reduced from +0.04 to avoid all-female juries all leaning prosecution
+        if (gender == "Female") lean += 0.01;
+        else if (gender == "Male") lean -= 0.01;
+        if (race == "Black") lean -= 0.06;
+        else if (race == "Hispanic/Latino") lean -= 0.03;
+        else if (race == "Asian") lean += 0.02;
+        else if (race == "Native American") lean -= 0.04;
+        // Wide random variance (±0.15) ensures genuine diversity of opinion —
+        // some jurors naturally lean defense, others prosecution, creating real debate
+        lean += (_random.NextDouble() * 0.30 - 0.15);
+        return Math.Clamp(lean, 0.15, 0.85);
+    }
+
+    private string SampleEducation(int age, CountyDemographics demos)
+    {
+        // Start from county base distribution, then apply age constraints
+        var baseDist = demos.EducationDistribution.Count > 0 ? demos.EducationDistribution
+            : new() { ("High School",0.28),("Some College",0.28),("Associate Degree",0.10),("Bachelor's Degree",0.22),("Master's Degree",0.08),("Doctorate",0.02),("Trade School",0.02) };
+
+        // Age-bracket adjustments: zero out weights for impossible education levels at this age
+        var adjusted = baseDist.Select(e =>
         {
-            // Younger: more students, less advanced degrees
-            educationWeights = new (string, double)[]
-            {
-                ("High School", 0.35),
-                ("Some College", 0.40),
-                ("Associate Degree", 0.10),
-                ("Bachelor's Degree", 0.10),
-                ("Master's Degree", 0.02),
-                ("Doctorate", 0.0),
-                ("Trade School", 0.03)
-            };
+            double w = e.Weight;
+            if (age < 18 && e.Label.Contains("Doctorate")) w = 0;
+            if (age < 20 && (e.Label.Contains("Bachelor") || e.Label.Contains("Master") || e.Label.Contains("Doctorate") || e.Label.Contains("Associate"))) w = 0;
+            if (age < 23 && (e.Label.Contains("Master") || e.Label.Contains("Doctorate"))) w = 0;
+            if (age < 26 && e.Label.Contains("Doctorate")) w = 0;
+            return (e.Label, w);
+        }).ToList();
+
+        double total = adjusted.Sum(a => a.w);
+        if (total <= 0) return "High School";
+
+        double roll = _random.NextDouble() * total;
+        double cum = 0;
+        foreach (var (label, w) in adjusted)
+        {
+            cum += w;
+            if (roll <= cum) return label;
         }
-        return WeightedChoice(educationWeights);
+        return "High School";
     }
 
-    private string SampleIncome()
+    private string SampleIncome(CountyDemographics demos)
     {
-        // Income should correlate somewhat with education (handled in profile generation)
-        return WeightedChoice(IncomeLevels);
+        if (demos.IncomeDistribution.Count > 0)
+            return WeightedChoice(demos.IncomeDistribution);
+        return WeightedChoice(("Lower Class",0.15),("Working Class",0.20),("Middle Class",0.35),("Upper Middle Class",0.20),("Upper Class",0.10));
     }
+
+    private string SampleReligion(CountyDemographics demos)
+    {
+        if (demos.ReligionDistribution.Count > 0)
+            return WeightedChoice(demos.ReligionDistribution);
+        return WeightedChoice(("Protestant",0.45),("Catholic",0.22),("Jewish",0.02),("Non-religious",0.20),("Other Christian",0.05));
+    }
+
+    private string SamplePolitics(CountyDemographics demos)
+    {
+        if (demos.PoliticalDistribution.Count > 0)
+            return WeightedChoice(demos.PoliticalDistribution);
+        return WeightedChoice(("Independent",0.42),("Democratic",0.30),("Republican",0.27));
+    }
+
+    private string SampleMedia() => WeightedChoice(MediaConsumption);
+
+    private string GenerateZipCode(CountyDemographics demos)
+    {
+        return $"{_random.Next(demos.ZipMin, demos.ZipMax + 1):00000}";
+    }
+
+    /// <summary>
+    /// Ensures education level is coherent with occupation AND age.
+    /// No 18-year-old doctors, no plumbers with PhDs, etc.
+    /// </summary>
+    private static string CoerceEducation(string education, string occupation, int age)
+    {
+        // ── Age constraints first ──
+        if (age < 20 && (education.Contains("Bachelor") || education.Contains("Master") 
+                       || education.Contains("Doctorate") || education.Contains("PhD")
+                       || education.Contains("Associate")))
+            return "High School";
+
+        if (age < 23 && (education.Contains("Master") || education.Contains("Doctorate") 
+                       || education.Contains("PhD")))
+            return "Bachelor's Degree";
+
+        if (age < 26 && (education.Contains("Doctorate") || education.Contains("PhD")))
+            return "Master's Degree";
+
+        var occ = occupation.ToLowerInvariant();
+        
+        // High-education professional roles need at least a Bachelor's
+        string[] highEdRoles = { "doctor", "surgeon", "physician", "lawyer", "attorney", "professor", 
+                                 "dentist", "pharmacist", "veterinarian", "psychologist", "architect",
+                                 "engineer", "scientist", "researcher", "physicist", "chemist", 
+                                 "biologist", "judge", "executive", "cfo", "ceo", "cto" };
+        string[] mediumEdRoles = { "teacher", "nurse", "accountant", "therapist", "counselor", "analyst",
+                                   "programmer", "developer", "manager", "administrator", "paralegal" };
+        string[] tradeRoles = { "plumber", "electrician", "mechanic", "carpenter", "welder", "mason",
+                                "roofer", "painter", "landscaper", "hvac", "technician", "truck driver",
+                                "construction", "machinist", "forklift", "assembler", "warehouse",
+                                "maintenance", "custodian", "janitor", "gardener", "fisherman", 
+                                "farm worker", "laborer", "cleaner", "housekeeper", "bartender", "barista" };
+        string[] serviceRoles = { "waiter", "waitress", "server", "cashier", "clerk", "receptionist",
+                                  "retail", "sales associate", "customer service", "security guard",
+                                  "delivery driver", "cook", "chef", "dishwasher", "host", "hostess",
+                                  "bellhop", "valet", "usher", "ticket", "call center" };
+
+        bool hasLowEducation = education.Contains("High School") || education.Contains("Some College") 
+                            || education.Contains("GED") || education.Contains("Trade School")
+                            || education.Contains("Associate");
+        bool hasHighEducation = education.Contains("Master") || education.Contains("Doctorate") 
+                             || education.Contains("PhD") || education.Contains("Professional");
+
+        // High-education roles: can't have low education
+        foreach (var role in highEdRoles)
+        {
+            if (occ.Contains(role) && hasLowEducation)
+                return age >= 30 ? "Master's Degree" : "Bachelor's Degree";
+        }
+
+        // Medium-education roles: can't have high school only
+        foreach (var role in mediumEdRoles)
+        {
+            if (occ.Contains(role) && (education.Contains("High School") || education.Contains("GED")))
+                return "Bachelor's Degree";
+        }
+
+        // Trade roles: shouldn't have advanced degrees (Master's, PhD)
+        // Plumber with a Master's = incoherent
+        foreach (var role in tradeRoles)
+        {
+            if (occ.Contains(role) && hasHighEducation)
+                return "Trade School";
+        }
+
+        // Trade role with Bachelor's is plausible (e.g., "Plumber with Business degree") 
+        // but plumber with Master's or PhD is not
+        foreach (var role in tradeRoles)
+        {
+            if (occ.Contains(role) && education.Contains("Bachelor"))
+                return education; // Bachelor's is OK for trades (career change, etc.)
+        }
+
+        // Service roles: shouldn't have advanced degrees
+        foreach (var role in serviceRoles)
+        {
+            if (occ.Contains(role) && hasHighEducation)
+                return age >= 25 ? "Some College" : "High School";
+        }
+
+        return education;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // OCCUPATION GENERATION
+    // ═══════════════════════════════════════════════════════════════
+
+    private static readonly string[] OccupationsProfessional = new[]
+    {
+        "Accountant", "Engineer", "Teacher", "Nurse", "Manager", "Sales Representative",
+        "Administrator", "Analyst", "Consultant", "IT Professional"
+    };
+    private static readonly string[] OccupationsTrade = new[]
+    {
+        "Electrician", "Plumber", "Mechanic", "Carpenter", "Construction Worker", "Truck Driver",
+        "Police Officer", "Firefighter", "Security Guard", "Factory Worker"
+    };
+    private static readonly string[] OccupationsService = new[]
+    {
+        "Retail Worker", "Food Service", "Customer Service", "Administrative Assistant",
+        "Cashier", "Janitor", "Home Health Aide", "Childcare Worker"
+    };
+    private static readonly string[] OccupationsRural = new[]
+    {
+        "Farmer", "Rancher", "Farm Hand", "Logger", "Agricultural Worker", "Equipment Operator"
+    };
+
+    private string SampleOccupation(int age, CountyDemographics demos)
+    {
+        if (age >= 65) return "Retired";
+        if (age < 22) return "Student";
+
+        // Build occupation pool weighted by urban/rural mix of the county
+        var pool = new List<string>();
+        pool.AddRange(OccupationsProfessional);
+        pool.AddRange(OccupationsService);
+
+        // Trade occupations more common in rural areas
+        int tradeCount = demos.UrbanPercent < 0.5 ? 3 : 2;
+        for (int i = 0; i < tradeCount; i++) pool.AddRange(OccupationsTrade);
+
+        // Rural occupations appear only in rural counties
+        if (demos.UrbanPercent < 0.6)
+            pool.AddRange(OccupationsRural);
+
+        return pool[_random.Next(pool.Count)];
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MARITAL & PARENTAL STATUS (age-dependent, not geographic)
+    // ═══════════════════════════════════════════════════════════════
 
     private string SampleMaritalStatus(int age)
     {
         if (age < 25) return "Single";
-        if (age >= 60) return WeightedChoice(new[] { ("Married", 0.55), ("Widowed", 0.20), ("Divorced", 0.15), ("Single", 0.10) });
+        if (age >= 60) return WeightedChoice(("Married",0.55),("Widowed",0.20),("Divorced",0.15),("Single",0.10));
         return WeightedChoice(MaritalStatuses);
     }
 
@@ -407,113 +522,97 @@ public class JuryDemographicsService : IJuryDemographicsService
         return WeightedChoice(ParentalStatuses);
     }
 
-    private string SampleReligion() => WeightedChoice(Religions);
-    private string SamplePolitics() => WeightedChoice(PoliticalAffiliation);
-    private string SampleMedia() => WeightedChoice(MediaConsumption);
+    // ═══════════════════════════════════════════════════════════════
+    // HOBBIES, CONSUMER, KNOWLEDGE (non-geographic)
+    // ═══════════════════════════════════════════════════════════════
 
-    private string SampleOccupation(int age)
+    private static readonly string[] HobbyCategories = {
+        "Sports & Fitness", "Arts & Crafts", "Reading & Writing", "Music & Performance",
+        "Gaming & Technology", "Outdoors & Nature", "Cooking & Food", "Volunteering & Community",
+        "Travel & Adventure", "Home & Garden", "Collecting & Antiques", "Pets & Animals"
+    };
+
+    private static readonly Dictionary<string, string[]> HobbiesByCategory = new()
     {
-        if (age >= 65) return "Retired";
-        if (age < 22) return "Student";
+        { "Sports & Fitness", new[] { "Running", "Yoga", "Gym", "Basketball", "Swimming", "Cycling", "Hiking", "Golf", "Tennis", "Soccer", "Weightlifting", "Pilates" } },
+        { "Arts & Crafts", new[] { "Painting", "Knitting", "Woodworking", "Pottery", "Scrapbooking", "Sewing", "Drawing", "Photography", "Jewelry making", "Calligraphy" } },
+        { "Reading & Writing", new[] { "Reading fiction", "Reading non-fiction", "Writing", "Book clubs", "Poetry", "Journaling", "Blogging", "Crossword puzzles" } },
+        { "Music & Performance", new[] { "Playing guitar", "Singing", "Piano", "Theater", "Dancing", "Choir", "Drums", "Vinyl collecting", "Concert going", "Karaoke" } },
+        { "Gaming & Technology", new[] { "Video games", "Board games", "Coding", "Building PCs", "VR gaming", "Chess", "Card games", "Drone flying", "3D printing" } },
+        { "Outdoors & Nature", new[] { "Fishing", "Hunting", "Camping", "Bird watching", "Kayaking", "Gardening", "Mountain biking", "Rock climbing", "Skiing", "Surfing" } },
+        { "Cooking & Food", new[] { "Cooking", "Baking", "Grilling", "Wine tasting", "Brewing beer", "Restaurant exploring", "Meal prepping", "Farmers markets" } },
+        { "Volunteering & Community", new[] { "Church volunteering", "Food bank", "Animal shelter", "Mentoring", "Neighborhood watch", "PTA", "Habitat for Humanity", "Red Cross" } },
+        { "Travel & Adventure", new[] { "Road trips", "International travel", "National parks", "Cruises", "Backpacking", "RV camping", "Weekend getaways", "Sightseeing" } },
+        { "Home & Garden", new[] { "Gardening", "Home improvement", "Interior design", "Lawn care", "DIY projects", "Houseplants", "Landscaping", "Furniture restoration" } },
+        { "Collecting & Antiques", new[] { "Coin collecting", "Stamp collecting", "Antiquing", "Sports memorabilia", "Comic books", "Vintage cars", "Art collecting", "Comic cons" } },
+        { "Pets & Animals", new[] { "Dog training", "Cat rescue", "Horseback riding", "Aquariums", "Beekeeping", "Bird keeping", "Animal fostering", "Pet photography" } }
+    };
 
-        var allOccupations = OccupationsProfessional
-            .Concat(OccupationsTrade)
-            .Concat(OccupationsService)
-            .Concat(OccupationsRetired.Where(o => age < 60)) // Some early retirees
-            .Concat(OccupationsStudents.Where(o => age < 30))
-            .ToList();
+    private string SampleHobbies(int age, string gender)
+    {
+        // Pick 1-3 random hobby categories, then random hobbies from each
+        int count = _random.Next(1, 4);
+        var picked = new HashSet<string>();
+        var selectedCategories = HobbyCategories.OrderBy(_ => _random.Next()).Take(count);
 
-        // Weight professional occupations higher for higher education
-        var weights = allOccupations.Select(o => 1.0).ToList();
-        return allOccupations[_random.Next(allOccupations.Count)];
+        var hobbies = new List<string>();
+        foreach (var cat in selectedCategories)
+        {
+            if (HobbiesByCategory.TryGetValue(cat, out var options))
+            {
+                string hobby = options[_random.Next(options.Length)];
+                if (picked.Add(hobby))
+                    hobbies.Add(hobby);
+            }
+        }
+
+        return string.Join(", ", hobbies.Count > 0 ? hobbies : new[] { "Reading", "Walking" });
     }
 
-    private string GenerateZipCode(string county, string state)
+    private static readonly string[] ConsumerSegments = {
+        "Budget Conscious", "Brand Loyal", "Early Adopter", "Mainstream Consumer",
+        "Quality Focused", "Convenience Seeker", "Eco-Conscious", "Minimalist",
+        "Status Seeker", "Family Focused", "Health Conscious", "Value Hunter"
+    };
+
+    private string SampleConsumerSegment(int age)
     {
-        // Simple placeholder ZIP generator (could map to real county ZIP ranges)
-        // For Richland County, SC: ranges 29201-29209, 29223, 29229, 29250, 29260, 29290
-        string stateAbbr = state.Substring(0, 2).ToUpper();
-        return $"{_random.Next(29000, 29999):00000}";
+        // Age-correlated segment preferences
+        if (age > 60) return WeightedChoice(new[] { ("Budget Conscious", 0.25), ("Brand Loyal", 0.20), ("Quality Focused", 0.20), ("Mainstream Consumer", 0.15), ("Minimalist", 0.10), ("Value Hunter", 0.10) });
+        if (age > 40) return WeightedChoice(new[] { ("Family Focused", 0.25), ("Quality Focused", 0.20), ("Brand Loyal", 0.15), ("Convenience Seeker", 0.15), ("Health Conscious", 0.15), ("Eco-Conscious", 0.10) });
+        return WeightedChoice(ConsumerSegments.Select(s => (s, 1.0 / ConsumerSegments.Length)).ToArray());
+    }
+
+    private static readonly string[] SpecializedKnowledgeOptions = {
+        "None (General Public)", "Basic Legal Knowledge", "Medical/Healthcare",
+        "Technology/IT", "Finance/Accounting", "Engineering/Technical",
+        "Education/Teaching", "Law Enforcement", "Military/Veteran",
+        "Construction/Trades", "Business/Management", "Real Estate"
+    };
+
+    private string SampleSpecializedKnowledge(int age)
+    {
+        // Older jurors more likely to have specialized knowledge
+        double specialistChance = age < 30 ? 0.3 : (age < 50 ? 0.5 : 0.7);
+        if (_random.NextDouble() < specialistChance)
+        {
+            return SpecializedKnowledgeOptions[_random.Next(1, SpecializedKnowledgeOptions.Length)];
+        }
+        return "None (General Public)";
     }
 
     private string GenerateProfile(Agent juror)
     {
-        // Generate hobbies based on age, occupation, and education
-        var hobbies = SampleHobbies(juror.Age, juror.Occupation, juror.EducationLevel);
-        juror.Hobbies = string.Join(", ", hobbies);
-
-        // Generate specialized knowledge based on occupation
-        juror.SpecializedKnowledge = SampleSpecializedKnowledge(juror.Occupation);
+        string hobbiesText = string.IsNullOrWhiteSpace(juror.Hobbies) ? "Reading, Walking" : juror.Hobbies;
+        string knowledgeText = string.IsNullOrWhiteSpace(juror.SpecializedKnowledge) ? "General public knowledge" : juror.SpecializedKnowledge;
 
         return $"A {juror.Age}-year-old {juror.Race} {juror.Gender} from {juror.ZipCode}. " +
                $"Education: {juror.EducationLevel}. Occupation: {juror.Occupation}. " +
                $"Marital: {juror.MaritalStatus}. Parental: {juror.ParentalStatus}. " +
                $"Income: {juror.IncomeLevel}. Politics: {juror.PoliticalAffiliation}. " +
                $"Religion: {juror.ReligiousAffiliation}. Media: {juror.MediaConsumption}. " +
-               $"Hobbies: {juror.Hobbies}. Knowledge: {juror.SpecializedKnowledge}.";
-    }
-
-    // Helper to generate a realistic hobby list
-    private List<string> SampleHobbies(int age, string occupation, string education)
-    {
-        var possible = new List<string>();
-
-        // Age‑based hobbies
-        if (age < 30)
-        {
-            possible.AddRange(new[] { "Video games", "Traveling", "Hiking", "Fitness" });
-        }
-        else if (age >= 60)
-        {
-            possible.AddRange(new[] { "Gardening", "Reading", "Birdwatching", "Traveling" });
-        }
-        else
-        {
-            possible.AddRange(new[] { "Reading", "Cooking", "Fitness", "Traveling" });
-        }
-
-        // Occupation‑based hobbies
-        if (occupation.Contains("Engineer") || occupation.Contains("IT"))
-            possible.AddRange(new[] { "Programming", "Electronics", "Robotics" });
-        if (occupation.Contains("Plumber") || occupation.Contains("Construction") || occupation.Contains("Carpenter"))
-            possible.AddRange(new[] { "DIY projects", "Woodworking", "Home improvement" });
-        if (occupation.Contains("Doctor") || occupation.Contains("Nurse"))
-            possible.AddRange(new[] { "Medical podcasts", "Running", "Health forums" });
-        if (occupation.Contains("Lawyer") || occupation.Contains("Attorney"))
-            possible.AddRange(new[] { "Reading legal thrillers", "Debating", "Chess" });
-
-        // Education‑based refinement
-        if (education.Contains("Doctorate"))
-            possible.AddRange(new[] { "Research", "Academic conferences" });
-        if (education.Contains("High School"))
-            possible.AddRange(new[] { "Sports", "Video games" });
-
-        // Randomly pick up to 3 unique hobbies
-        var selected = new HashSet<string>();
-        while (selected.Count < 3 && possible.Count > 0)
-        {
-            var h = possible[_random.Next(possible.Count)];
-            selected.Add(h);
-        }
-        return selected.ToList();
-    }
-
-    // Helper to map occupations to domain knowledge
-    private string SampleSpecializedKnowledge(string occupation)
-    {
-        if (string.IsNullOrEmpty(occupation)) return "General public knowledge";
-        var lowered = occupation.ToLower();
-        if (lowered.Contains("plumber") || lowered.Contains("construction"))
-            return "Plumbing and construction codes, home repair";
-        if (lowered.Contains("doctor") || lowered.Contains("nurse"))
-            return "Medical terminology, healthcare procedures";
-        if (lowered.Contains("lawyer") || lowered.Contains("attorney"))
-            return "Legal procedures, case law, courtroom etiquette";
-        if (lowered.Contains("engineer"))
-            return "Engineering principles, technical analysis";
-        if (lowered.Contains("teacher"))
-            return "Educational theory, pedagogy";
-        return "General public knowledge";
+               $"Consumer: {juror.ConsumerSegment}. " +
+               $"Hobbies: {hobbiesText}. Knowledge: {knowledgeText}.";
     }
 
     private string BuildSystemPrompt(Agent juror)
@@ -540,5 +639,20 @@ public class JuryDemographicsService : IJuryDemographicsService
                 return value;
         }
         return options[0].Item1;
+    }
+
+    private string WeightedChoice(List<(string Label, double Weight)> options)
+    {
+        double totalWeight = options.Sum(o => o.Weight);
+        double roll = _random.NextDouble() * totalWeight;
+
+        double cumulative = 0;
+        foreach (var (label, weight) in options)
+        {
+            cumulative += weight;
+            if (roll <= cumulative)
+                return label;
+        }
+        return options[0].Label;
     }
 }

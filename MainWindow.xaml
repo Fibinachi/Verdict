@@ -152,6 +152,18 @@
             <MenuItem Header="_File">
                 <MenuItem Header="_New Case" Click="NewCase_Click"/>
                 <MenuItem Header="_Open Case..." Click="OpenCase_Click"/>
+                <Separator/>
+                <MenuItem Header="_Default Cases" x:Name="DefaultCasesMenu">
+                    <MenuItem Header="Apple River Stabbing Trial" Click="DefaultCase_AppleRiver_Click"
+                              ToolTip="State v. Nicolae Miu — Balanced middle-ground criminal case testing self-defense vs. reckless homicide. Juror demographics and bias factors will drive the verdict."/>
+                    <MenuItem Header="Apple Juice Murders" Click="DefaultCase_AppleJuice_Click"
+                              ToolTip="Criminal case involving poisoned apple juice. Tests juror bias toward product liability and corporate negligence."/>
+                    <MenuItem Header="NC Comparative Fault Accident" Click="DefaultCase_NCAccident_Click"
+                              ToolTip="Civil negligence case with comparative fault. Tests how jurors assign percentages of blame between plaintiff and defendant."/>
+                    <MenuItem Header="Smoking Memo (Punitive)" Click="DefaultCase_SmokingMemo_Click"
+                              ToolTip="Corporate liability case involving a smoking-gun internal memo. Tests jury punitive damage capacity and outrage response."/>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="_Save Case" Click="SaveSimulation_Click"/>
                 <MenuItem Header="Save Case _As..." Click="SaveCaseAs_Click"/>
                 <Separator/>
@@ -169,14 +181,16 @@
             <MenuItem Header="_Stage">
                 <MenuItem Header="_Discovery" Click="SetTrialPhase_Discovery_Click" IsChecked="{Binding CurrentCase.TrialPhase, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Discovery}" IsCheckable="True"/>
                 <MenuItem Header="_Pretrial" Click="SetTrialPhase_Pretrial_Click" IsChecked="{Binding CurrentCase.TrialPhase, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Pretrial}" IsCheckable="True"/>
-                <MenuItem Header="_Trial" Click="SetTrialPhase_Trial_Click" IsChecked="{Binding CurrentCase.TrialPhase, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Trial}" IsCheckable="True"/>
-                <Separator/>
-                <MenuItem Header="_Opening Statements" Click="SetCourtPhase_OpeningStatements_Click"/>
-                <MenuItem Header="_Witness Testimony" Click="SetCourtPhase_WitnessTestimony_Click"/>
-                <MenuItem Header="_Cross Examination" Click="SetCourtPhase_CrossExamination_Click"/>
-                <MenuItem Header="_Party Statements" Click="SetCourtPhase_PartyStatements_Click"/>
-                <MenuItem Header="_Closing Arguments" Click="SetCourtPhase_ClosingArguments_Click"/>
-                <MenuItem Header="_Jury Deliberation" Click="SetCourtPhase_JuryDeliberation_Click"/>
+                <MenuItem Header="_Trial" IsChecked="{Binding CurrentCase.TrialPhase, Converter={StaticResource EnumMatchConverter}, ConverterParameter=Trial}" IsCheckable="True">
+                    <MenuItem Header="_Opening Statements" Click="SetCourtPhase_OpeningStatements_Click"/>
+                    <MenuItem Header="_Witness Testimony" Click="SetCourtPhase_WitnessTestimony_Click"/>
+                    <MenuItem Header="_Cross Examination" Click="SetCourtPhase_CrossExamination_Click"/>
+                    <MenuItem Header="_Party Statements" Click="SetCourtPhase_PartyStatements_Click"/>
+                    <MenuItem Header="_Closing Arguments" Click="SetCourtPhase_ClosingArguments_Click"/>
+                    <Separator/>
+                    <MenuItem Header="_Jury Instructions" Click="SetCourtPhase_JuryInstructions_Click"/>
+                    <MenuItem Header="_Jury Deliberation" Click="SetCourtPhase_JuryDeliberation_Click"/>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_Case">
                 <MenuItem Header="_Import Transcript..." Click="ImportTranscript_Click"/>
@@ -185,8 +199,11 @@
                 <MenuItem Header="Re-evaluate Evidence" Click="ReevaluateEvidence_Click"
                           ToolTip="Replay all admitted exhibits through each juror's current psychology"/>
                 <Separator/>
+                <MenuItem Header="_Generate Case (Demos)" Click="GenerateCase_Click"/>
                 <MenuItem Header="_Case Settings" Click="CaseSettings_Click"/>
-                <!-- Removed Default Case Settings from here - it belongs in Settings menu -->
+                <Separator/>
+                <MenuItem Header="_Custom Models" Click="CaseCustomModels_Click"
+                          ToolTip="Configure models specific to this case only. These won't affect other cases."/>
             </MenuItem>
             <MenuItem Header="_Agents">
                 <MenuItem Header="_Initiate Counsel Discussion" Click="CounselDiscussion_Click"/>
@@ -219,6 +236,7 @@
                     <TextBlock Text="COURT STAGE:" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,10,0"/>
                     <TextBlock Text="{Binding CurrentDebateStageDisplay, Mode=OneWay}" FontWeight="SemiBold" Foreground="#2ECC71"/>
                     <Button Content="DELIBERATE (Turn)" Click="AdvanceStage_Click" Margin="15,0,0,0" Padding="8,2" Background="#2980B9" Foreground="White" FontSize="10"/>
+                    <Button Content="AUTOPILOT" Click="AutoDeliberate_Click" Margin="8,0,0,0" Padding="8,2" Background="#E67E22" Foreground="White" FontSize="10" FontWeight="Bold"/>
 
                 </StackPanel>
             </StatusBarItem>
@@ -283,7 +301,11 @@
                 <DockPanel>
                     <TextBlock Text="COURT RECORD / REPLIES" DockPanel.Dock="Top" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,0,10" FontSize="12"/>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" Height="100">
-                        <TextBlock x:Name="ReplyOutput" Text="{Binding TranscriptOutput}" Foreground="#ECF0F1" TextWrapping="Wrap" FontSize="14"/>
+                        <TextBox x:Name="ReplyOutput" Text="{Binding TranscriptOutput, Mode=OneWay}" 
+                                 Foreground="#ECF0F1" TextWrapping="Wrap" FontSize="14"
+                                 Background="Transparent" BorderThickness="0"
+                                 IsReadOnly="True" IsReadOnlyCaretVisible="True"
+                                 VerticalScrollBarVisibility="Disabled"/>
                     </ScrollViewer>
                 </DockPanel>
             </Border>
@@ -315,14 +337,23 @@
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
-                        <Button Content="GENERATE JURY" 
-                                Click="GenerateJury_Click" 
-                                Margin="0,10,0,0" 
-                                Padding="5,2"
-                                Background="#2ECC71" 
-                                Foreground="White" 
-                                FontSize="9"
-                                Width="120"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                            <Button Content="GENERATE JURY" 
+                                    Click="GenerateJury_Click" 
+                                    Padding="5,2"
+                                    Background="#2ECC71" 
+                                    Foreground="White" 
+                                    FontSize="9"
+                                    Width="120"/>
+                            <Button Content="GENERATE ALTS" 
+                                    Click="GenerateAlternates_Click" 
+                                    Margin="8,0,0,0"
+                                    Padding="5,2"
+                                    Background="#3498DB" 
+                                    Foreground="White" 
+                                    FontSize="9"
+                                    Width="110"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
                 <!-- Observer Box (Max 6 in 2x3) -->
@@ -347,18 +378,18 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Defense Table -->
+                    <!-- Prosecution/Plaintiff Table (nearest jury) -->
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="DEFENSE TABLE" Foreground="#BDC3C7" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center" FontSize="14"/>
-                        <ItemsControl ItemsSource="{Binding DefenseTeam}" ItemTemplate="{StaticResource AgentSeatTemplate}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ProsecutionTableLabel}" Foreground="#BDC3C7" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center" FontSize="14"/>
+                        <ItemsControl ItemsSource="{Binding ProsecutionTeam}" ItemTemplate="{StaticResource AgentSeatTemplate}" VerticalAlignment="Center"/>
                     </StackPanel>
                     
                     <Button Grid.Column="1" Width="60" Height="40" Background="#D35400" Content="PODIUM" Foreground="White" FontWeight="Bold" Click="Podium_Click" VerticalAlignment="Center"/>
                     
-                    <!-- Plaintiff/Prosecution Table -->
+                    <!-- Defense Table -->
                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                        <TextBlock Text="PLAINTIFF TABLE" Foreground="#BDC3C7" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center" FontSize="14"/>
-                        <ItemsControl ItemsSource="{Binding ProsecutionTeam}" ItemTemplate="{StaticResource AgentSeatTemplate}" VerticalAlignment="Center"/>
+                        <TextBlock Text="DEFENSE TABLE" Foreground="#BDC3C7" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center" FontSize="14"/>
+                        <ItemsControl ItemsSource="{Binding DefenseTeam}" ItemTemplate="{StaticResource AgentSeatTemplate}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
             </Grid>

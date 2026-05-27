@@ -30,8 +30,14 @@
                     <TextBlock Text="{Binding SelectedModel.Provider}" Margin="0,2,0,5" Foreground="Gray"/>
                 </StackPanel>
 
-                <Button Grid.Column="1" Content="Reset All Weights" Click="ResetAllWeights_Click" 
-                        Padding="10,5" Background="#E74C3C" Foreground="White"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Research Defaults" Click="ResearchDefaults_Click" 
+                            Padding="10,5" Background="#2ECC71" Foreground="White"
+                            ToolTip="Reset all weights to research-backed defaults (see docs/JurorBiasResearch.md)"/>
+                    <Button Content="Zero All" Click="ZeroAllWeights_Click" 
+                            Padding="10,5" Background="#E74C3C" Foreground="White" Margin="5,0,0,0"
+                            ToolTip="Set all weights to zero — remove all demographic bias influences"/>
+                </StackPanel>
             </Grid>
         </GroupBox>
 
@@ -236,8 +242,10 @@
 
                 <!-- Preset Weights -->
                 <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                    <Button Content="Balanced Weights" Click="BalancedWeights_Click" Width="120" Margin="0,0,10,0"/>
-                    <Button Content="Expert Focus" Click="ExpertFocus_Click" Width="120" Margin="0,0,10,0"/>
+                    <Button Content="Research Defaults" Click="ResearchDefaults_Click" Width="130" Margin="0,0,10,0"
+                            Background="#2ECC71" Foreground="White"/>
+                    <Button Content="Balanced" Click="BalancedWeights_Click" Width="90" Margin="0,0,10,0"/>
+                    <Button Content="Expert Focus" Click="ExpertFocus_Click" Width="100" Margin="0,0,10,0"/>
                     <Button Content="Diverse Perspective" Click="DiversePerspective_Click" Width="130"/>
                 </StackPanel>
             </Grid>

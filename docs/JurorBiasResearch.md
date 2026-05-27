@@ -101,16 +101,17 @@ Based on the research synthesis, the following table provides recommended defaul
 | Factor | Default Weight | Research Basis |
 |--------|---------------|----------------|
 | Political Affiliation | 0.90 | Strongest predictor of verdict direction (Forresta 2025, Politics in Courtroom 2018) |
+| Education Level | 0.80 | High education correlates with analytical evaluation (RAND 2024) |
 | Legal Knowledge | 0.75 | Education and legal expertise strongly influence evidence evaluation (RAND 2024) |
 | Juror Experience | 0.70 | Experience affects deliberation participation and conformity (multiple studies) |
 | Community Ties | 0.65 | Social identity influences decision-making (Pozzulo 2024) |
-| Communication Style | 0.35 | Moderates but less directly influences verdicts |
-| Religion | 0.40 | Moderate influence, varies by case type (Vettese 2024, Fraser 2025) |
 | Ethnicity | 0.60 | Strong influence, varies by context (Vettese 2025, RAND 2024) |
+| Age | 0.55 | Influences perspective and credibility assessment (Pozzulo 2017, Sheahan 2021) |
+| Professional Background | 0.55 | Occupation and expertise affect technical evidence and expert testimony weighting (RAND 2024) |
 | Income Level | 0.50 | Economic status affects perspective but moderated by other factors |
-| Education Level | 0.80 | High education correlates with analytical evaluation (RAND 2024) |
-| Age | 0.55 | Influences perspective but varies by case context |
-| Gender | 0.45 | Moderate influence, context-dependent |
+| Gender | 0.45 | Moderate influence, context-dependent (Pozzulo 2010) |
+| Religion | 0.40 | Moderate influence, varies by case type (Vettese 2024, Fraser 2025) |
+| Communication Style | 0.35 | Moderates but less directly influences verdicts |
 
 ## Implementation Notes
 
