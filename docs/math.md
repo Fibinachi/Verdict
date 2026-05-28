@@ -31,7 +31,7 @@ b = static_bias(traits) = Σ αᵢ · traitᵢ
   + α_news_lean·NewsLean·(-1) + α_prior_victim·PriorVictimization + α_prior_system·PriorSystemContact·(-1)
   + α_bjw·BeliefInJustWorld·(-1) + α_death_penalty·DeathPenaltyQualified
   + α_trust_institutions·TrustInInstitutions + α_trait_empathy·TraitEmpathy·(-1)
-g₁ = logistic(β₀ + β₁ · b)
+g₁ = clamp(β₀ + β₁ · b, 0.0, 1.0)       [Task 3: no squashing — linear clamp preserves mid-tier variance]
 ```
 
 **Current Alpha coefficients (α) — Static Bias:**
@@ -59,8 +59,18 @@ g₁ = logistic(β₀ + β₁ · b)
 ### Stage 2: Evidence Drift + Rigidity → Updated Belief (g₂)
 
 ```raw
-λ = rigidity(traits) = logistic(η_intercept + Σ ηᵢ · traitᵢ)
-g₂ = clamp01(g₁ + γ₁ · Δevidence · (1 - λ))
+λ = rigidity(traits) = logistic(η_intercept + Σ ηᵢ · traitᵢ)  
+
+conflicts = sign(Δevidence) × PolId < 0   [Task 2: directional — evidence conflicts with bias profile]
+
+if conflicts:
+    λ += edu_weight × pol_weight × 0.45   [Task 5: dynamic weaponization — educated partisans deploy
+    λ = min(λ, 1.0)                            cognitive rigidity only against hostile evidence]
+    multiplier = 1.0 - λ                       [dampen counter-evidence]
+else:
+    multiplier = 1.0                           [zero resistance to aligned evidence]
+
+g₂ = clamp01(g₁ + γ₁ · Δevidence · multiplier)
 ```
 
 **Current coefficients (η):**
@@ -92,10 +102,14 @@ g₂ = clamp01(g₁ + γ₁ · Δevidence · (1 - λ))
 ### Stage 3: Deliberation + Conformity → Final Verdict Lean
 
 ```raw
-M = Σ(wᵢ · g₂ᵢ) / Σ(wᵢ)          [weighted jury consensus]
+V_i = 1.0 if g₂ᵢ > conviction_threshold else 0.0   [Task 1: binary functional legal position]
+     threshold = 0.85 (criminal, beyond-reasonable-doubt)
+     threshold = 0.50 (civil, preponderance)
+
+M = Σ(wᵢ · Vᵢ) / Σ(wᵢ)              [jury consensus: weighted average of binary VOTES, not continuous lean]
 φ = conformity(traits)             [susceptibility to peer influence]
 g₃ = g₂ᵢ + (1 - hᵢ) · φ · (M - g₂ᵢ)   [deliberation update]
-P = logistic(θ₀ + θ₁ · g₃)         [verdict probability]
+P = logistic(θ₀ + θ₁ · g₃)         [verdict probability — THE ONLY logistic squashing in the pipeline]
 verdict_lean = clamp(0.2, 0.8, P)  [mapped to 0..1 range]
 ```
 
@@ -135,7 +149,8 @@ h = logistic(ζ_intercept + Σ ζᵢ · traitᵢ)
 
 #### Influence Weight (w) — Persuasive power: χ coefficients
 Higher w → greater influence during deliberation.
-w = exp(χ_intercept + Σ χᵢ · traitᵢ)
+w = min(1.0 + max(0, x)² × 0.08,  3.5)   [Task 4: bounded quadratic — max 3.5× cap prevents domination]
+  where x = χ_intercept + Σ χᵢ · traitᵢ
 
 | Factor | Weight | Interpretation |
 |--------|--------|----------------|
@@ -214,7 +229,8 @@ else:                     compound_bias = 0
 
 **Education × Political Rigidity Interaction:**
 ```raw
-edu_pol_rigidity = edu_weight × pol_weight × 0.3
+edu_pol_rigidity: DELETED from static generation (2026-05-27 Task 5).
+Now deployed DYNAMICALLY in Stage 2: if evidence conflicts with PolId → λ += edu_weight × pol_weight × 0.45
 ```
 *Rationale: Educated partisans show MORE motivated reasoning, not less (Kahan et al. 2012).*
 

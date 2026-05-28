@@ -89,6 +89,10 @@ public int SierraClub;
          public double SocialConsensus = 5;
          public double StatusQuoBias = 5;
 
+         // ── Bias weights carried through for dynamic Stage-2 weaponization (2026-05-27) ──
+         public double EduBiasWeight = 0.80;
+         public double PolBiasWeight = 0.90;
+
          // ── Research-backed individual difference traits (2026-05-27 expansion) ──
          public double NeedForCognition = 5;    // 0..10  Cacioppo & Petty (1982): central vs peripheral processing
          public double BeliefInJustWorld = 5;   // 0..10  Lerner (1980): victim-blaming, defense-leaning
@@ -127,7 +131,8 @@ public int SierraClub;
         IReadOnlyList<BiasFactor>? biasFactors = null,
         int maxSampleTries = 2000,
         double coherenceThreshold = 0.9,
-        int? seed = null)
+        int? seed = null,
+        CaseMode mode = CaseMode.Civil)
     {
         if (jurors == null || jurors.Count == 0) return;
 
@@ -155,7 +160,7 @@ public int SierraClub;
 
             // Static bias and initial guilt belief (toy)
             double b = ComputeStaticBias(traits, coefs);
-            double g1 = Logistic(coefs.Beta0 + coefs.Beta1 * b);
+            double g1 = Math.Clamp(coefs.Beta0 + coefs.Beta1 * b, 0.0, 1.0);
 
             // Rigidity + evidence drift
             double lam = ComputeRigidity(traits, coefs);
@@ -196,10 +201,21 @@ public int SierraClub;
             traitsByIndex[i] = traits;
 
             double b = ComputeStaticBias(traits, coefs);
-            double g1 = Logistic(coefs.Beta0 + coefs.Beta1 * b);
+            double g1 = Math.Clamp(coefs.Beta0 + coefs.Beta1 * b, 0.0, 1.0);
 
             double lam = ComputeRigidity(traits, coefs);
-            double g2 = Clamp01(g1 + coefs.Gamma1 * deltaEvidence * (1.0 - lam));
+
+            // Directional rigidity (Task 2): dampen only when evidence conflicts with bias profile.
+            // Task 5: dynamically amplify rigidity for educated partisans facing hostile evidence.
+            double evidenceDir = Math.Sign(deltaEvidence);
+            bool evidenceConflicts = (evidenceDir * traits.PolId) < 0;
+            if (evidenceConflicts)
+            {
+                lam += traits.EduBiasWeight * traits.PolBiasWeight * 0.45;
+                lam = Math.Min(lam, 1.0);
+            }
+            double effectiveMultiplier = evidenceConflicts ? (1.0 - lam) : 1.0;
+            double g2 = Clamp01(g1 + coefs.Gamma1 * deltaEvidence * effectiveMultiplier);
 
             double h = ComputeHardness(traits, coefs);
             double w = ComputeInfluenceWeight(traits, g2, coefs);
@@ -209,15 +225,26 @@ public int SierraClub;
             ws[i] = w;
         }
 
-        double wSum = ws.Sum();
-        if (wSum <= 0) wSum = 1.0;
+        // ── Task 1: Binary functional legal-position consensus ──
+        // Compute V_i per juror: binary vote (1.0 = Guilty/Liable, 0.0 = Not)
+        // Criminal: >0.85 = Guilty (beyond reasonable doubt). Civil: >0.50 = Liable (preponderance).
+        double convictionThreshold = mode == CaseMode.Criminal ? 0.85 : 0.50;
+        var votes = new double[jurors.Count];
+        for (int i = 0; i < jurors.Count; i++)
+        {
+            if (ws[i] > 0)
+                votes[i] = g2s[i] > convictionThreshold ? 1.0 : 0.0;
+        }
 
-        double M = 0.0;
+        double voteSum = 0.0;
+        double voteWeightSum = 0.0;
         for (int i = 0; i < jurors.Count; i++)
         {
             if (ws[i] <= 0) continue;
-            M += (ws[i] / wSum) * g2s[i];
+            voteSum += ws[i] * votes[i];
+            voteWeightSum += ws[i];
         }
+        double M = voteWeightSum > 0 ? voteSum / voteWeightSum : 0.0;
 
         // Final: conformity drift and verdict probability -> apply to VerdictLean.
         for (int i = 0; i < jurors.Count; i++)
@@ -459,7 +486,12 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          x += coefs.Chi.TryGetValue("anchoring", out var anW) ? anW * j.Anchoring * 0.3 : 0.0;
          // Hindsight bias reduces perceived influence of counterevidence
          x += coefs.Chi.TryGetValue("hindsight", out var hbW2) ? hbW2 * j.HindsightBias * -0.2 : 0.0;
-         return Math.Exp(x);
+
+         // ── Task 4: Bounded polynomial influence weight (replaces unbounded Math.Exp) ──
+         // Base weight 1.0 grows quadratically, strict cap at 3.5.
+         // Prevents single highly-educated profiles from dominating deliberation.
+         double w = 1.0 + Math.Pow(Math.Max(0, x), 2) * 0.08;
+         return Math.Min(w, 3.5);
      }
 
      private static double ComputeConformity(ToyJurorTraits j, ToyCoefs coefs)
@@ -576,6 +608,8 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
         SierraClub = 0,
         Nra = 0,
         OilExecutive = 0,
+        EduBiasWeight = 0.80,
+        PolBiasWeight = 0.90,
         // New individual-difference traits (2026-05-27)
         NeedForCognition = 5,
         BeliefInJustWorld = 5,
@@ -611,6 +645,10 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
         double communityW = GetWeight(biasLookup, "Community Ties", 0.65);
         double commStyleW = GetWeight(biasLookup, "Communication Style", 0.35);
 
+        // Store weights on traits for dynamic Stage-2 weaponization (Task 5)
+        j.EduBiasWeight = eduW;
+        j.PolBiasWeight = polW;
+
         // --- Implicit bias factor (not directly observable, derived from other traits) ---
         // Simulates unconscious associations that influence verdict lean independent of explicit attitudes
         // Meta-analytic effect: implicit bias accounts for ~15% of variance in juror decisions (Greenwald et al.)
@@ -630,8 +668,8 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
         }
 
         // Education×Political rigidity interaction: educated partisans are MORE rigid (Kahan et al. 2012)
-        // Higher education amplifies motivated reasoning when political identity is strong
-        double eduPolRigidity = eduW * polW * 0.3; // Interaction term: 0.3 magnitude
+        // REMOVED from static generation — now deployed dynamically in Stage 2 (Task 5: Dynamic Weaponization)
+        // See the conditional branch in the two-pass section where evidence conflicts with bias profile.
 
         // Age×Punitiveness curvilinear relationship (U-shaped)
         // Young and old jurors show higher punitiveness; middle-aged most lenient (Steiner et al. 2001)
@@ -647,7 +685,7 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
 
         // RWA (Right-Wing Authoritarianism): Political polarity + education rigidity + age conservatism
         j.RWA = Clamp10(5 + (bias * 3.2 * polW) + (ageFactor) + (ethnicityW - 0.5) * 0.6
-            + eduPolRigidity + raceGenderCompound * 0.5 + implicitBias * 0.3
+            + raceGenderCompound * 0.5 + implicitBias * 0.3
             + (arng.NextDouble() - 0.5) * 1.8);
 
         // SDO (Social Dominance Orientation): Income/status + gender power dynamics + education
