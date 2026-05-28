@@ -27,28 +27,38 @@ clamp11(x) = max(-1, min(1, x))
 
 ```raw
 b = static_bias(traits) = Σ αᵢ · traitᵢ
-  = α_intercept + α_pol_id·PolId + α_conserv_relig·ConservRelig + α_nra·Nra·(-1)
-  + α_news_lean·NewsLean·(-1) + α_prior_victim·PriorVictimization + α_prior_system·PriorSystemContact·(-1)
-  + α_bjw·BeliefInJustWorld·(-1) + α_death_penalty·DeathPenaltyQualified
-  + α_trust_institutions·TrustInInstitutions + α_trait_empathy·TraitEmpathy·(-1)
-g₁ = clamp(β₀ + β₁ · b, 0.0, 1.0)       [Task 3: no squashing — linear clamp preserves mid-tier variance]
-```
+  = α_intercept + α_pol_id·PolId + α_conserv_relig·ConservRelig + α_nra·Nra
+  + α_news_lean·NewsLean·(−1) + α_prior_victim·PriorVictimization + α_prior_system·PriorSystemContact·(−1)
+  + BJW_case_type_switch + α_death_penalty·DeathPenaltyQualified
+  + α_trust_institutions·TrustInInstitutions + α_trait_empathy·TraitEmpathy·(−1)
+  + α_gender·GenderWeight + α_ethnicity·EthnicityWeight
 
-**Current Alpha coefficients (α) — Static Bias:**
+
+BJW (Block 4, case-type dependent):```
+
+  SexualAssault   → b −= α_bjw · BeliefInJustWorld  [victim-blaming → defense]g₁ = clamp(β₀ + β₁ · b, 0.0, 1.0)       [Task 3: no squashing — linear clamp preserves mid-tier variance]
+
+  ViolentCrime     → b += α_bjw · BeliefInJustWorld  ["bad things happen to bad people" → prosecution]
+
+  PropertyCrime    → b += α_bjw · BeliefInJustWorld  [same as violent crime]  default           → b += 0.05 · BeliefInJustWorld    [neutral/mild effect]
+
+**Current Alpha coefficients (α) — Static Bias (rebalanced 2026-05-27):**
 | Parameter | Value | Description |
 |-----------|-------|-------------|
 | α_intercept | 0.0 | Baseline intercept |
-| α_pol_id | 0.90 | Political identity → strongest directional predictor (Forresta 2025) |
-| α_conserv_relig | 0.25 | Conservative religiosity → conservative lean |
+| α_pol_id | 0.60 | Political identity — reduced from 0.90 to limit political dominance |
+| α_conserv_relig | 0.35 | Conservative religiosity — increased from 0.25 |
+| α_gender | 0.25 | Gender — added as moderate context-dependent driver |
+| α_ethnicity | 0.35 | Ethnicity — added as moderate but non-trivial driver |
 | α_news_lean | 0.18 | Partisan news consumption (−1 liberal, +1 conservative) |
 | α_prior_victim | 0.15 | Crime victimization → prosecution lean |
 | α_prior_system | −0.12 | Prior justice system contact → defense skepticism |
-| α_nra | 0.12 | NRA membership → defense lean (authority skepticism) |
-| α_bjw | −0.20 | Belief in Just World → victim-blaming, defense-leaning (Lerner 1980) |
+| α_nra | 0.12 | NRA membership → prosecution lean in violent crime (flipped from defense) |
+| α_bjw | 0.20 | Belief in Just World — now case-type dependent (was −0.20 always defense) |
 | α_death_penalty | 0.25 | Death penalty qualified → more conviction-prone (Haney 1984) |
 | α_trust_institutions | 0.15 | Trust in police/courts → prosecution lean (Tyler 2006) |
 | α_trait_empathy | −0.10 | Dispositional empathy → plaintiff/defendant sympathy (Davis 1983) |
-| α_education_years | 0.10 | Reserved for future education-length extension |
+| α_education_years | 0.15 | Education — not a primary directional driver |
 
 **Pipeline parameters:**
 | Parameter | Value | Description |
@@ -56,8 +66,8 @@ g₁ = clamp(β₀ + β₁ · b, 0.0, 1.0)       [Task 3: no squashing — linea
 | β₀ (intercept) | 0.0 | Logistic offset |
 | β₁ | 1.0 | Scaling factor for static bias |
 
-### Stage 2: Evidence Drift + Rigidity → Updated Belief (g₂)
 
+### Stage 2: Evidence Drift + Rigidity → Updated Belief (g₂)
 ```raw
 // ── Temporal order-of-proof weighting (Block 4: Primacy/Recency effects) ──
 // t = evidence index (0-based), N = total evidence items
@@ -70,15 +80,14 @@ temporal_weight = primacy_anchor × recency_retention
 
 conflicts = sign(Δevidence_adjusted) × PolId < 0   [Task 2: directional — evidence conflicts with bias profile]
 
-if conflicts:
-    λ += edu_weight × pol_weight × 0.45   [Task 5: dynamic weaponization — educated partisans deploy
-
-    λ = min(λ, 1.0)                            cognitive rigidity only against hostile evidence]```
-
-    multiplier = 1.0 - λ                       [dampen counter-evidence]g₂ = clamp01(g₁ + γ₁ · Δevidence_adjusted · multiplier)
-
+if conflicts AND |PolId| > 0.4:                  [Block 2 fix: only strong partisans deploy motivated reasoning]
+    λ += edu_weight × pol_weight × 0.20          [reduced from 0.45 — narrower motivated-reasoning effect]
+    λ = min(λ, 1.0)
+    multiplier = 1.0 - λ                       [dampen counter-evidence]
 else:
     multiplier = 1.0                           [zero resistance to aligned evidence]
+
+g₂ = clamp01(g₁ + γ₁ · Δevidence_adjusted · multiplier)
 
 **Current coefficients (η):**
 | Factor | Weight | Interpretation |
@@ -154,6 +163,8 @@ belief state approaches the legal threshold (Block 2: threshold friction).
 h_base = logistic(ζ_intercept + Σ ζᵢ · traitᵢ)
 h_i = min(h_base + 0.45 · exp(−15.0 · |g₂ᵢ − threshold|), 0.98)
 
+Zeta increased for strong ideologues (Block 7): RWA +0.05, Pol_Strength +0.05
+
 | Factor | Weight | Interpretation |
 |--------|--------|----------------|
 | RWA | 0.25 | Authoritarianism resists conformity pressure |
@@ -196,31 +207,31 @@ w = min(1.0 + max(0, x)² × 0.08,  3.5)   [Task 4: bounded quadratic — max 3.
 | Age | 0.02 | Life experience → mild influence |
 | Certainty | 0.03 | Certainty (G2−0.5) → small boost |
 
-#### Conformity (φ) — Susceptibility to consensus: ρ coefficients
+#### Conformity (φ) — Susceptibility to consensus: ρ coefficients (reduced ~30-40%, Block 7)
 Higher φ → more conforming to jury majority.
+φ = logistic(0.6 × (ρ_intercept + Σ ρᵢ · traitᵢ))  [was logistic(sum) — narrower effective range]
 
 | Factor | Weight | Interpretation |
 |--------|--------|----------------|
-| RWA | 0.20 | Authoritarianism → conforming |
-| SDO | 0.12 | Social dominance → slightly conforming |
-| Conserv_Relig | 0.18 | Religious conservatism → conforming |
-| Pol_Id | 0.10 | Political identity → conforming |
-| Pol_Strength | 0.12 | Strong identity → conforming |
+| RWA | 0.12 | Authoritarianism → conforming (was 0.20) |
+| SDO | 0.07 | Social dominance → slightly conforming (was 0.12) |
+| Conserv_Relig | 0.10 | Religious conservatism → conforming (was 0.18) |
+| Pol_Id | 0.06 | Political identity → conforming (was 0.10) |
+| Pol_Strength | 0.07 | Strong identity → conforming (was 0.12) |
 | Sm_Polar | 0.06 | Polarized SM → slightly conforming |
 | Blue_Collar | 0.02 | Blue collar → minor conformity |
-| Diyer | 0.01 | DIY identity → minor conformity |
-| NRA | −0.10 | NRA members → LESS conforming (individualistic) |
+| NRA | −0.04 | NRA members → LESS conforming, softened (was −0.10) |
 | Religiosity | 0.10 | Religious → more conforming |
-| Need_Closure | 0.12 | NFC → wants resolution, conforms |
+| Need_Closure | 0.08 | NFC → wants resolution, conforms (was 0.12) |
 | NFC (Need for Cognition) | −0.08 | High NFC → independent thinker |
 | SM_News_Reliance | 0.08 | SM news → susceptible to groupthink |
-
 ---
-
+---
 ## 3. Trait Generation from Agent Demographics
-
+## 3. Trait Generation from Agent Demographics
 ### 3.1 Demographic → Trait Mapping (Research-Backed)
-
+### 3.1 Demographic → Trait Mapping (Research-Backed)
+Each juror agent has observable demographics. These are mapped to the latent trait space using **bias-category weights** that represent the relative influence of each demographic dimension. Default weights are derived from meta-analyses of jury research (see `docs/JurorBiasResearch.md`).
 Each juror agent has observable demographics. These are mapped to the latent trait space using **bias-category weights** that represent the relative influence of each demographic dimension. Default weights are derived from meta-analyses of jury research (see `docs/JurorBiasResearch.md`).
 
 #### Bias Factor Weights (Default Values)
@@ -235,10 +246,11 @@ Each juror agent has observable demographics. These are mapped to the latent tra
 | Age | 0.55 | Perspective and credibility assessment |
 | Income Level | 0.50 | Economic perspective |
 | Gender | 0.45 | Context-dependent influence |
-
+| Religion | 0.40 | Case-type variation |### 3.2 Implicit Bias
 | Religion | 0.40 | Case-type variation |### 3.2 Implicit Bias
 
-| Communication Style | 0.35 | Narrative influence |
+
+| Communication Style | 0.35 | Narrative influence || Communication Style | 0.35 | Narrative influence |
 ```raw
 implicit_bias ~ Uniform(-0.6, 0.6) × 1.2  [negative skew]
 ```

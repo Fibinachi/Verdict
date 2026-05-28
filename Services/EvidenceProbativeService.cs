@@ -128,6 +128,25 @@ public static class EvidenceProbativeService
             probative *= 0.5 + doc.WitnessCredibility * 0.5; // Credibility scales probative value
         }
 
+        // ── Block 8: Non-linear "cliff" boost for high-credibility video/physical evidence ──
+        // Video and physical evidence that is also highly probative gets an additional
+        // boost — "seeing is believing" compounded with strong chain of custody.
+        if ((doc.EvidenceCategory == "Video" || doc.EvidenceCategory == "Physical")
+            && probative > 0.75)
+        {
+            probative += 0.15; // Cliff boost for compelling audiovisual/tangible evidence
+        }
+
+        // ── Block 8: Sharp penalty for major chain-of-custody issues ──
+        // Instead of just multiplicative scaling, cap probative value for evidence
+        // with serious authenticity/reliability problems.
+        bool hasMajorChainIssue = lower.Contains("chain of custody") && (lower.Contains("broken") ||
+            lower.Contains("missing") || lower.Contains("tampered") || lower.Contains("unaccounted"));
+        if (hasMajorChainIssue || doc.ReliabilityScore < 0.3)
+        {
+            probative = Math.Min(probative, 0.35); // Hard cap for unreliable evidence
+        }
+
         doc.ProbativeValue = Math.Clamp(probative, 0.05, 1.0);
     }
 }

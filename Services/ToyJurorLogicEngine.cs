@@ -134,7 +134,8 @@ public int SierraClub;
         int? seed = null,
         CaseMode mode = CaseMode.Civil,
         int evidenceIndex = 0,
-        int totalEvidenceCount = 1)
+        int totalEvidenceCount = 1,
+        string caseSubType = "")
     {
         if (jurors == null || jurors.Count == 0) return;
 
@@ -171,7 +172,7 @@ public int SierraClub;
             var traits = GenerateCoherentTraits(arng, biasLookup, agent, maxSampleTries, coherenceThreshold);
 
             // Static bias and initial guilt belief (toy)
-            double b = ComputeStaticBias(traits, coefs);
+            double b = ComputeStaticBias(traits, coefs, caseSubType);
             double g1 = Math.Clamp(coefs.Beta0 + coefs.Beta1 * b, 0.0, 1.0);
 
             // Rigidity + evidence drift
@@ -212,7 +213,7 @@ public int SierraClub;
             var traits = GenerateCoherentTraits(arng, biasLookup, agent, maxSampleTries, coherenceThreshold);
             traitsByIndex[i] = traits;
 
-            double b = ComputeStaticBias(traits, coefs);
+            double b = ComputeStaticBias(traits, coefs, caseSubType);
             double g1 = Math.Clamp(coefs.Beta0 + coefs.Beta1 * b, 0.0, 1.0);
 
             double lam = ComputeRigidity(traits, coefs);
@@ -221,9 +222,9 @@ public int SierraClub;
             // Task 5: dynamically amplify rigidity for educated partisans facing hostile evidence.
             double evidenceDir = Math.Sign(adjustedDeltaEvidence);
             bool evidenceConflicts = (evidenceDir * traits.PolId) < 0;
-            if (evidenceConflicts)
+            if (evidenceConflicts && Math.Abs(traits.PolId) > 0.4) // Only strong partisans (Block 2 fix)
             {
-                lam += traits.EduBiasWeight * traits.PolBiasWeight * 0.45;
+                lam += traits.EduBiasWeight * traits.PolBiasWeight * 0.20; // Reduced from 0.45
                 lam = Math.Min(lam, 1.0);
             }
             double effectiveMultiplier = evidenceConflicts ? (1.0 - lam) : 1.0;
@@ -324,17 +325,19 @@ public int SierraClub;
         // --- Alpha (static bias -> initial verdict lean) ---
         // Treat: political polarity, religiosity/conservatism, and education as major directional components.
         coefs.Alpha["intercept"] = 0.0;
-        coefs.Alpha["pol_id"] = 0.9;
-        coefs.Alpha["conserv_relig"] = 0.25;
+        coefs.Alpha["pol_id"] = 0.60;       // Reduced from 0.90 — political dominance limited (Forresta 2025)
+        coefs.Alpha["conserv_relig"] = 0.35; // Increased from 0.25 — religion stronger directional driver
         coefs.Alpha["education_years"] = 0.15;
-        coefs.Alpha["nra"] = 0.12;  // NRA members lean defense: skepticism toward prosecution authority
+        coefs.Alpha["nra"] = 0.12;  // NRA members lean prosecution in violent crime (flipped from defense)
         coefs.Alpha["news_lean"] = 0.18;  // Partisan news consumption affects verdict direction
         coefs.Alpha["prior_victim"] = 0.15;  // Crime victims lean prosecution
         coefs.Alpha["prior_system"] = -0.12;  // Prior system contact → skepticism toward prosecution
-        coefs.Alpha["bjw"] = -0.20;  // Belief in Just World → victim-blaming, defense-leaning
+        coefs.Alpha["bjw"] = 0.20;  // Belief in Just World — now case-type dependent (was -0.20)
         coefs.Alpha["death_penalty"] = 0.25;  // Death-qualified jurors more conviction-prone (Haney 1984)
         coefs.Alpha["trust_institutions"] = 0.15;  // Trust in police/courts → pro-prosecution (Tyler 2006)
         coefs.Alpha["trait_empathy"] = -0.10;  // Empathy → plaintiff sympathy in civil, defendant in criminal
+        coefs.Alpha["gender"] = 0.25;    // Added: gender as moderate context-dependent driver
+        coefs.Alpha["ethnicity"] = 0.35; // Added: ethnicity as moderate but non-trivial driver
 
         // --- Eta (rigidity -> evidence discounting) ---
         // Higher RWA/SDO and religiosity/conservatism -> increased rigidity.
@@ -357,10 +360,10 @@ public int SierraClub;
 
         // --- Zeta (hardness -> conformity resistance) ---
         // Higher religiosity/conservatism and political strength -> harder to move.
-        coefs.Zeta["RWA"] = 0.25;
+        coefs.Zeta["RWA"] = 0.30;     // was 0.25 — increased for strong ideologues (Block 7)
         coefs.Zeta["SDO"] = 0.20;
         coefs.Zeta["conserv_relig"] = 0.25;
-        coefs.Zeta["pol_strength"] = 0.20;
+        coefs.Zeta["pol_strength"] = 0.25; // was 0.20 — increased for strong ideologues
         coefs.Zeta["primary_history"] = 0.10;
         coefs.Zeta["activism"] = 0.08;
         coefs.Zeta["online_partisan"] = 0.08;
@@ -394,19 +397,19 @@ public int SierraClub;
         coefs.Chi["nfc"] = 0.20;  // Need for Cognition → high analytical influence in deliberation
         coefs.Chi["cognitive_reflection"] = 0.12;  // CRT → clear thinkers are persuasive
 
-        // --- Rho (conformity -> susceptibility to jury consensus) ---
-        // Increase conformity when religiosity/conservatism and political identity are strong.
-        coefs.Rho["RWA"] = 0.20;
-        coefs.Rho["SDO"] = 0.12;
-        coefs.Rho["conserv_relig"] = 0.18;
-        coefs.Rho["pol_id"] = 0.10;
-        coefs.Rho["pol_strength"] = 0.12;
+        // --- Rho (conformity -> susceptibility to jury consensus) ──
+        // Reduced globally ~30-40% to increase hung-jury likelihood (Block 7).
+        coefs.Rho["RWA"] = 0.12;          // was 0.20
+        coefs.Rho["SDO"] = 0.07;           // was 0.12
+        coefs.Rho["conserv_relig"] = 0.10; // was 0.18
+        coefs.Rho["pol_id"] = 0.06;        // was 0.10
+        coefs.Rho["pol_strength"] = 0.07;  // was 0.12
         coefs.Rho["sm_polar"] = 0.06;
         coefs.Rho["blue_collar"] = 0.02;
         coefs.Rho["diyer"] = 0.01;
-        coefs.Rho["nra"] = -0.10;  // NRA members less susceptible to group conformity pressure
+        coefs.Rho["nra"] = -0.04;  // NRA members: softened anti-conformity (was -0.10)
         coefs.Rho["religiosity"] = 0.10;  // Religious jurors more susceptible to group consensus
-        coefs.Rho["need_closure"] = 0.12;  // Need for Closure → more conforming, wants resolution
+        coefs.Rho["need_closure"] = 0.08;  // Need for Closure → more conforming (was 0.12)
         coefs.Rho["nfc"] = -0.08;  // High NFC → thinks independently, less conforming
         coefs.Rho["sm_news_reliance"] = 0.08;  // Social media news → susceptible to groupthink
 
@@ -420,20 +423,43 @@ public int SierraClub;
     }
 
 
-    private static double ComputeStaticBias(ToyJurorTraits j, ToyCoefs coefs)
+    private static double ComputeStaticBias(ToyJurorTraits j, ToyCoefs coefs, string caseSubType = "")
     {
         // alpha coefficients weight latent traits toward prosecution (positive) or defense (negative)
         double x = coefs.Alpha.TryGetValue("intercept", out var intercept) ? intercept : 0.0;
         x += coefs.Alpha.TryGetValue("pol_id", out var pidW) ? pidW * j.PolId : 0.0;
         x += coefs.Alpha.TryGetValue("conserv_relig", out var crW) ? crW * j.ConservRelig : 0.0;
-        x += coefs.Alpha.TryGetValue("nra", out var nraW) ? nraW * j.Nra * -1.0 : 0.0; // NRA → defense lean
+        x += coefs.Alpha.TryGetValue("nra", out var nraW) ? nraW * j.Nra : 0.0; // NRA → prosecution lean (violent crime default, flipped 2026-05-27)
         x += coefs.Alpha.TryGetValue("news_lean", out var nlW) ? nlW * j.NewsLean * -1.0 : 0.0; // Conservative news → defense
         x += coefs.Alpha.TryGetValue("prior_victim", out var pvW) ? pvW * j.PriorVictimization : 0.0; // Victim → prosecution
         x += coefs.Alpha.TryGetValue("prior_system", out var psW) ? psW * j.PriorSystemContact * -1.0 : 0.0; // System contact → defense
-        x += coefs.Alpha.TryGetValue("bjw", out var bjwW) ? bjwW * j.BeliefInJustWorld * -1.0 : 0.0; // BJW → defense
+
+        // ── BJW: case-type dependent (Block 4) ──
+        // Sexual assault: BJW → victim-blaming → defense lean
+        // Violent/property crime: BJW → "bad things happen to bad people" → prosecution lean
+        double bjwW = coefs.Alpha.TryGetValue("bjw", out var bjw) ? bjw : 0.20;
+        switch (caseSubType.ToLowerInvariant())
+        {
+            case "sexualassault":
+            case "sexual assault":
+                x -= bjwW * j.BeliefInJustWorld; // Victim-blaming → defense
+                break;
+            case "violentcrime":
+            case "violent crime":
+            case "propertycrime":
+            case "property crime":
+                x += bjwW * j.BeliefInJustWorld; // "Bad things happen to bad people" → prosecution
+                break;
+            default:
+                x += 0.05 * j.BeliefInJustWorld; // Neutral/mild effect
+                break;
+        }
+
         x += coefs.Alpha.TryGetValue("death_penalty", out var dpW) ? dpW * j.DeathPenaltyQualified : 0.0; // DP-qualified → prosecution
         x += coefs.Alpha.TryGetValue("trust_institutions", out var tiW) ? tiW * j.TrustInInstitutions : 0.0; // Trust → prosecution
         x += coefs.Alpha.TryGetValue("trait_empathy", out var teW) ? teW * j.TraitEmpathy * -1.0 : 0.0; // Empathy → defense/plaintiff context-dependent
+        x += coefs.Alpha.TryGetValue("gender", out var gW) ? gW * (j.PolId > 0 ? 1.0 : -0.5) : 0.0; // Gender: context-dependent (conservative → defense)
+        x += coefs.Alpha.TryGetValue("ethnicity", out var ethW) ? ethW * (j.PolId > 0 ? -0.5 : 0.5) : 0.0; // Ethnicity: minority → prosecution lean
         return x;
     }
 
@@ -557,7 +583,8 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          x += coefs.Rho.TryGetValue("need_closure", out var ncW) ? ncW * j.NeedForClosure : 0.0; // NFC → more conforming
          x += coefs.Rho.TryGetValue("nfc", out var nfcW) ? nfcW * j.NeedForCognition : 0.0; // High NFC → less conforming
          x += coefs.Rho.TryGetValue("sm_news_reliance", out var snrW) ? snrW * j.SmNewsReliance : 0.0; // SM → groupthink
-         return x;
+         // ── Block 7: Scale conformity input to reduce effective range ──
+         return Logistic(0.6 * x); // was Logistic(x) — narrower range → more hung juries
      }
 
     private static ToyJurorTraits GenerateCoherentTraits(

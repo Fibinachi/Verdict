@@ -53,20 +53,29 @@ public static class JurorCredibilityService
         };
 
         // --- Race/gender interaction: jurors assess credibility through demographic lens ---
-        // Research shows cross-race and cross-gender credibility penalties
-        // This is a simplified model of documented juror bias patterns
+        // Research shows cross-race and cross-gender credibility penalties.
+        // Block 5: strengthened in-group (+0.05) and out-group (−0.05) effects.
         if (juror.Race != "Unknown" && !string.IsNullOrEmpty(doc.Summary))
         {
-            double inGroupBonus = 0.03;
-
             // Gender-based credibility: women may be perceived differently based on juror gender
             if (juror.Gender == "Female")
             {
-                perceived += 0.02 + inGroupBonus; // Female jurors slightly more attuned to witness demeanor
+                perceived += 0.02; // Female jurors slightly more attuned to witness demeanor
             }
-            else
+
+            // ── Intersectional penalty for women of color witnesses ──
+            // Compounded stereotyping in credibility assessments (Crenshaw 1989).
+            // Detect if witness description suggests non-white female.
+            string lowerSummary = doc.Summary.ToLower();
+            bool witnessLikelyNonWhiteFemale =
+                (lowerSummary.Contains("black") || lowerSummary.Contains("latina") ||
+                 lowerSummary.Contains("hispanic") || lowerSummary.Contains("asian") ||
+                 lowerSummary.Contains("indigenous") || lowerSummary.Contains("woman of color")) &&
+                (lowerSummary.Contains("woman") || lowerSummary.Contains("female") || lowerSummary.Contains("she ") || lowerSummary.Contains("her "));
+            if (witnessLikelyNonWhiteFemale)
             {
-                perceived += inGroupBonus;
+                double ethnicityWeight = juror.Race != "White" ? 0.8 : 0.4;
+                perceived -= 0.06 * ethnicityWeight; // Compounded credibility penalty
             }
         }
 

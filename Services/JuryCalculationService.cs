@@ -248,6 +248,16 @@ public class JuryCalculationService : IJuryCalculationService
             (lower.Contains("moral") || lower.Contains("negligence") || lower.Contains("harm")))
             weight += 0.05;
 
+        // ── Block 6: Religion × gender interaction in sexual assault cases ──
+        // Conservative gender views combined with religiosity → victim credibility penalty.
+        if (lower.Contains("sexual assault") || lower.Contains("rape") || lower.Contains("sexual abuse"))
+        {
+            double religiosity = juror.ReligiousAffiliation.Contains("Non-religious", StringComparison.OrdinalIgnoreCase) ? 0.3 : 0.7;
+            double genderConservatism = juror.Gender == "Male" ? 0.6 : 0.3;
+            double genderReligionInteraction = (religiosity - 0.5) * (genderConservatism - 0.5) * 0.6;
+            weight += genderReligionInteraction * 0.15;
+        }
+
         // --- Media consumption: heavy news consumers may have stronger preconceptions ---
         if (juror.MediaConsumption.Contains("Mainstream News", StringComparison.OrdinalIgnoreCase) ||
             juror.MediaConsumption.Contains("24/7", StringComparison.OrdinalIgnoreCase))
@@ -286,7 +296,7 @@ public class JuryCalculationService : IJuryCalculationService
     {
         foreach (var juror in jurors.Where(j => j.IsOccupied))
         {
-            juror.VerdictLean = Math.Max(0.2, Math.Min(0.8, juror.VerdictLean));
+            juror.VerdictLean = Math.Clamp(juror.VerdictLean, 0.05, 0.95);
             juror.Sentiment = 0.5;
         }
     }
