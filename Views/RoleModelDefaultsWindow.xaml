@@ -1,0 +1,66 @@
+<Window x:Class="Verdict.Views.RoleModelDefaultsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Default Model by Role" Height="420" Width="380"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="#F0F0F0">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Assign default AI models to each role:"
+                   FontSize="13" Margin="0,0,0,10"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Judge -->
+                <TextBlock Text="Judge" FontWeight="SemiBold" Margin="0,6,0,2"/>
+                <ComboBox x:Name="JudgeCombo" DisplayMemberPath="FriendlyName"
+                          Margin="0,0,0,10" Padding="4,2"/>
+
+                <!-- Prosecution / Plaintiff -->
+                <TextBlock Text="Prosecution / Plaintiff" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                <ComboBox x:Name="ProsecutionCombo" DisplayMemberPath="FriendlyName"
+                          Margin="0,0,0,10" Padding="4,2"/>
+
+                <!-- Defense -->
+                <TextBlock Text="Defense" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                <ComboBox x:Name="DefenseCombo" DisplayMemberPath="FriendlyName"
+                          Margin="0,0,0,10" Padding="4,2"/>
+
+                <!-- Witness -->
+                <TextBlock Text="Witness" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                <ComboBox x:Name="WitnessCombo" DisplayMemberPath="FriendlyName"
+                          Margin="0,0,0,10" Padding="4,2"/>
+
+                <!-- Court Reporter -->
+                <TextBlock Text="Court Reporter" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                <ComboBox x:Name="ReporterCombo" DisplayMemberPath="FriendlyName"
+                          Margin="0,0,0,10" Padding="4,2"/>
+
+                <!-- Client -->
+                <TextBlock Text="Client" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                <ComboBox x:Name="ClientCombo" DisplayMemberPath="FriendlyName"
+                          Margin="0,0,0,10" Padding="4,2"/>
+
+                <!-- Jurors -->
+                <TextBlock Text="Jurors" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                <ComboBox x:Name="JurorCombo" DisplayMemberPath="FriendlyName"
+                          Margin="0,0,0,8" Padding="4,2"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="_Apply to Existing Agents" Click="ApplyToExisting_Click"
+                    Width="160" Margin="0,0,10,0" ToolTip="Also update all existing agents to use their role's new default model."/>
+            <Button Content="OK" IsDefault="True" Click="Ok_Click" Width="60" Margin="0,0,5,0"/>
+            <Button Content="Cancel" IsCancel="True" Width="60"/>
+        </StackPanel>
+    </Grid>
+</Window>

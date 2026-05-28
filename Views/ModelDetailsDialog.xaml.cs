@@ -61,6 +61,58 @@ public partial class ModelDetailsDialog : Window
         bool isHfModel = !string.IsNullOrWhiteSpace(Model.ModelId) && Model.ModelId.Contains("/");
         bool isDownloadable = _module.ProviderName == "Hugging Face" || _module.ProviderName == "ONNX";
         DownloadButton.Visibility = (isHfModel && isDownloadable) ? Visibility.Visible : Visibility.Collapsed;
+        DeleteModelButton.Visibility = (isHfModel && isDownloadable) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void DeleteModel_Click(object sender, RoutedEventArgs e)
+    {
+        var modelId = Model.ModelId?.Trim();
+        if (string.IsNullOrWhiteSpace(modelId) || !modelId.Contains("/")) return;
+
+        // Determine the local model directory
+        string modelsRoot = string.IsNullOrWhiteSpace(Model.Endpoint)
+            ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Verdict", "Models")
+            : Model.Endpoint;
+        string folderName = modelId.Split('/').Last();
+        foreach (var c in System.IO.Path.GetInvalidFileNameChars())
+            folderName = folderName.Replace(c, '_');
+        string modelDir = System.IO.Path.Combine(modelsRoot, folderName);
+
+        if (!System.IO.Directory.Exists(modelDir))
+        {
+            MessageBox.Show($"No local model files found at:\n{modelDir}", "Nothing to Delete", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var result = MessageBox.Show(
+            $"Delete all downloaded model files for '{modelId}'?\n\nThis will remove:\n{modelDir}\n\nYou can re-download afterwards.",
+            "Delete Local Model",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            try
+            {
+                System.IO.Directory.Delete(modelDir, recursive: true);
+
+                // Clear the model cache so deleted models don't show as ghosts
+                var cacheFile = System.IO.Path.Combine(modelsRoot, _module.ProviderName == "ONNX"
+                    ? "onnx_model_cache.json"
+                    : "huggingface_model_cache.json");
+                if (System.IO.File.Exists(cacheFile))
+                {
+                    try { System.IO.File.Delete(cacheFile); } catch { /* best effort */ }
+                }
+
+                Model.Status = "Model files deleted";
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Failed to delete: {ex.Message}");
+                Model.Status = "Delete failed";
+            }
+        }
     }
 
     private async void Download_Click(object sender, RoutedEventArgs e)
@@ -288,8 +340,7 @@ public partial class ModelDetailsDialog : Window
                     ShowDownloadProgress(status, percent, fileLabel);
                 });
             }
-            catch (TaskCanceledException) { }
-            catch (InvalidOperationException) { /* dialog closed */ }
+            catch (Exception) { /* dialog closed or disposed - silently ignore */ }
         });
 
         if (_module is Providers.HuggingFaceModelBase hfBase)

@@ -91,10 +91,10 @@ public class OnnxProvider : HuggingFaceModelBase
 
     protected override async Task DownloadModelFilesAsync(string modelId, string destinationDir, IProgress<DownloadProgressInfo>? progress, CancellationToken ct = default)
     {
-        await _downloadService.DownloadModelAsync(modelId, destinationDir, info => progress?.Report(info));
+        await _downloadService.DownloadModelAsync(modelId, destinationDir, info => progress?.Report(info), ct);
     }
 
-    private async Task<string> ResolveModelPathAsync(AIModelConfiguration config)
+    private async Task<string> ResolveModelPathAsync(AIModelConfiguration config, CancellationToken ct = default)
     {
         string modelId = config.ModelId.Trim();
 
@@ -107,8 +107,8 @@ public class OnnxProvider : HuggingFaceModelBase
             // Check if model directory already exists and is valid
             if (!ModelDownloadService.IsValidModelDirectory(modelDir))
             {
-                // Download the model using the download service
-                await _downloadService.DownloadModelAsync(modelId, modelDir, null);
+                // Download the model using the download service (resumes partial downloads)
+                await _downloadService.DownloadModelAsync(modelId, modelDir, null, ct);
             }
 
             // Find the actual model subdirectory (handles nested onnx-community structure)
@@ -172,7 +172,7 @@ public class OnnxProvider : HuggingFaceModelBase
 
     private async Task<string> GenerateOnnxResponseAsync(AIModelConfiguration config, string systemPrompt, string userPrompt, CancellationToken ct)
     {
-        string modelPath = await ResolveModelPathAsync(config);
+        string modelPath = await ResolveModelPathAsync(config, ct);
 
         if (!Directory.Exists(modelPath))
             throw new DirectoryNotFoundException($"Model directory not found: {modelPath}");
@@ -237,7 +237,7 @@ public class OnnxProvider : HuggingFaceModelBase
     {
         try
         {
-            string modelPath = await ResolveModelPathAsync(config);
+            string modelPath = await ResolveModelPathAsync(config, ct);
 
             if (!Directory.Exists(modelPath))
                 return $"Error: Model directory not found: {modelPath}";

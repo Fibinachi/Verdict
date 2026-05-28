@@ -1414,10 +1414,10 @@ public class MainViewModel : ViewModelBase
     /// </summary>
     private void ProcessTrialHistoryForJuror(Agent juror)
     {
-        // Set the default juror model if configured, so new jurors
-        // have their model pre-populated in the agent profile editor.
-        if (!string.IsNullOrWhiteSpace(CurrentCase.DefaultJurorModel))
-            juror.SelectedModel = CurrentCase.DefaultJurorModel;
+        // Set the default juror model from the per-role mapping, if configured.
+        var roleModel = GetDefaultModelForRole(juror.Role, juror.CommunicationTeam, CurrentCase);
+        if (!string.IsNullOrWhiteSpace(roleModel))
+            juror.SelectedModel = roleModel;
 
         // 1. Replay event log entries in chronological order (transcript lines, rulings, etc.)
         foreach (var evt in CurrentCase.EventLog)
@@ -1442,6 +1442,30 @@ public class MainViewModel : ViewModelBase
             // Apply evidence influence to update initial VerdictLean
             _juryCalc.ApplyEvidenceInfluence(new[] { juror }, doc);
         }
+    }
+
+    /// <summary>
+    /// Returns the FriendlyName of the per-role default model from the case,
+    /// or null if no role-specific default is configured.
+    /// For lawyers, distinguishes prosecution vs defense via CommunicationTeam.
+    /// </summary>
+    public static string? GetDefaultModelForRole(AgentRole role, string communicationTeam, CaseFile c)
+    {
+        return role switch
+        {
+            AgentRole.Judge => string.IsNullOrEmpty(c.DefaultJudgeModel) ? null : c.DefaultJudgeModel,
+            AgentRole.Lawyer when string.Equals(communicationTeam, "Plaintiff", StringComparison.OrdinalIgnoreCase)
+                => string.IsNullOrEmpty(c.DefaultProsecutionModel) ? null : c.DefaultProsecutionModel,
+            AgentRole.Lawyer when string.Equals(communicationTeam, "Defendant", StringComparison.OrdinalIgnoreCase)
+                => string.IsNullOrEmpty(c.DefaultDefenseModel) ? null : c.DefaultDefenseModel,
+            AgentRole.Lawyer => string.IsNullOrEmpty(c.DefaultDefenseModel) ? null : c.DefaultDefenseModel,
+            AgentRole.Witness => string.IsNullOrEmpty(c.DefaultWitnessModel) ? null : c.DefaultWitnessModel,
+            AgentRole.Reporter => string.IsNullOrEmpty(c.DefaultReporterModel) ? null : c.DefaultReporterModel,
+            AgentRole.Client => string.IsNullOrEmpty(c.DefaultClientModel) ? null : c.DefaultClientModel,
+            AgentRole.Juror or AgentRole.AlternateJuror
+                => string.IsNullOrEmpty(c.DefaultJurorModel) ? null : c.DefaultJurorModel,
+            _ => null
+        };
     }
 
     public void OccupySlot(Agent agent) =>
@@ -3269,18 +3293,22 @@ public class MainViewModel : ViewModelBase
         loadedCase.AvailableModels.RemoveAll(m =>
             !activeProviders.Any(p => p.ProviderName.Equals(m.Provider, StringComparison.OrdinalIgnoreCase)));
 
-        // Pick the best available model (prefer one with an API key)
-        var defaultModel = loadedCase.AvailableModels.LastOrDefault(m => !string.IsNullOrWhiteSpace(m.ApiKey))
-                        ?? loadedCase.AvailableModels.LastOrDefault()
-                        ?? loadedCase.AvailableModels.FirstOrDefault();
-        if (defaultModel != null)
+        // Fallback model when no role-specific default is set (prefer one with an API key)
+        var fallbackModel = loadedCase.AvailableModels.LastOrDefault(m => !string.IsNullOrWhiteSpace(m.ApiKey))
+                         ?? loadedCase.AvailableModels.LastOrDefault()
+                         ?? loadedCase.AvailableModels.FirstOrDefault();
+
+        if (fallbackModel != null)
         {
             foreach (var agent in AllAgents.Where(a => a.IsOccupied))
             {
                 bool hasValidModel = !string.IsNullOrWhiteSpace(agent.SelectedModel)
                     && loadedCase.AvailableModels.Any(m => m.FriendlyName == agent.SelectedModel);
                 if (!hasValidModel)
-                    agent.SelectedModel = defaultModel.FriendlyName;
+                {
+                    agent.SelectedModel = GetDefaultModelForRole(agent.Role, agent.CommunicationTeam, loadedCase)
+                                       ?? fallbackModel.FriendlyName;
+                }
             }
         }
 

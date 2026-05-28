@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:Verdict.Converters"
         mc:Ignorable="d"
-        Title="LLM Model Configuration" Height="550" Width="650"
-        WindowStartupLocation="CenterOwner" Background="#F0F0F0">
+        Title="LLM Model Configuration" Height="820" Width="650"
+        WindowStartupLocation="CenterOwner" Background="#F0F0F0" MinHeight="700">
     <Window.Resources>
         <conv:NullToBoolConverter x:Key="NullToBoolConverter"/>
     </Window.Resources>
@@ -102,17 +102,85 @@
                         </StackPanel>
                     </Border>
                 
-                    <TextBlock Text="Default Juror Model:" FontWeight="Bold" Margin="0,12,0,3"/>
+                    <TextBlock Text="🎭 Role Model Assignments" FontWeight="Bold" Margin="0,12,0,5"/>
+                    
+                    <TextBlock Text="Judge:" FontSize="11" Margin="0,0,0,1"/>
                     <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="FriendlyName"
-                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultJurorModel}"
-                              Margin="0,0,0,5" Padding="4,2">
+                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultJudgeModel}"
+                              Margin="0,0,0,6" Padding="2,2">
                         <ComboBox.ItemContainerStyle>
                             <Style TargetType="ComboBoxItem">
-                                <Setter Property="Padding" Value="4,2"/>
+                                <Setter Property="Padding" Value="2,1"/>
                             </Style>
                         </ComboBox.ItemContainerStyle>
                     </ComboBox>
-                    <TextBlock Text="New jurors will use this model by default." FontSize="10" Foreground="#888888" 
+
+                    <TextBlock Text="Prosecution / Plaintiff:" FontSize="11" Margin="0,0,0,1"/>
+                    <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="FriendlyName"
+                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultProsecutionModel}"
+                              Margin="0,0,0,6" Padding="2,2">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="2,1"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+
+                    <TextBlock Text="Defense:" FontSize="11" Margin="0,0,0,1"/>
+                    <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="FriendlyName"
+                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultDefenseModel}"
+                              Margin="0,0,0,6" Padding="2,2">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="2,1"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+
+                    <TextBlock Text="Witness:" FontSize="11" Margin="0,0,0,1"/>
+                    <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="FriendlyName"
+                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultWitnessModel}"
+                              Margin="0,0,0,6" Padding="2,2">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="2,1"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+
+                    <TextBlock Text="Court Reporter:" FontSize="11" Margin="0,0,0,1"/>
+                    <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="FriendlyName"
+                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultReporterModel}"
+                              Margin="0,0,0,6" Padding="2,2">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="2,1"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+
+                    <TextBlock Text="Client:" FontSize="11" Margin="0,0,0,1"/>
+                    <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="FriendlyName"
+                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultClientModel}"
+                              Margin="0,0,0,6" Padding="2,2">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="2,1"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+
+                    <TextBlock Text="Jurors:" FontSize="11" Margin="0,0,0,1"/>
+                    <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="FriendlyName"
+                              SelectedValuePath="FriendlyName" SelectedValue="{Binding DefaultJurorModel}"
+                              Margin="0,0,0,8" Padding="2,2">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Padding" Value="2,1"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+                    <TextBlock Text="New agents use their role's model; empty = use first available." FontSize="10" Foreground="#888888" 
                                TextWrapping="Wrap" Margin="0,0,0,5"/>
                 </StackPanel>
 

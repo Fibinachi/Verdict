@@ -208,6 +208,24 @@ namespace Verdict.Models
         /// </summary>
         public string DefaultJurorModel { get; set; } = string.Empty;
 
+        /// <summary>Default model for the Judge role.</summary>
+        public string DefaultJudgeModel { get; set; } = string.Empty;
+
+        /// <summary>Default model for Plaintiff/Prosecution lawyers.</summary>
+        public string DefaultProsecutionModel { get; set; } = string.Empty;
+
+        /// <summary>Default model for Defense lawyers.</summary>
+        public string DefaultDefenseModel { get; set; } = string.Empty;
+
+        /// <summary>Default model for Witnesses.</summary>
+        public string DefaultWitnessModel { get; set; } = string.Empty;
+
+        /// <summary>Default model for the Court Reporter.</summary>
+        public string DefaultReporterModel { get; set; } = string.Empty;
+
+        /// <summary>Default model for Client roles.</summary>
+        public string DefaultClientModel { get; set; } = string.Empty;
+
         public List<BiasFactor> DefaultBiasFactors { get; set; } = new()
         {
             new BiasFactor { Name = "Age", Weight = 0.55 },

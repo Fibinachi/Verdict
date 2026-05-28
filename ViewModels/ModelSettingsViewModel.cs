@@ -14,6 +14,12 @@ public class ModelSettingsViewModel : ViewModelBase
     private double _globalTemperature = 0.7;
     private int _globalMaxTokens = 4096;
     private string _defaultJurorModel = string.Empty;
+    private string _defaultJudgeModel = string.Empty;
+    private string _defaultProsecutionModel = string.Empty;
+    private string _defaultDefenseModel = string.Empty;
+    private string _defaultWitnessModel = string.Empty;
+    private string _defaultReporterModel = string.Empty;
+    private string _defaultClientModel = string.Empty;
 
     private static string ModelsFolderPath =>
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models");
@@ -132,15 +138,63 @@ public class ModelSettingsViewModel : ViewModelBase
         get => _defaultJurorModel;
         set => SetProperty(ref _defaultJurorModel, value ?? string.Empty);
     }
+
+    public string DefaultJudgeModel
+    {
+        get => _defaultJudgeModel;
+        set => SetProperty(ref _defaultJudgeModel, value ?? string.Empty);
+    }
+
+    public string DefaultProsecutionModel
+    {
+        get => _defaultProsecutionModel;
+        set => SetProperty(ref _defaultProsecutionModel, value ?? string.Empty);
+    }
+
+    public string DefaultDefenseModel
+    {
+        get => _defaultDefenseModel;
+        set => SetProperty(ref _defaultDefenseModel, value ?? string.Empty);
+    }
+
+    public string DefaultWitnessModel
+    {
+        get => _defaultWitnessModel;
+        set => SetProperty(ref _defaultWitnessModel, value ?? string.Empty);
+    }
+
+    public string DefaultReporterModel
+    {
+        get => _defaultReporterModel;
+        set => SetProperty(ref _defaultReporterModel, value ?? string.Empty);
+    }
+
+    public string DefaultClientModel
+    {
+        get => _defaultClientModel;
+        set => SetProperty(ref _defaultClientModel, value ?? string.Empty);
+    }
     public ModelSettingsViewModel(IEnumerable<AIModelConfiguration> initialModels,
         double globalTemperature = 0.7, int globalMaxTokens = 4096,
         IEnumerable<BiasFactor>? defaultBiasFactors = null,
-        string defaultJurorModel = "")
+        string defaultJurorModel = "",
+        string defaultJudgeModel = "",
+        string defaultProsecutionModel = "",
+        string defaultDefenseModel = "",
+        string defaultWitnessModel = "",
+        string defaultReporterModel = "",
+        string defaultClientModel = "")
     {
         Models = new ObservableCollection<AIModelConfiguration>(initialModels);
         GlobalTemperature = globalTemperature;
         GlobalMaxTokens = globalMaxTokens;
         DefaultJurorModel = defaultJurorModel;
+        DefaultJudgeModel = defaultJudgeModel;
+        DefaultProsecutionModel = defaultProsecutionModel;
+        DefaultDefenseModel = defaultDefenseModel;
+        DefaultWitnessModel = defaultWitnessModel;
+        DefaultReporterModel = defaultReporterModel;
+        DefaultClientModel = defaultClientModel;
 
         if (defaultBiasFactors != null)
         {

@@ -61,6 +61,26 @@ namespace Verdict.Services
         // Files that indicate a model is compatible with OnnxRuntimeGenAI
         private const string GenaiConfigFile = "genai_config.json";
 
+        /// <summary>Min file size for a real .onnx model (not an LFS stub).</summary>
+        private const long MinOnnxModelBytes = 50_000_000; // 50 MB — real ONNX models are always >50MB
+
+        /// <summary>
+        /// Detects if a file is a Git LFS pointer stub (small text file pointing to the real binary).
+        /// LFS stubs start with "version https://git-lfs.github.com".
+        /// </summary>
+        private static bool IsLfsPointerStub(string filePath)
+        {
+            if (!File.Exists(filePath)) return false;
+            try
+            {
+                var info = new FileInfo(filePath);
+                if (info.Length > 1024) return false; // LFS stubs are always small (<1KB)
+                var content = File.ReadAllText(filePath);
+                return content.StartsWith("version https://git-lfs.github.com", StringComparison.Ordinal);
+            }
+            catch { return false; }
+        }
+
         /// <summary>
         /// Searches HuggingFace for ONNX models suitable for local LLM inference.
         /// </summary>
@@ -240,14 +260,18 @@ namespace Verdict.Services
                 if (!string.IsNullOrEmpty(destDir))
                     Directory.CreateDirectory(destDir);
 
-                // Resume: skip files that already exist and are substantial
-                // ONNX model files should be >500KB, config files >100 bytes
+                // Resume: skip files that already exist and are substantial.
+                // .onnx/.onnx_data files: must be >= MinOnnxModelBytes (50MB) — not LFS stubs,
+                //   not partial downloads. This matches IsValidModelDirectory validation.
+                // Config/tokenizer files: must be > 100 bytes.
                 if (File.Exists(destPath))
                 {
                     var existingSize = new FileInfo(destPath).Length;
-                    bool isOnnxStub = filename.EndsWith(".onnx", StringComparison.OrdinalIgnoreCase) && existingSize < 500_000;
-                    bool isTiny = existingSize < 100;
-                    if (!isOnnxStub && !isTiny)
+                    bool isOnnxFile = filename.EndsWith(".onnx", StringComparison.OrdinalIgnoreCase)
+                        || filename.EndsWith(".onnx_data", StringComparison.OrdinalIgnoreCase);
+                    bool isOnnxStub = isOnnxFile && (existingSize < MinOnnxModelBytes || IsLfsPointerStub(destPath));
+                    bool isTinyConfig = !isOnnxFile && existingSize < 100;
+                    if (!isOnnxStub && !isTinyConfig)
                     {
                         totalBytesDownloaded += existingSize;
                         progress.BytesDownloaded = totalBytesDownloaded;
@@ -256,7 +280,7 @@ namespace Verdict.Services
                         onProgress?.Invoke(progress);
                         continue;
                     }
-                    // Delete stub/tiny file before re-downloading
+                    // Delete stub/tiny/partial file before re-downloading
                     try { File.Delete(destPath); } catch { }
                 }
 
@@ -276,6 +300,8 @@ namespace Verdict.Services
 
                     var buffer = new byte[8192];
                     long fileBytesDownloaded = 0;
+                    long lastProgressReport = 0;
+                    const long progressInterval = 100_000; // Report progress every ~100KB
                     int bytesRead;
 
                     while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
@@ -284,10 +310,20 @@ namespace Verdict.Services
                         fileBytesDownloaded += bytesRead;
                         totalBytesDownloaded += bytesRead;
 
-                        progress.BytesDownloaded = totalBytesDownloaded;
-                        progress.TotalBytes = totalBytes > 0 ? totalBytesDownloaded + (modelInfo.FileList.Count - i - 1) * totalBytes : 0;
-                        onProgress?.Invoke(progress);
+                        // Throttle progress updates to avoid flooding UI thread
+                        if (totalBytesDownloaded - lastProgressReport >= progressInterval || fileBytesDownloaded == totalBytes)
+                        {
+                            lastProgressReport = totalBytesDownloaded;
+                            progress.BytesDownloaded = totalBytesDownloaded;
+                            progress.TotalBytes = totalBytes > 0 ? totalBytesDownloaded + (modelInfo.FileList.Count - i - 1) * totalBytes : 0;
+                            onProgress?.Invoke(progress);
+                        }
                     }
+
+                    // Final progress for this file
+                    progress.BytesDownloaded = totalBytesDownloaded;
+                    progress.TotalBytes = totalBytes > 0 ? totalBytesDownloaded + (modelInfo.FileList.Count - i - 1) * totalBytes : 0;
+                    onProgress?.Invoke(progress);
 
                     await fileStream.FlushAsync(ct);
                 }
@@ -330,6 +366,7 @@ namespace Verdict.Services
         /// Checks if a directory contains a valid ONNX model for OnnxRuntimeGenAI.
         /// Searches recursively because some models (e.g., onnx-community) nest
         /// the actual model files inside cpu_and_mobile/ or gpu/ subdirectories.
+        /// Also validates that .onnx files are not LFS pointer stubs.
         /// </summary>
         public static bool IsValidModelDirectory(string directoryPath)
         {
@@ -383,10 +420,13 @@ namespace Verdict.Services
         {
             if (!Directory.Exists(directoryPath)) return false;
 
-            var hasOnnxFile = Directory.GetFiles(directoryPath, "*.onnx", SearchOption.TopDirectoryOnly).Length > 0;
+            var onnxFiles = Directory.GetFiles(directoryPath, "*.onnx", SearchOption.TopDirectoryOnly);
             var hasGenaiConfig = File.Exists(Path.Combine(directoryPath, GenaiConfigFile));
 
-            return hasOnnxFile && hasGenaiConfig;
+            if (!hasGenaiConfig) return false;
+
+            // Require at least one non-stub .onnx file (not LFS pointer, at least 50MB)
+            return onnxFiles.Any(f => !IsLfsPointerStub(f) && new FileInfo(f).Length >= MinOnnxModelBytes);
         }
 
         /// <summary>

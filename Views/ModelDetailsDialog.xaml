@@ -43,6 +43,8 @@
             </StackPanel>
             
             <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="DeleteModelButton" Content="Delete Local" Click="DeleteModel_Click" 
+                        Width="80" Margin="0,0,6,0" Visibility="Collapsed" ToolTip="Delete downloaded model files to free space or fix partial downloads."/>
                 <Button x:Name="DownloadButton" Content="Download" Click="Download_Click" 
                         Width="80" Margin="0,0,6,0" Visibility="Collapsed"/>
                 <Button x:Name="LoadModelsButton" Content="Browse..." Click="LoadModels_Click" 

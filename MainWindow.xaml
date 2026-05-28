@@ -9,50 +9,11 @@
         Title="{Binding WindowTitle}" Height="950" Width="1500"
         Background="#2C3E50">
     <Window.Resources>
-        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
-        <conv:InverseBooleanConverter x:Key="InvBool"/>
-        <conv:EnumMatchConverter x:Key="EnumMatchConverter"/>
-        <!-- Seat Style - compact for better visibility -->
-        <Style x:Key="SeatBase" TargetType="Border">
-            <Setter Property="Width" Value="28"/>
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Margin" Value="3"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#7F8C8D"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-        
-        <Style x:Key="StatusWindow" TargetType="Border">
-            <Setter Property="Width" Value="100"/>
-            <Setter Property="Height" Value="44"/>
-            <Setter Property="Background" Value="#1A252F"/>
-            <Setter Property="BorderBrush" Value="#34495E"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="3"/>
-            <Setter Property="Padding" Value="3"/>
-            <Setter Property="Margin" Value="1"/>
-            <Setter Property="IsHitTestVisible" Value="False"/>
-        </Style>
-        
-        <Style x:Key="RoleLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="8"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#E67E22"/>
-            <Setter Property="Margin" Value="0,0,0,1"/>
-        </Style>
-
-        <Style x:Key="MetricLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="7"/>
-            <Setter Property="Foreground" Value="#BDC3C7"/>
-        </Style>
-
-        <Style x:Key="MetricValue" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="7"/>
-            <Setter Property="Foreground" Value="#2ECC71"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="1,0,3,0"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="MainWindow.Resources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- DataTemplates must stay in MainWindow.xaml because they contain event handlers -->
 
         <!-- Agent Seat DataTemplate -->
         <DataTemplate x:Key="AgentSeatTemplate">
@@ -72,22 +33,14 @@
                     <Grid>
                         <TextBlock Text="+" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Visibility="{Binding IsOccupied, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"/>
 
-                        <!-- Small avatar (static, compilation-safe) -->
                         <Grid Visibility="{Binding IsOccupied, Converter={StaticResource BoolToVis}}"
                               HorizontalAlignment="Center" VerticalAlignment="Center" Width="24" Height="24">
                             <Ellipse Fill="#2C3E50" Stroke="#7F8C8D" StrokeThickness="1"/>
-
-                            <!-- Hat (red) -->
                             <Polygon Points="12,5 16,12 8,12" Fill="#E74C3C"/>
                             <Rectangle Width="18" Height="4" Fill="#E74C3C" RadiusX="2" RadiusY="2"
                                        HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,9,0,0"/>
-                            <!-- Brim -->
                             <Rectangle Width="2" Height="3" Fill="#F1C40F" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,0,0"/>
-
-                            <!-- age hint: gray hair line -->
                             <Rectangle Width="14" Height="2" Fill="#95A5A6" Opacity="0.9" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,8"/>
-
-                            <!-- fallback initials (tiny) -->
                             <TextBlock Text="{Binding Initials}" Foreground="White" FontSize="7" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
                     </Grid>
@@ -95,8 +48,7 @@
 
                 <Border Style="{StaticResource StatusWindow}" 
                         Visibility="{Binding IsOccupied, Converter={StaticResource BoolToVis}}"
-                        HorizontalAlignment="Center" 
-                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
                         Margin="-50,-25,-50,-25">
                     <StackPanel>
                         <TextBlock Style="{StaticResource RoleLabel}" Text="{Binding Name}"/>
@@ -114,7 +66,6 @@
             </Grid>
         </DataTemplate>
 
-        
         <!-- Special DataTemplate for Clerk/Reporter with document intake functionality -->
         <DataTemplate x:Key="ClerkSeatTemplate">
             <StackPanel Orientation="Vertical" Margin="5">
@@ -128,12 +79,7 @@
                     </Border.ContextMenu>
                     <TextBlock Text="📋" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <TextBlock Text="{Binding Name}" 
-                           HorizontalAlignment="Center" 
-                           Foreground="White" 
-                           FontSize="10" 
-                           FontWeight="SemiBold" 
-                           Margin="0,3,0,0" />
+                <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" Foreground="White" FontSize="10" FontWeight="SemiBold" Margin="0,3,0,0" />
                 <Border Style="{StaticResource StatusWindow}">
                     <StackPanel>
                         <TextBlock Style="{StaticResource RoleLabel}" Text="{Binding Role}"/>
@@ -145,6 +91,7 @@
                 </Border>
             </StackPanel>
         </DataTemplate>
+        </ResourceDictionary>
     </Window.Resources>
 
     <DockPanel>

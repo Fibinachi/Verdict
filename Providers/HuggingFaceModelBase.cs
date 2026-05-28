@@ -101,13 +101,37 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
         var models = new List<string>();
 
         string modelsRoot = ResolveModelsRoot(config, DefaultModelsRoot);
+        var localNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (Directory.Exists(modelsRoot))
+        {
             models.AddRange(FindLocalModels(modelsRoot));
+            foreach (var dir in Directory.GetDirectories(modelsRoot))
+                localNames.Add(new DirectoryInfo(dir).Name);
+        }
 
         var cachedModels = LoadCachedModelList(config);
         if (cachedModels.Count > 0)
         {
-            models.AddRange(cachedModels);
+            // Filter out cached entries for models already downloaded locally
+            var prunedCache = cachedModels.Where(entry =>
+            {
+                var lastSep = entry.LastIndexOf(" - ", StringComparison.Ordinal);
+                if (lastSep < 0) return true;
+                var modelId = entry[(lastSep + 3)..];
+                var folderName = SanitizeFolderName(modelId.Split('/').Last());
+                // Remove if already downloaded locally
+                if (localNames.Contains(folderName)) return false;
+                // Remove if there's a broken/ghost download
+                var potentialDir = Path.Combine(modelsRoot, folderName);
+                if (Directory.Exists(potentialDir) && !ModelDownloadService.IsValidModelDirectory(potentialDir))
+                    return false; // Broken download — don't list it
+                return true;
+            }).ToList();
+
+            if (prunedCache.Count != cachedModels.Count)
+                SaveCachedModelList(config, prunedCache);
+
+            models.AddRange(prunedCache);
             return models;
         }
 
@@ -216,14 +240,37 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
         var cached = LoadCachedModelList(config);
         if (cached.Count > 0)
         {
+            // Track which local folder names are already present so we don't show duplicates
+            var localNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (Directory.Exists(modelsRoot))
+            {
+                foreach (var dir in Directory.GetDirectories(modelsRoot))
+                    localNames.Add(new DirectoryInfo(dir).Name);
+            }
+
+            var validCachedEntries = new List<string>();
             foreach (var entry in cached)
             {
                 var sep = " - ";
                 var lastSep = entry.LastIndexOf(sep, StringComparison.Ordinal);
-                if (lastSep < 0) continue;
+                if (lastSep < 0)
+                {
+                    validCachedEntries.Add(entry);
+                    continue;
+                }
 
                 var modelId = entry[(lastSep + sep.Length)..];
                 var display = entry[..lastSep];
+
+                // Skip cached entries for models that are already downloaded locally
+                var folderName = SanitizeFolderName(modelId.Split('/').Last());
+                if (localNames.Contains(folderName))
+                    continue;
+
+                // Check for partial/ghost download — a folder exists but isn't valid
+                var potentialLocalDir = Path.Combine(modelsRoot, folderName);
+                bool isGhostDownload = Directory.Exists(potentialLocalDir)
+                    && !ModelDownloadService.IsValidModelDirectory(potentialLocalDir);
 
                 string size = "";
                 var parenStart = display.LastIndexOf('(');
@@ -231,7 +278,6 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
                 if (parenStart >= 0 && parenEnd > parenStart)
                 {
                     var parenContent = display[(parenStart + 1)..parenEnd];
-                    // Only treat as file size, not download counts ("15.2K downloads" etc.)
                     if (LooksLikeFileSize(parenContent))
                     {
                         size = parenContent;
@@ -241,12 +287,19 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
 
                 items.Add(new ModelListItem
                 {
-                    DisplayName = display,
+                    DisplayName = isGhostDownload ? $"⚠ {display} (broken download)" : display,
                     ModelId = modelId,
-                    Source = "HuggingFace",
-                    SizeFormatted = size
+                    Source = isGhostDownload ? "Broken" : "HuggingFace",
+                    SizeFormatted = size,
+                    IsHeader = false
                 });
+                validCachedEntries.Add(entry);
             }
+
+            // Prune stale cache entries (keep only what we displayed)
+            if (validCachedEntries.Count != cached.Count)
+                SaveCachedModelList(config, validCachedEntries);
+
             return items;
         }
 
@@ -339,14 +392,17 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
             return;
         }
 
-        // Partial download exists — don't delete, let DownloadModelFilesAsync resume
+        // Partial download may exist — let per-file resume logic handle it
+        // (stub files and tiny files are deleted and re-downloaded; substantial files are kept)
+
         await DownloadModelFilesAsync(modelId, modelDir, progress, ct);
     }
 
     /// <summary>
     /// Validates that a model directory has all required files and isn't a partial download.
-    /// For ONNX: checks .onnx files are substantial (>100KB, not just LFS stubs).
-    /// For GGUF: checks .gguf files exist and are substantial.
+    /// For ONNX: checks .onnx files are substantial (>50MB, not LFS stubs).
+    /// For GGUF: checks .gguf files exist and are substantial (>50MB).
+    /// For other: checks files match patterns and are >100KB.
     /// </summary>
     protected virtual bool IsModelDownloadComplete(string modelDir)
     {
@@ -357,8 +413,23 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
             var files = Directory.GetFiles(modelDir, pattern, SearchOption.AllDirectories);
             if (files.Length == 0) return false;
 
-            // Check that at least one matching file is substantial (not a 0-byte or tiny stub)
-            if (files.Any(f => new FileInfo(f).Length > 100_000))
+            // Check that at least one matching file is substantial.
+            // For .onnx/.gguf files, require >50MB (real models are always large).
+            // For other files (.json, etc.), require >100KB to skip tiny stubs.
+            long minSize = (pattern == "*.onnx" || pattern == "*.gguf") ? 50_000_000 : 100_000;
+
+            // Also check for LFS pointer stubs (small text files that point to missing LFS objects)
+            if (files.Any(f => {
+                long len = new FileInfo(f).Length;
+                if (len < minSize) return false;
+                // Check for LFS pointer stub
+                if (len < 1024 && pattern == "*.onnx")
+                {
+                    try { return !File.ReadAllText(f).StartsWith("version https://git-lfs.github.com", StringComparison.Ordinal); }
+                    catch { return false; }
+                }
+                return true;
+            }))
                 return true;
         }
 
