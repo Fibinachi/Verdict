@@ -1,12 +1,8 @@
 # Verdict Juror Opinion Engine — Mathematical Reference
 
-This document provides a complete mathematical reference for the juror bias and opinion simulation engine. All formulas are implemented in `Services/ToyJurorLogicEngine.cs`.
+**Updated for Engine v0.61 — 2026-05-28**
 
----
-
-## 1. Core Functions
-
-### Logistic (Sigmoid) Function
+This document provides a complete mathematical reference for the juror bias and opinion simulation engine. All formulas are implemented in `Services/ToyJurorLogicEngine.cs`. This version corrects mathematical inconsistencies, removes circular dependencies, and stabilizes the Stage-3 pipeline.
 ```raw
 logistic(x) = 1 / (1 + exp(-x))
 ```
@@ -490,6 +486,45 @@ per_juror_cred = clamp(0.05, 0.95, per_juror_cred)
 
 Jurors respond differently to different evidence media based on their demographics:
 
+
+---
+
+## 6.4 Consolidated Evidence Impact Summary
+
+The following table consolidates all evidence types with their raw impact, probative scaling, juror sensitivity factors, and implementation notes into a single reference.
+
+| Evidence Type | Raw Media Impact | Probative Scaling | Juror Sensitivity Factors | Notes |
+|--------------|-----------------|-------------------|--------------------------|-------|
+| **Video** | 1.6× | Direct (1.2×) / Circumstantial (0.85×) | Education (−), Age (+), Attentiveness (+) | Highest impact — visual + auditory + temporal; primacy boost ×1.25 if in first 20% |
+| **Physical** | 1.5× | Reliability × chain of custody; 0.5–1.0 scaling | Education (−), RiskPerception (+), DIY/maker identity (+) | Tangible objects feel "real"; probative value depends on chain-of-custody |
+| **Image** | 1.4× | Reliability × authentication; 0.5–1.0 scaling | Age (−young,+old), MediaConsumption (+) | Visual evidence compelling; authentication concerns may reduce probative |
+| **Audio** | 1.3× | Reliability × authentication; 0.5–1.0 scaling | Age (+), Attentiveness (+), RiskPerception (+) | Hearing a voice adds authenticity; harder to authenticate than video |
+| **Testimony** | 1.0× (base, then scaled by credibility) | Credibility base: Expert (0.85), LE (0.75), Eyewitness (0.60), Character (0.45) | Per-juror credibility: Education (−), Age (+), Politics (−Rep), In-group bias (+), Status (+attentive, −skeptical) | Hearsay penalty ×0.5; red flags reduce by 0.6–0.7; most juror-variable impact |
+| **Document** | 1.0× | Reliability × authentication; 0.5–1.0 scaling | Education (+ analytical), LegalKnowledge (+), Age (−young) | Baseline — requires reading and parsing; smallest juror sensitivity variance |
+| **Hearsay** | 0.5× of parent type | Explicit ×0.5 penalty regardless of parent category | Same as parent type | Legal doctrine; second-hand information inherently less probative |
+| **Circumstantial** | 0.85× of parent type | ×0.85 multiplier on probative base | Education (+ analytical interpretation) | Requires inference; educated jurors weight more carefully |
+| **Outdated/Stale** | 0.6× of parent type | ×0.6 multiplier | Age (+ older may recall context) | Temporal distance reduces probative value |
+| **Unauthenticated** | 0.7× of parent type | ×0.7 multiplier | LegalKnowledge (+ skepticism), RiskPerception (+ caution) | Authentication concerns reduce weight uniformly |
+
+### Key Variable Ranges
+
+| Variable | Range | Description |
+|----------|-------|-------------|
+| VerdictLean | 0.05 .. 0.95 | Final juror verdict position (clamped) |
+| g₁ (Static Bias) | 0.0 .. 1.0 | Initial belief from demographics alone |
+| g₂ (Evidence Drift) | 0.0 .. 1.0 | Belief after evidence + rigidity |
+| g₃ (Deliberation) | 0.0 .. 1.0 | Belief after conformity + deliberation |
+| b (raw bias sum) | Unbounded, typically −3.0 .. +3.0 | Raw sum of α·trait products |
+| λ (rigidity) | 0.0 .. 1.0 | logistic output; 0 = completely open, 1 = impervious |
+| h (hardness) | 0.0 .. 0.98 | Resistance to conformity; capped at 0.98 |
+| φ (conformity) | 0.0 .. 1.0 | logistic(0.6·x); narrow effective range |
+| w (influence weight) | 1.0 .. 3.5 | Bounded quadratic; cap at 3.5 |
+| M (jury consensus) | 0.0 .. 1.0 | Weighted average of binary votes |
+| VerdictLean | 0.05 .. 0.95 | Criminal conviction > 0.85; Civil liability > 0.50 |
+| ProbativeValue | 0.05 .. 1.0 | Clamped product of category × credibility × reliability |
+| ImplicitBias | ~ −0.72 .. +0.72 | Uniform(−0.6, 0.6) × 1.2 |
+
+---
 ```raw
 media_sensitivity = 1.0
   [Age < 30:]  Video +0.15, Image +0.08, Document -0.05

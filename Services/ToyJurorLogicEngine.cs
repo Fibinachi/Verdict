@@ -135,7 +135,8 @@ public int SierraClub;
         CaseMode mode = CaseMode.Civil,
         int evidenceIndex = 0,
         int totalEvidenceCount = 1,
-        string caseSubType = "")
+        string caseSubType = "",
+        double evidenceDirection = 0.0)
     {
         if (jurors == null || jurors.Count == 0) return;
 
@@ -220,12 +221,18 @@ public int SierraClub;
 
             // Directional rigidity (Task 2): dampen only when evidence conflicts with bias profile.
             // Task 5: dynamically amplify rigidity for educated partisans facing hostile evidence.
-            double evidenceDir = Math.Sign(adjustedDeltaEvidence);
-            bool evidenceConflicts = (evidenceDir * traits.PolId) < 0;
+            // evidenceDirection: +1 = favors prosecution/plaintiff, -1 = favors defense.
+            // Falls back to Math.Sign(deltaEvidence) when not explicitly provided.
+            double effectiveEvidenceDir = evidenceDirection != 0.0
+                ? Math.Sign(evidenceDirection)
+                : Math.Sign(adjustedDeltaEvidence);
+            bool evidenceConflicts = (effectiveEvidenceDir * traits.PolId) < 0;
             if (evidenceConflicts && Math.Abs(traits.PolId) > 0.4) // Only strong partisans (Block 2 fix)
             {
-                lam += traits.EduBiasWeight * traits.PolBiasWeight * 0.20; // Reduced from 0.45
-                lam = Math.Min(lam, 1.0);
+                // v0.61: motivated_term is blended inside the logistic input of ComputeRigidity
+                // (see ComputeRigidity overload below) rather than added post-hoc.
+                lam = ComputeRigidityWithMotivatedTerm(traits, coefs,
+                    traits.EduBiasWeight * traits.PolBiasWeight * 0.20);
             }
             double effectiveMultiplier = evidenceConflicts ? (1.0 - lam) : 1.0;
             double g2 = Clamp01(g1 + coefs.Gamma1 * adjustedDeltaEvidence * effectiveMultiplier);
@@ -280,32 +287,27 @@ public int SierraClub;
             double thresholdFriction = 0.45 * Math.Exp(-15.0 * distanceToThreshold);
             double h_i = Math.Min(baseHardness + thresholdFriction, 0.98);
 
-            // ── Stage 3: Directional deliberation with continuous target vector ──
-            // M is a weighted average of *binary* votes (V_i ∈ {0,1}), so using (M - g2s[i])
-            // as the drift delta creates a mathematical discontinuity. A juror at 0.84 lean
-            // in a split jury (M=0.50) would be pulled *downward* (−0.34), which is nonsensical
-            // when their continuous position hasn't crossed the conviction threshold.
-            //
-            // Fix: the target is directional — jurors are pulled toward the upper or lower
+            // ── Stage 3: Directional deliberation with continuous target vector (v0.61) ──
+            // M is a weighted average of *binary* votes (V_i ∈ {0,1}).
+            // The target is directional — jurors are pulled toward the upper or lower
             // boundary depending on which side the group majority favors.
+            // v0.61 fix: acquittal branch no longer collapses to M (identity collapse);
+            // it pulls toward (threshold − 0.01) instead of min(M, threshold − 0.01).
             double groupMajoritySide = M >= 0.50 ? 1.0 : 0.0;
 
-            double targetLeaning = groupMajoritySide == 1.0
-                ? Math.Max(convictionThreshold + 0.01, M)  // Pulling toward conviction/liability
-                : Math.Min(convictionThreshold - 0.01, M); // Pulling toward acquittal/non-liability
+            double targetLeaning;
+            if (groupMajoritySide == 1.0)
+                targetLeaning = Math.Max(convictionThreshold + 0.01, M);
+            else
+                targetLeaning = convictionThreshold - 0.01;
 
             double g3 = Clamp01(g2s[i] + (1.0 - h_i) * phi * (targetLeaning - g2s[i]));
 
-            // Verdict probability (proxy) then map to verdict lean directly.
-            // Using P = logistic(theta0 + theta1*g3).
+            // ── Stage 3 post: verdict probability (v0.61 explicit ordering) ──
+            // 1. Compute P = logistic(theta0 + theta1 * g3).
+            // 2. verdict_lean = clamp(0.05, 0.95, P).
             double p = Logistic(coefs.Theta0 + coefs.Theta1 * g3);
-            double verdictLean = p;
-
-            // ── Block 3: Expanded clamping (0.05, 0.95) ──
-            // Criminal convictions require > 0.85; the old (0.2, 0.8) range made them
-            // mathematically impossible. Expanded boundaries clear the 0.85 threshold
-            // while maintaining soft asymptotic protection against absolute 0.0/1.0.
-            verdictLean = Math.Clamp(verdictLean, 0.05, 0.95);
+            double verdictLean = Math.Clamp(p, 0.05, 0.95);
 
             agent.VerdictLean = verdictLean;
             agent.Sentiment = 0.5; // optional: keep stable for now
@@ -497,6 +499,45 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          return Logistic(x);
      }
 
+     /// <summary>
+     /// v0.61: Rigidity with motivated-reasoning term blended inside the logistic input.
+     /// Replaces the post-hoc additive saturation pattern (lam += term; lam = min(lam,1.0)).
+     /// </summary>
+     private static double ComputeRigidityWithMotivatedTerm(ToyJurorTraits j, ToyCoefs coefs, double motivatedTerm)
+     {
+         double x = coefs.Eta.TryGetValue("intercept", out var intercept) ? intercept : 0.0;
+         x += coefs.Eta.TryGetValue("RWA", out var rwaW) ? rwaW * j.RWA : 0.0;
+         x += coefs.Eta.TryGetValue("SDO", out var sdoW) ? sdoW * j.SDO : 0.0;
+         x += coefs.Eta.TryGetValue("punitiveness", out var pW) ? pW * j.Punitiveness : 0.0;
+         x += coefs.Eta.TryGetValue("conserv_relig", out var crW) ? crW * j.ConservRelig : 0.0;
+         x += coefs.Eta.TryGetValue("pol_id", out var pidW) ? pidW * j.PolId : 0.0;
+         x += coefs.Eta.TryGetValue("pol_strength", out var psW) ? psW * j.PolStrength : 0.0;
+         x += coefs.Eta.TryGetValue("primary_history", out var phW) ? phW * j.PrimaryHistory : 0.0;
+         x += coefs.Eta.TryGetValue("online_partisan", out var opW) ? opW * j.OnlinePartisan : 0.0;
+         x += coefs.Eta.TryGetValue("sm_polar", out var spW) ? spW * j.SmPolar : 0.0;
+         x += coefs.Eta.TryGetValue("home_own", out var hoW) ? hoW * j.HomeOwn : 0.0;
+         x += coefs.Eta.TryGetValue("income_band", out var ibW) ? ibW * j.IncomeBand : 0.0;
+         x += coefs.Eta.TryGetValue("job_security", out var jsW) ? jsW * j.JobSecurity : 0.0;
+         x += coefs.Eta.TryGetValue("trade_school", out var tsW) ? tsW * j.TradeSchool : 0.0;
+         x += coefs.Eta.TryGetValue("hbcu", out var hbW) ? hbW * j.Hbcu : 0.0;
+         x += coefs.Eta.TryGetValue("blue_collar", out var bcW) ? bcW * j.BlueCollar : 0.0;
+         x += coefs.Eta.TryGetValue("diyer", out var dyW) ? dyW * j.Diyer : 0.0;
+         x += j.ConfirmationBias * 0.15;
+         x += j.StatusQuoBias * 0.12;
+         x += j.NarrativeCoherence * 0.08;
+         x += coefs.Eta.TryGetValue("nra", out var nraW) ? nraW * j.Nra : 0.0;
+         x += coefs.Eta.TryGetValue("religiosity", out var relW) ? relW * j.Religiosity : 0.0;
+         x += coefs.Eta.TryGetValue("tv_crime", out var tcW) ? tcW * j.TvCrime : 0.0;
+         x += coefs.Eta.TryGetValue("need_closure", out var ncW) ? ncW * j.NeedForClosure : 0.0;
+         x += coefs.Eta.TryGetValue("cognitive_reflection", out var crW2) ? crW2 * j.CognitiveReflection : 0.0;
+         x += coefs.Eta.TryGetValue("bjw", out var bjwW) ? bjwW * j.BeliefInJustWorld : 0.0;
+
+         // v0.61: motivated reasoning blended inside the logistic — no post-hoc addition.
+         x += motivatedTerm;
+
+         return Logistic(x);
+     }
+
      private static double ComputeHardness(ToyJurorTraits j, ToyCoefs coefs)
      {
          // Resistance to conformity pressure
@@ -553,10 +594,11 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
          // Hindsight bias reduces perceived influence of counterevidence
          x += coefs.Chi.TryGetValue("hindsight", out var hbW2) ? hbW2 * j.HindsightBias * -0.2 : 0.0;
 
-         // ── Task 4: Bounded polynomial influence weight (replaces unbounded Math.Exp) ──
-         // Base weight 1.0 grows quadratically, strict cap at 3.5.
-         // Prevents single highly-educated profiles from dominating deliberation.
-         double w = 1.0 + Math.Pow(Math.Max(0, x), 2) * 0.08;
+         // ── v0.61: Softplus influence weight (replaces quadratic) ──
+         // Softplus is smooth, monotonic, and avoids the quadratic saturation problem
+         // that caused elite-educated clusters to always hit the 3.5 cap.
+         // Softplus(x) ≈ max(0,x) for large x, ≈ exp(x) for small x.
+         double w = 1.0 + 0.08 * Math.Log(1 + Math.Exp(x));
          return Math.Min(w, 3.5);
      }
 
@@ -701,20 +743,20 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
         // Meta-analytic effect sizes from published mock jury studies and RAND civil jury data
         double ageW = GetWeight(biasLookup, "Age", 0.55);
         double genderW = GetWeight(biasLookup, "Gender", 0.45);
-        double eduW = GetWeight(biasLookup, "Education Level", 0.80);
+        double EduWeight = GetWeight(biasLookup, "Education Level", 0.80);
         double incomeW = GetWeight(biasLookup, "Income Level", 0.50);
-        double religionW = GetWeight(biasLookup, "Religion", 0.40);
-        double polW = GetWeight(biasLookup, "Political Affiliation", 0.90);
+        double ReligionWeight = GetWeight(biasLookup, "Religion", 0.40);
+        double PolWeight = GetWeight(biasLookup, "Political Affiliation", 0.90);
         double ethnicityW = GetWeight(biasLookup, "Ethnicity", 0.60);
         double experienceW = GetWeight(biasLookup, "Juror Experience", 0.70);
         double legalW = GetWeight(biasLookup, "Legal Knowledge", 0.75);
         double profBgW = GetWeight(biasLookup, "Professional Background", 0.55);
         double communityW = GetWeight(biasLookup, "Community Ties", 0.65);
-        double commStyleW = GetWeight(biasLookup, "Communication Style", 0.35);
+        double CommStyleWeight = GetWeight(biasLookup, "Communication Style", 0.35);
 
         // Store weights on traits for dynamic Stage-2 weaponization (Task 5)
-        j.EduBiasWeight = eduW;
-        j.PolBiasWeight = polW;
+        j.EduBiasWeight = EduWeight;
+        j.PolBiasWeight = PolWeight;
 
         // --- Implicit bias factor (not directly observable, derived from other traits) ---
         // Simulates unconscious associations that influence verdict lean independent of explicit attitudes
@@ -750,37 +792,49 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
         // Political affiliation and education remain the strongest directional forces
         // Cross-factor interactions and implicit bias add realism
 
+        // ── Implicit bias propagation (Greenwald et al.): implicitBias flows into RWA, Punitiveness,
+        //    Religiosity, PolId, and JobSecurity through scalar multipliers documented in
+        //    docs/JurorBiasResearch.md §Implicit Bias. ──
+
         // RWA (Right-Wing Authoritarianism): Political polarity + education rigidity + age conservatism
-        j.RWA = Clamp10(5 + (bias * 3.2 * polW) + (ageFactor) + (ethnicityW - 0.5) * 0.6
+        // Range: clamped to 0..10
+        j.RWA = Clamp10(5 + (bias * 3.2 * PolWeight) + (ageFactor) + (ethnicityW - 0.5) * 0.6
             + raceGenderCompound * 0.5 + implicitBias * 0.3
             + (arng.NextDouble() - 0.5) * 1.8);
 
         // SDO (Social Dominance Orientation): Income/status + gender power dynamics + education
-        j.SDO = Clamp10(5 + (-bias * 2.8 * polW) + (incomeW - 0.5) * 1.2 + (genderW - 0.5) * 0.4
-            + (eduW - 0.5) * -0.2 + raceGenderCompound * 0.3
+        // Range: clamped to 0..10
+        j.SDO = Clamp10(5 + (-bias * 2.8 * PolWeight) + (incomeW - 0.5) * 1.2 + (genderW - 0.5) * 0.4
+            + (EduWeight - 0.5) * -0.2 + raceGenderCompound * 0.3
             + (arng.NextDouble() - 0.5) * 1.8);
 
         // Punitiveness: Political ideology × age curve × religion × implicit bias
-        j.Punitiveness = Clamp10(5 + (bias * 2.1 * polW) + (religionW - 0.5) * 1.0
+        // Range: clamped to 0..10
+        j.Punitiveness = Clamp10(5 + (bias * 2.1 * PolWeight) + (ReligionWeight - 0.5) * 1.0
             + agePunitiveCurve * 1.2 + implicitBias * 0.4
             + (arng.NextDouble() - 0.5) * 1.8);
 
         // RapeMyth acceptance: Gender × religion interaction (Burt & Albin 1981, extended research)
         // Higher religiosity + conservative gender views = higher myth acceptance
-        double genderReligionInteraction = (genderW - 0.5) * (religionW - 0.5) * 0.6;
-        j.RapeMyth = Clamp10(5 + (bias * 1.6 * polW) + (religionW - 0.5) * 1.2
-            + (eduW - 0.5) * -0.4 + genderReligionInteraction
+        // Range: clamped to 0..10
+        double genderReligionInteraction = (genderW - 0.5) * (ReligionWeight - 0.5) * 0.6;
+        j.RapeMyth = Clamp10(5 + (bias * 1.6 * PolWeight) + (ReligionWeight - 0.5) * 1.2
+            + (EduWeight - 0.5) * -0.4 + genderReligionInteraction
             + raceGenderCompound * 0.4 + (arng.NextDouble() - 0.5) * 1.8);
 
         // Religiosity: Base on religion weight + communication style + implicit bias
-        j.Religiosity = Clamp10(5 + (religionW - 0.5) * 2.0 + (commStyleW - 0.5) * 0.5
+        // Range: clamped to 0..10
+        j.Religiosity = Clamp10(5 + (ReligionWeight - 0.5) * 2.0 + (CommStyleWeight - 0.5) * 0.5
             + implicitBias * 0.2 + (arng.NextDouble() - 0.5) * 1.8);
-        j.ConservRelig = Clamp10(5 + (bias * 2.1 * religionW) + (ethnicityW - 0.5) * 0.6
-            + (religionW - 0.5) * (polW - 0.5) * 0.4 // Religion×Political conservatism interaction
+        // Conservative Religiosity: Political + religious conservatism interaction
+        // Range: clamped to 0..10
+        j.ConservRelig = Clamp10(5 + (bias * 2.1 * ReligionWeight) + (ethnicityW - 0.5) * 0.6
+            + (ReligionWeight - 0.5) * (PolWeight - 0.5) * 0.4 // Religion×Political conservatism interaction
             + (arng.NextDouble() - 0.5) * 1.8);
 
         // Polarity: Weighted by political strength and implicit bias
-        j.PolId = Clamp11(bias * 1.0 * polW + implicitBias * 0.2);
+        // Range: clamped to -1..1
+        j.PolId = Clamp11(bias * 1.0 * PolWeight + implicitBias * 0.2);
         j.HomeOwn = (agent.Occupation ?? "").ToLower().Contains("retired") ? 1 : (arng.NextDouble() < 0.5 ? 1 : 0);
         j.IncomeBand = Math.Clamp(1 + (int)Math.Floor(agent.IncomeLevel switch
         {
@@ -791,20 +845,22 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
             "Upper Class" => 4 + arng.NextDouble(),
             _ => arng.NextDouble() * 5
         }), 1, 5);
+        // Job Security: Income + professional background + legal knowledge
+        // Range: clamped to 0..10
         j.JobSecurity = Clamp10(5 + (incomeW - 0.5) * 2 + (profBgW - 0.5) * 1.0 + (legalW - 0.5) * 1.0
             + implicitBias * 0.2 + (arng.NextDouble() - 0.5) * 1.8);
         j.Union = arng.NextDouble() < (0.3 + (incomeW - 0.5) * 0.1) ? 1 : 0; // Income slightly affects union membership
 
         // --- Reliability-weighted civic engagement ---
         // More educated and experienced jurors are more likely to volunteer, donate, and be active
-        double reliabilityFactor = (eduW * 0.5 + legalW * 0.3 + experienceW * 0.2); // Weighted reliability proxy
+        double reliabilityFactor = (EduWeight * 0.5 + legalW * 0.3 + experienceW * 0.2); // Weighted reliability proxy
         j.Volunteer = Clamp10(4 + (communityW - 0.5) * 3 + (experienceW - 0.5) * 1.0
-            + (commStyleW - 0.5) * 1.0 + reliabilityFactor * 0.8 + (arng.NextDouble() - 0.5) * 1.8);
+            + (CommStyleWeight - 0.5) * 1.0 + reliabilityFactor * 0.8 + (arng.NextDouble() - 0.5) * 1.8);
         j.Donate = Clamp10(4 + (communityW - 0.5) * 2 + (legalW - 0.5) * 0.5
-            + (commStyleW - 0.5) * 0.8 + reliabilityFactor * 0.5 + (arng.NextDouble() - 0.5) * 1.8);
-        j.Activism = Clamp10(4 + (communityW - 0.5) * 2 + (polW - 0.5) * 1.8
+            + (CommStyleWeight - 0.5) * 0.8 + reliabilityFactor * 0.5 + (arng.NextDouble() - 0.5) * 1.8);
+        j.Activism = Clamp10(4 + (communityW - 0.5) * 2 + (PolWeight - 0.5) * 1.8
             + (experienceW - 0.5) * 0.8 + reliabilityFactor * 0.6 + (arng.NextDouble() - 0.5) * 1.8);
-        j.OnlinePartisan = Clamp10(5 + (commStyleW - 0.5) * 1.5 + (polW - 0.5) * 1.5
+        j.OnlinePartisan = Clamp10(5 + (CommStyleWeight - 0.5) * 1.5 + (PolWeight - 0.5) * 1.5
             + (experienceW - 0.5) * 0.5 + (arng.NextDouble() - 0.5) * 1.8);
 
         // --- Additional cognitive bias factors (research-backed) ---
@@ -812,43 +868,43 @@ private static double ComputeRigidity(ToyJurorTraits j, ToyCoefs coefs)
         // Anchoring effect size: d = 0.5-1.0 for damage awards, moderate for verdict lean
         double anchoringBase = (arng.NextDouble() * 6) + 2; // Base 2..8
         // Media exposure amplifies anchoring (exposure to numbers in news)
-        double mediaAnchoringBoost = (commStyleW - 0.5) * 1.5;
+        double mediaAnchoringBoost = (CommStyleWeight - 0.5) * 1.5;
         // Education provides some resistance to anchoring (numeracy effect)
-        double eduAnchoringResistance = (eduW - 0.5) * -1.0;
+        double eduAnchoringResistance = (EduWeight - 0.5) * -1.0;
         j.Anchoring = Clamp10(anchoringBase + mediaAnchoringBoost + eduAnchoringResistance
             + (arng.NextDouble() - 0.5) * 1.5);
 
         // Hindsight bias: Knowing the outcome makes it seem predictable (Fischhoff 1975)
         // Affected by media exposure (outcomes reported in news) and education
         double hindsightBase = (arng.NextDouble() * 5) + 2; // Base 2..7
-        j.HindsightBias = Clamp10(hindsightBase + (commStyleW - 0.5) * 2.0
-            + (eduW - 0.5) * -0.8 + (arng.NextDouble() - 0.5) * 1.5);
+        j.HindsightBias = Clamp10(hindsightBase + (CommStyleWeight - 0.5) * 2.0
+            + (EduWeight - 0.5) * -0.8 + (arng.NextDouble() - 0.5) * 1.5);
 
         // Confirmation bias: Seeking evidence that confirms initial beliefs (Nickerson 1998)
         // Stronger with higher political/religious identity strength
         double confirmBase = (arng.NextDouble() * 4) + 3; // Base 3..7
-        j.ConfirmationBias = Clamp10(confirmBase + (polW - 0.5) * 2.0
-            + (religionW - 0.5) * 1.5 + (implicitBias + 0.5) * 0.8
+        j.ConfirmationBias = Clamp10(confirmBase + (PolWeight - 0.5) * 2.0
+            + (ReligionWeight - 0.5) * 1.5 + (implicitBias + 0.5) * 0.8
             + (arng.NextDouble() - 0.5) * 1.5);
 
         // Narrative coherence: Tendency to construct and favor coherent stories (Pennington & Hastie 1992)
         // Higher with education (better narrative construction) and legal knowledge
         double narrativeBase = (arng.NextDouble() * 5) + 3; // Base 3..8
-        j.NarrativeCoherence = Clamp10(narrativeBase + (eduW - 0.5) * 1.5
-            + (legalW - 0.5) * 1.0 + (commStyleW - 0.5) * 0.8
+        j.NarrativeCoherence = Clamp10(narrativeBase + (EduWeight - 0.5) * 1.5
+            + (legalW - 0.5) * 1.0 + (CommStyleWeight - 0.5) * 0.8
             + (arng.NextDouble() - 0.5) * 1.5);
 
         // Outcome bias: Judging decision quality by outcome rather than process (Baron & Hershey 1988)
         // Stronger with hindsight bias and media exposure
         double outcomeBase = (arng.NextDouble() * 4) + 3; // Base 3..7
         j.OutcomeBias = Clamp10(outcomeBase + (j.HindsightBias - 5) * 0.4
-            + (commStyleW - 0.5) * 1.2 + (arng.NextDouble() - 0.5) * 1.5);
+            + (CommStyleWeight - 0.5) * 1.2 + (arng.NextDouble() - 0.5) * 1.5);
 
         // Social consensus bias: Perceived group agreement amplifies individual beliefs (Sunstein 2003)
         // Related to group polarization and conformity
         double consensusBase = (arng.NextDouble() * 4) + 3; // Base 3..7
         j.SocialConsensus = Clamp10(consensusBase + (communityW - 0.5) * 2.0
-            + (commStyleW - 0.5) * 1.0 + (arng.NextDouble() - 0.5) * 1.5);
+            + (CommStyleWeight - 0.5) * 1.0 + (arng.NextDouble() - 0.5) * 1.5);
 
         // Status quo bias: Preference for maintaining current lean/decision (Samuelson & Zeckhauser 1988)
         // Increases with certainty and perceived deliberation cost
