@@ -132,12 +132,24 @@ public int SierraClub;
         int maxSampleTries = 2000,
         double coherenceThreshold = 0.9,
         int? seed = null,
-        CaseMode mode = CaseMode.Civil)
+        CaseMode mode = CaseMode.Civil,
+        int evidenceIndex = 0,
+        int totalEvidenceCount = 1)
     {
         if (jurors == null || jurors.Count == 0) return;
 
         var rng = seed.HasValue ? new Random(seed.Value) : new Random();
         var coefs = BuildNeutralToyCoefs();
+
+        // ── Block 4: Temporal order-of-proof effects (Primacy/Recency) ──
+        // Early evidence anchors perception (primacy); recent evidence is fresher (recency).
+        // Mid-trial evidence decays exponentially. Opening/closing arguments naturally benefit.
+        int N = Math.Max(1, totalEvidenceCount);
+        int t = Math.Clamp(evidenceIndex, 0, N - 1);
+        double primacyAnchor = (t < (N * 0.20)) ? 1.25 : 1.0;   // Boost initial 20% of evidence
+        double recencyRetention = Math.Exp(-0.05 * (N - 1 - t));  // Exponential memory decay for aging points
+        double temporalWeight = primacyAnchor * recencyRetention;
+        double adjustedDeltaEvidence = deltaEvidence * temporalWeight;
 
         // If you provide BiasFactors, interpret them as shaping the toy trait mapping.
         // Otherwise, mapping relies only on Agent fields.
@@ -164,7 +176,7 @@ public int SierraClub;
 
             // Rigidity + evidence drift
             double lam = ComputeRigidity(traits, coefs);
-            double g2 = Clamp01(g1 + coefs.Gamma1 * deltaEvidence * (1.0 - lam));
+            double g2 = Clamp01(g1 + coefs.Gamma1 * adjustedDeltaEvidence * (1.0 - lam));
 
             // Hardness + influence weights
             double h = ComputeHardness(traits, coefs);
@@ -207,7 +219,7 @@ public int SierraClub;
 
             // Directional rigidity (Task 2): dampen only when evidence conflicts with bias profile.
             // Task 5: dynamically amplify rigidity for educated partisans facing hostile evidence.
-            double evidenceDir = Math.Sign(deltaEvidence);
+            double evidenceDir = Math.Sign(adjustedDeltaEvidence);
             bool evidenceConflicts = (evidenceDir * traits.PolId) < 0;
             if (evidenceConflicts)
             {
@@ -215,7 +227,7 @@ public int SierraClub;
                 lam = Math.Min(lam, 1.0);
             }
             double effectiveMultiplier = evidenceConflicts ? (1.0 - lam) : 1.0;
-            double g2 = Clamp01(g1 + coefs.Gamma1 * deltaEvidence * effectiveMultiplier);
+            double g2 = Clamp01(g1 + coefs.Gamma1 * adjustedDeltaEvidence * effectiveMultiplier);
 
             double h = ComputeHardness(traits, coefs);
             double w = ComputeInfluenceWeight(traits, g2, coefs);
@@ -256,15 +268,43 @@ public int SierraClub;
             if (traits == null) continue;
 
             double phi = ComputeConformity(traits, coefs);
-            double g3 = Clamp01(g2s[i] + (1.0 - hs[i]) * phi * (M - g2s[i]));
+
+            // ── Block 2: Dynamic threshold friction (psychological hardness) ──
+            // Base hardness from traits is static; real jurors experience heightened
+            // cognitive anxiety when peer pressure attempts to push them across a critical
+            // legal threshold (0.85 for criminal, 0.50 for civil). This inverse-distance
+            // function spikes resistance when on the precipice of changing their vote.
+            double baseHardness = hs[i];
+            double distanceToThreshold = Math.Abs(g2s[i] - convictionThreshold);
+            double thresholdFriction = 0.45 * Math.Exp(-15.0 * distanceToThreshold);
+            double h_i = Math.Min(baseHardness + thresholdFriction, 0.98);
+
+            // ── Stage 3: Directional deliberation with continuous target vector ──
+            // M is a weighted average of *binary* votes (V_i ∈ {0,1}), so using (M - g2s[i])
+            // as the drift delta creates a mathematical discontinuity. A juror at 0.84 lean
+            // in a split jury (M=0.50) would be pulled *downward* (−0.34), which is nonsensical
+            // when their continuous position hasn't crossed the conviction threshold.
+            //
+            // Fix: the target is directional — jurors are pulled toward the upper or lower
+            // boundary depending on which side the group majority favors.
+            double groupMajoritySide = M >= 0.50 ? 1.0 : 0.0;
+
+            double targetLeaning = groupMajoritySide == 1.0
+                ? Math.Max(convictionThreshold + 0.01, M)  // Pulling toward conviction/liability
+                : Math.Min(convictionThreshold - 0.01, M); // Pulling toward acquittal/non-liability
+
+            double g3 = Clamp01(g2s[i] + (1.0 - h_i) * phi * (targetLeaning - g2s[i]));
 
             // Verdict probability (proxy) then map to verdict lean directly.
             // Using P = logistic(theta0 + theta1*g3).
             double p = Logistic(coefs.Theta0 + coefs.Theta1 * g3);
             double verdictLean = p;
 
-            // Keep your app conventions: stay away from extremes (existing ResetTrialOpinions uses 0.2..0.8).
-            verdictLean = Math.Max(0.2, Math.Min(0.8, verdictLean));
+            // ── Block 3: Expanded clamping (0.05, 0.95) ──
+            // Criminal convictions require > 0.85; the old (0.2, 0.8) range made them
+            // mathematically impossible. Expanded boundaries clear the 0.85 threshold
+            // while maintaining soft asymptotic protection against absolute 0.0/1.0.
+            verdictLean = Math.Clamp(verdictLean, 0.05, 0.95);
 
             agent.VerdictLean = verdictLean;
             agent.Sentiment = 0.5; // optional: keep stable for now

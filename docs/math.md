@@ -59,19 +59,26 @@ g₁ = clamp(β₀ + β₁ · b, 0.0, 1.0)       [Task 3: no squashing — linea
 ### Stage 2: Evidence Drift + Rigidity → Updated Belief (g₂)
 
 ```raw
+// ── Temporal order-of-proof weighting (Block 4: Primacy/Recency effects) ──
+// t = evidence index (0-based), N = total evidence items
+primacy_anchor = (t < N × 0.20) ? 1.25 : 1.0   [boost initial 20% of evidence — anchoring effect]
+recency_retention = exp(−0.05 × (N − 1 − t))   [exponential decay for aging evidence points]
+temporal_weight = primacy_anchor × recency_retention
+Δevidence_adjusted = Δevidence_raw × temporal_weight
+
 λ = rigidity(traits) = logistic(η_intercept + Σ ηᵢ · traitᵢ)  
 
-conflicts = sign(Δevidence) × PolId < 0   [Task 2: directional — evidence conflicts with bias profile]
+conflicts = sign(Δevidence_adjusted) × PolId < 0   [Task 2: directional — evidence conflicts with bias profile]
 
 if conflicts:
     λ += edu_weight × pol_weight × 0.45   [Task 5: dynamic weaponization — educated partisans deploy
-    λ = min(λ, 1.0)                            cognitive rigidity only against hostile evidence]
-    multiplier = 1.0 - λ                       [dampen counter-evidence]
+
+    λ = min(λ, 1.0)                            cognitive rigidity only against hostile evidence]```
+
+    multiplier = 1.0 - λ                       [dampen counter-evidence]g₂ = clamp01(g₁ + γ₁ · Δevidence_adjusted · multiplier)
+
 else:
     multiplier = 1.0                           [zero resistance to aligned evidence]
-
-g₂ = clamp01(g₁ + γ₁ · Δevidence · multiplier)
-```
 
 **Current coefficients (η):**
 | Factor | Weight | Interpretation |
@@ -107,11 +114,27 @@ V_i = 1.0 if g₂ᵢ > conviction_threshold else 0.0   [Task 1: binary functiona
      threshold = 0.50 (civil, preponderance)
 
 M = Σ(wᵢ · Vᵢ) / Σ(wᵢ)              [jury consensus: weighted average of binary VOTES, not continuous lean]
-φ = conformity(traits)             [susceptibility to peer influence]
-g₃ = g₂ᵢ + (1 - hᵢ) · φ · (M - g₂ᵢ)   [deliberation update]
-P = logistic(θ₀ + θ₁ · g₃)         [verdict probability — THE ONLY logistic squashing in the pipeline]
-verdict_lean = clamp(0.2, 0.8, P)  [mapped to 0..1 range]
-```
+
+// ── Directional target vector (Block 1: resolves binary/continuous discontinuity) ──
+// M ∈ {0,1}ⁿ but g₂ᵢ ∈ [0,1] continuous — raw delta (M − g₂ᵢ) distorts near thresholds.
+// Fix: pull directionally toward conviction-side or acquittal-side boundary based on majority.
+group_majority = M >= 0.50 ? 1.0 : 0.0
+
+target = group_majority == 1.0```
+
+    ? max(threshold + 0.01, M)      [pull toward conviction/liability boundary]verdict_lean = clamp(0.05, 0.95, P)  [was (0.2, 0.8) — expanded to clear criminal beyond-reasonable-doubt]
+
+    : min(threshold − 0.01, M)      [pull toward acquittal/non-liability boundary]// ── Expanded clamping (Block 3: allows criminal convictions above 0.85) ──
+
+
+
+// ── Dynamic threshold friction (Block 2: spikes resistance near legal thresholds) ──P = logistic(θ₀ + θ₁ · g₃)         [verdict probability — THE ONLY logistic squashing in the pipeline]
+
+distance = |g₂ᵢ − threshold|g₃ = clamp01(g₂ᵢ + (1 − h_i) · φ · (target − g₂ᵢ))   [deliberation update with directional target]
+
+friction = 0.45 · exp(−15.0 · distance)φ = conformity(traits)             [susceptibility to peer influence]
+
+h_i = min(h_base + friction, 0.98)  [capped at 0.98 — just below absolute immunity]
 
 **Current coefficients (θ):**
 | Parameter | Value | Description |
@@ -125,7 +148,11 @@ verdict_lean = clamp(0.2, 0.8, P)  [mapped to 0..1 range]
 
 #### Hardness (h) — Resistance to conformity pressure: ζ coefficients
 Higher h → harder to move by jury consensus.
-h = logistic(ζ_intercept + Σ ζᵢ · traitᵢ)
+Base hardness is computed from static traits, then dynamically amplified when the juror's
+belief state approaches the legal threshold (Block 2: threshold friction).
+
+h_base = logistic(ζ_intercept + Σ ζᵢ · traitᵢ)
+h_i = min(h_base + 0.45 · exp(−15.0 · |g₂ᵢ − threshold|), 0.98)
 
 | Factor | Weight | Interpretation |
 |--------|--------|----------------|
@@ -208,10 +235,10 @@ Each juror agent has observable demographics. These are mapped to the latent tra
 | Age | 0.55 | Perspective and credibility assessment |
 | Income Level | 0.50 | Economic perspective |
 | Gender | 0.45 | Context-dependent influence |
-| Religion | 0.40 | Case-type variation |
-| Communication Style | 0.35 | Narrative influence |
 
-### 3.2 Implicit Bias
+| Religion | 0.40 | Case-type variation |### 3.2 Implicit Bias
+
+| Communication Style | 0.35 | Narrative influence |
 ```raw
 implicit_bias ~ Uniform(-0.6, 0.6) × 1.2  [negative skew]
 ```
