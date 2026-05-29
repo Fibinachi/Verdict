@@ -1,6 +1,6 @@
-﻿# Bias Factor Weight Mapping
+# Bias Factor Weight Mapping
 
-**Version**: v0.61 | Maps 12 user-facing weights to pipeline coefficients.
+**Version**: v0.75 | Maps 12 user-facing weights to pipeline coefficients.
 
 ## The 12 Weights
 

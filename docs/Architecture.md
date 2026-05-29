@@ -1,6 +1,6 @@
-﻿# Verdict Juror Opinion Engine — Architecture
+# Verdict Juror Opinion Engine — Architecture
 
-**Version**: v0.61 | **Last Updated**: 2026-05-28
+**Version**: v0.75 | **Last Updated**: 2026-05-29
 
 The engine simulates juror opinion formation through three sequential stages. All code in Services/ToyJurorLogicEngine.cs.
 

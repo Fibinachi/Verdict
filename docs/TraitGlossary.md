@@ -1,6 +1,6 @@
-﻿# Trait Glossary
+# Trait Glossary
 
-**Version**: v0.61 | Complete glossary of all latent traits.
+**Version**: v0.75 | Complete glossary of all latent traits.
 
 ## Core Psychological (0–10)
 

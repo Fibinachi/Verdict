@@ -1,6 +1,6 @@
-﻿# Verdict Juror Opinion Engine — Algorithmic Overview
+# Verdict Juror Opinion Engine — Algorithmic Overview
 
-**Version**: v0.61 | **Last Updated**: 2026-05-28
+**Version**: v0.75 | **Last Updated**: 2026-05-29
 **Audience**: Legal professionals, researchers, reviewers — no formulas.
 
 ## What This Engine Does

@@ -1,6 +1,6 @@
-﻿# Verdict Juror Opinion Engine — API Reference
+# Verdict Juror Opinion Engine — API Reference
 
-**Version**: v0.61 | **Last Updated**: 2026-05-28
+**Version**: v0.75 | **Last Updated**: 2026-05-29
 
 ## Core Engine
 

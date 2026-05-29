@@ -1,6 +1,6 @@
-﻿# Verdict Evidence Model
+# Verdict Evidence Model
 
-**Version**: v0.61 | **Last Updated**: 2026-05-28
+**Version**: v0.75 | **Last Updated**: 2026-05-29
 
 Evidence flows through a multi-layer weighting pipeline before reaching the three-stage engine.
 
@@ -19,7 +19,7 @@ Category detection: keywords for Testimony/Physical → MediaType mapping fallba
 
 ## Probative Value
 
-```
+```raw
 probative = category_base[EvidenceCategory]
 probative *= 0.5 + ReliabilityScore × 0.5
 if direct: ×1.2; if circumstantial: ×0.85

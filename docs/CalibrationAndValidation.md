@@ -1,6 +1,6 @@
-﻿# Verdict Juror Opinion Engine — Calibration & Validation Plan
+# Verdict Juror Opinion Engine — Calibration & Validation Plan
 
-**Version**: v0.61 | **Last Updated**: 2026-05-28
+**Version**: v0.75 | **Last Updated**: 2026-05-29
 **Status**: Pre-calibration — research-grounded defaults, not empirically fitted.
 
 ## Planned Datasets

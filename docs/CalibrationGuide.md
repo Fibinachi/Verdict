@@ -1,6 +1,6 @@
-﻿# Calibration Guide
+# Calibration Guide
 
-**Version**: v0.61 | Practical guide to tuning coefficients.
+**Version**: v0.75 | Practical guide to tuning coefficients.
 
 ## Quick Reference
 

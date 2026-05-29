@@ -1,6 +1,6 @@
-﻿# Verdict Trait Model
+# Verdict Trait Model
 
-**Version**: v0.61 | **Last Updated**: 2026-05-28
+**Version**: v0.75 | **Last Updated**: 2026-05-29
 
 Converts observable demographics into 50+ latent psychological traits via coherent rejection sampling.
 

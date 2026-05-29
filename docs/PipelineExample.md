@@ -1,6 +1,6 @@
-﻿# Pipeline Example — Step-by-Step Walkthrough
+# Pipeline Example — Step-by-Step Walkthrough
 
-**Version**: v0.61 | Complete worked example through all three stages.
+**Version**: v0.75 | Complete worked example through all three stages.
 
 ## Setup
 Criminal trial (armed robbery). Juror: Female, 45, White, Bachelor, Middle Class, Republican, Protestant.
