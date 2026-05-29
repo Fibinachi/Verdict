@@ -76,7 +76,7 @@ namespace Verdict.Models
             AvailableModels.Add(new AIModelConfiguration
             {
                 FriendlyName = "HF TinyLlama",
-                Provider = "Hugging Face",
+                Provider = "HF GGUF (LlamaSharp)",
                 ModelId = "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
                 Endpoint = ""
             });

@@ -16,8 +16,8 @@ namespace Verdict.Providers;
 
 public class HuggingFaceProvider : HuggingFaceModelBase
 {
-    public override string ProviderName => "Hugging Face";
-    public override string Description => "Download and run GGUF models from HuggingFace locally using LLamaSharp. No API key needed.";
+    public override string ProviderName => "HF GGUF (LlamaSharp)";
+    public override string Description => "Downloads GGUF-format models from HuggingFace for local inference via LLamaSharp. No API key needed.";
     public override string DefaultFriendlyName => "HF TinyLlama (CPU)";
 
     public override List<ProviderField> ConfigFields => new()

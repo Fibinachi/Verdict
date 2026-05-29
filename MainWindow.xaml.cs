@@ -45,6 +45,41 @@ public partial class MainWindow : Window
         this.DataContext = _viewModel;
         PopulateRecentFilesMenu();
         System.Console.WriteLine("MAINWINDOW CTOR DONE");
+
+        // Auto-resume any interrupted downloads from previous sessions
+        _ = ResumeDownloadsOnStartupAsync();
+    }
+
+    /// <summary>
+    /// Scans for incomplete downloads from previous sessions and resumes them
+    /// in the background. Shows a notification when each completes or fails.
+    /// </summary>
+    private async Task ResumeDownloadsOnStartupAsync()
+    {
+        // Brief delay to let the UI finish loading before we start
+        await Task.Delay(500);
+
+        await ModelDownloadService.ResumeAllIncompleteDownloadsAsync((modelId, success) =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (success)
+                {
+                    var shortName = modelId.Split('/').LastOrDefault() ?? modelId;
+                    TranscriptOutputAddLine($"[DOWNLOAD] Resumed: {shortName} — download complete.");
+                }
+                else
+                {
+                    var shortName = modelId.Split('/').LastOrDefault() ?? modelId;
+                    TranscriptOutputAddLine($"[DOWNLOAD] Failed to resume: {shortName}. You can retry from Model Settings.");
+                }
+            });
+        });
+    }
+
+    private void TranscriptOutputAddLine(string text)
+    {
+        _viewModel.TranscriptOutput += "\n" + text;
     }
 
     // Chat / Podium

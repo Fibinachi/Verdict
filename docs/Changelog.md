@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.71 — 2026-05-28
+
+### Download Resilience
+- **LFS stub detection**: After each file download, code checks if the result is a Git LFS pointer stub (130-byte text) instead of the real binary. Automatically retries with `/raw/main/` URL to force LFS resolution. If still a stub after retry, gives clear error instead of silently saving broken files.
+- **Auto-resume on startup**: App scans both model directories at launch for incomplete downloads (directories with `_download_manifest.json` but not valid models). Resumes each in the background with transcript panel notifications.
+- **Download manifest resume validation**: When resuming, existing files are validated — LFS stubs are deleted and re-downloaded instead of being skipped.
+- **Broken download cleanup**: Removed 6 abandoned `.tmp_*` directories (~2 GB) and 3 broken model directories (SmolLM2-135M, Qwen2.5-0.5B, Phi-3-mini) that contained only text config files without actual models.
+
+### Provider Fixes
+- **Provider naming**: Renamed to "HF GGUF (LlamaSharp)" and "HF ONNX (GenAI)" for clarity. Updated `ProviderDiscoveryService` whitelist, tests, and dialog references to match.
+- **All providers re-enabled**: OpenAI, Anthropic, Grok, Ollama, Alibaba Cloud, NVIDIA, Intel providers all reactivated (were previously commented out).
+
+### UI Improvements
+- **Download size preview**: Model size fetched from HuggingFace API and displayed (📦 813 MB) before committing to download.
+- **Windows download bar style**: Progress bar now uses green `#10893E` foreground matching Windows Explorer download style, not system accent color.
+- **Button spacing fix**: Delete/Download/Browse/Save buttons re-spaced to prevent overlap at narrow window widths.
+
+### Bug Fixes
+- Fixed `isDownloadable` variable scope error in `ModelDetailsDialog.LoadModels_Click`
+- Fixed `CS1998` async warning in `DownloadInBackgroundAsync`
+- Fixed build errors from provider name mismatches in tests
+
+### Test Suite
+- 674 tests passing, 0 failures, build clean
+
 ## v0.70 — 2026-05-28
 
 ### Default Scenarios

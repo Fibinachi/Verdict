@@ -382,8 +382,8 @@ public class ServiceTests : BaseTestClass
             Assert(defaults.Jurisdiction == JurisdictionType.State, "Default jurisdiction is State");
             Assert(defaults.JurorCount == 12, "Default juror count is 12");
             Assert(defaults.AvailableModels.Count >= 2, "Default settings has at least ONNX + HuggingFace models");
-            Assert(defaults.AvailableModels.Any(m => m.Provider == "ONNX"), "ONNX in default models");
-            Assert(defaults.AvailableModels.Any(m => m.Provider == "Hugging Face"), "HuggingFace in default models");
+            Assert(defaults.AvailableModels.Any(m => m.Provider == "HF ONNX (GenAI)"), "ONNX in default models");
+            Assert(defaults.AvailableModels.Any(m => m.Provider == "HF GGUF (LlamaSharp)"), "HuggingFace in default models");
 
             // 2. Save custom models and verify they persist
             defaults.AvailableModels.Clear();

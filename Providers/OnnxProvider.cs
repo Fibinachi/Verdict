@@ -25,8 +25,8 @@ public class OnnxProvider : HuggingFaceModelBase
         _downloadService = downloadService;
     }
 
-    public override string ProviderName => "ONNX";
-    public override string Description => "Run LLM models locally using ONNX Runtime. Search and download models from HuggingFace, or use local ONNX model files.";
+    public override string ProviderName => "HF ONNX (GenAI)";
+    public override string Description => "Downloads ONNX-format models from HuggingFace for local inference via OnnxRuntimeGenAI. Requires genai_config.json.";
     public override string DefaultFriendlyName => "Local ONNX Model";
 
     public override List<ProviderField> ConfigFields => new()
@@ -34,7 +34,7 @@ public class OnnxProvider : HuggingFaceModelBase
         new ProviderField
         {
             Key = "ModelId",
-            Label = "HF Model ID or Local Path",
+            Label = "HF ONNX Model ID",
             Description = "Recommended: 'llmware/llama-3.2-1b-instruct-onnx' (1.8GB) or 'onnx-community/Phi-4-mini-instruct-onnx' (2.5GB INT4). Also: local path to model directory.",
             DefaultValue = ""
         },

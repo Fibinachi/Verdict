@@ -284,8 +284,8 @@ public class ModelTests : BaseTestClass
         // Calling AddDefaultModels adds ONNX + HuggingFace (always) plus any with API keys
         cf.AddDefaultModels();
         Assert(cf.AvailableModels.Count >= 2, "AddDefaultModels adds at least ONNX + HuggingFace models");
-        Assert(cf.AvailableModels.Any(m => m.Provider == "ONNX"), "ONNX provider included in defaults");
-        Assert(cf.AvailableModels.Any(m => m.Provider == "Hugging Face"), "HuggingFace provider included in defaults");
+        Assert(cf.AvailableModels.Any(m => m.Provider == "HF ONNX (GenAI)"), "ONNX provider included in defaults");
+        Assert(cf.AvailableModels.Any(m => m.Provider == "HF GGUF (LlamaSharp)"), "HuggingFace provider included in defaults");
 
         // Calling AddDefaultModels again should NOT duplicate
         var countAfterFirst = cf.AvailableModels.Count;

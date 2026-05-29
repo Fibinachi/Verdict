@@ -17,16 +17,15 @@ public class ProviderDiscoveryService
     {
         "DeepSeek",
         "Google Gemini",
-        "ONNX",
-        "Hugging Face",
-        // "OpenAI",          // deactivated - re-add to enable
-        // "Anthropic",       // deactivated - re-add to enable
-        // "Grok",            // deactivated - re-add to enable
-        // "Alibaba Cloud",   // deactivated - re-add to enable
-        // "Ollama",          // deactivated - re-add to enable
-        // "Hugging Face",    // deactivated - re-add to enable
-        // "NVIDIA",          // deactivated - re-add to enable
-        // "Intel",           // deactivated - re-add to enable
+        "HF ONNX (GenAI)",
+        "HF GGUF (LlamaSharp)",
+        "OpenAI",
+        "Anthropic",
+        "Grok",
+        "Alibaba Cloud",
+        "Ollama",
+        "NVIDIA",
+        "Intel",
     };
 
     private static List<ILLMProviderModule>? _providers;

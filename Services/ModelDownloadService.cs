@@ -64,6 +64,9 @@ namespace Verdict.Services
         /// <summary>Min file size for a real .onnx model (not an LFS stub).</summary>
         private const long MinOnnxModelBytes = 50_000_000; // 50 MB — real ONNX models are always >50MB
 
+        /// <summary>Manifest file recording completed downloads for resumability.</summary>
+        private const string DownloadManifestFile = "_download_manifest.json";
+
         /// <summary>
         /// Detects if a file is a Git LFS pointer stub (small text file pointing to the real binary).
         /// LFS stubs start with "version https://git-lfs.github.com".
@@ -248,6 +251,24 @@ namespace Verdict.Services
             long totalBytesDownloaded = 0;
             var failedFiles = new List<string>();
 
+            // Load download manifest for resumability
+            var manifestPath = Path.Combine(destinationDir, DownloadManifestFile);
+            var completedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (File.Exists(manifestPath))
+            {
+                try
+                {
+                    var manifestJson = await File.ReadAllTextAsync(manifestPath, ct);
+                    var manifest = JsonSerializer.Deserialize<DownloadManifest>(manifestJson);
+                    if (manifest?.ModelId == modelId && manifest.CompletedFiles != null)
+                    {
+                        foreach (var f in manifest.CompletedFiles)
+                            completedFiles.Add(f);
+                    }
+                }
+                catch { /* corrupted manifest — restart download */ }
+            }
+
             for (int i = 0; i < modelInfo.FileList.Count; i++)
             {
                 ct.ThrowIfCancellationRequested();
@@ -260,27 +281,34 @@ namespace Verdict.Services
                 if (!string.IsNullOrEmpty(destDir))
                     Directory.CreateDirectory(destDir);
 
-                // Resume: skip files that already exist and are substantial.
-                // .onnx/.onnx_data files: must be >= MinOnnxModelBytes (50MB) — not LFS stubs,
-                //   not partial downloads. This matches IsValidModelDirectory validation.
-                // Config/tokenizer files: must be > 100 bytes.
-                if (File.Exists(destPath))
+                // Resume: skip files already recorded as complete in the manifest.
+                // Without manifest confirmation, even large files could be partial downloads.
+                if (completedFiles.Contains(filename))
                 {
-                    var existingSize = new FileInfo(destPath).Length;
-                    bool isOnnxFile = filename.EndsWith(".onnx", StringComparison.OrdinalIgnoreCase)
-                        || filename.EndsWith(".onnx_data", StringComparison.OrdinalIgnoreCase);
-                    bool isOnnxStub = isOnnxFile && (existingSize < MinOnnxModelBytes || IsLfsPointerStub(destPath));
-                    bool isTinyConfig = !isOnnxFile && existingSize < 100;
-                    if (!isOnnxStub && !isTinyConfig)
+                    // Validate that the existing file isn't an LFS pointer stub
+                    if (File.Exists(destPath) && IsLfsPointerStub(destPath))
                     {
+                        // LFS stub — delete and re-download
+                        System.Diagnostics.Debug.WriteLine($"Existing file {filename} is LFS stub, re-downloading...");
+                        try { File.Delete(destPath); } catch { }
+                        completedFiles.Remove(filename);
+                        // Fall through to normal download below
+                    }
+                    else
+                    {
+                        var existingSize = File.Exists(destPath) ? new FileInfo(destPath).Length : 0;
                         totalBytesDownloaded += existingSize;
-                        progress.BytesDownloaded = totalBytesDownloaded;
                         progress.FilesCompleted = i + 1;
-                        progress.CurrentFile = $"Skipped: {filename}";
+                        progress.BytesDownloaded = totalBytesDownloaded;
+                        progress.CurrentFile = $"Resumed: {filename}";
                         onProgress?.Invoke(progress);
                         continue;
                     }
-                    // Delete stub/tiny/partial file before re-downloading
+                }
+
+                // Clean up any partial/stub file from a prior interrupted download
+                if (File.Exists(destPath))
+                {
                     try { File.Delete(destPath); } catch { }
                 }
 
@@ -326,6 +354,35 @@ namespace Verdict.Services
                     onProgress?.Invoke(progress);
 
                     await fileStream.FlushAsync(ct);
+
+                    // Validate: if we got an LFS pointer stub instead of the real file,
+                    // retry using the raw URL (which forces LFS resolution)
+                    if (IsLfsPointerStub(destPath))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"LFS stub detected for {filename}, retrying with raw URL...");
+                        try { File.Delete(destPath); } catch { }
+
+                        // Retry with the raw content URL (bypasses LFS pointer caching)
+                        var rawUrl = $"https://huggingface.co/{modelId}/raw/main/{filename}";
+                        using var retryResponse = await _downloadClient.GetAsync(rawUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+                        retryResponse.EnsureSuccessStatusCode();
+
+                        await using var retryStream = await retryResponse.Content.ReadAsStreamAsync(ct);
+                        await using var retryFileStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+                        await retryStream.CopyToAsync(retryFileStream, ct);
+                        await retryFileStream.FlushAsync(ct);
+
+                        // If it's STILL a stub, give up on this file
+                        if (IsLfsPointerStub(destPath))
+                        {
+                            try { File.Delete(destPath); } catch { }
+                            throw new Exception($"File {filename} could not be resolved from Git LFS. The model may require HuggingFace authentication.");
+                        }
+                    }
+
+                    // Record this file as complete in the download manifest
+                    completedFiles.Add(filename);
+                    await SaveDownloadManifestAsync(manifestPath, modelId, completedFiles);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -372,7 +429,24 @@ namespace Verdict.Services
         {
             if (!Directory.Exists(directoryPath)) return false;
 
-            // Check top-level first
+            // If a manifest exists, trust it: only valid if all files are recorded complete
+            var manifestPath = Path.Combine(directoryPath, DownloadManifestFile);
+            if (File.Exists(manifestPath))
+            {
+                try
+                {
+                    var manifestJson = File.ReadAllText(manifestPath);
+                    var manifest = JsonSerializer.Deserialize<DownloadManifest>(manifestJson);
+                    if (manifest?.CompletedFiles != null && manifest.CompletedFiles.Count > 0)
+                    {
+                        // Model is valid if the manifest exists and at least the critical files are present
+                        return HasOnnxModelFilesInManifest(directoryPath, manifest);
+                    }
+                }
+                catch { /* corrupted manifest — fall through to file-based check */ }
+            }
+
+            // No manifest: fall back to file-based validation (legacy/manual models)
             if (HasOnnxModelFiles(directoryPath)) return true;
 
             // Search one level deep for model subdirectories (cpu_and_mobile/*, gpu/*, etc.)
@@ -380,7 +454,6 @@ namespace Verdict.Services
             {
                 if (HasOnnxModelFiles(subDir)) return true;
 
-                // Search second level (e.g., cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4/)
                 foreach (var nestedDir in Directory.GetDirectories(subDir))
                 {
                     if (HasOnnxModelFiles(nestedDir)) return true;
@@ -436,6 +509,28 @@ namespace Verdict.Services
         }
 
         /// <summary>
+        /// Validates a model using the download manifest: checks that critical ONNX files
+        /// listed in the manifest actually exist on disk with expected sizes.
+        /// </summary>
+        private static bool HasOnnxModelFilesInManifest(string directoryPath, DownloadManifest manifest)
+        {
+            if (!File.Exists(Path.Combine(directoryPath, GenaiConfigFile)))
+                return false;
+
+            var criticalExtensions = new[] { ".onnx", ".onnx_data" };
+            foreach (var file in manifest.CompletedFiles)
+            {
+                if (criticalExtensions.Any(ext => file.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var path = Path.Combine(directoryPath, file);
+                    if (File.Exists(path) && new FileInfo(path).Length >= MinOnnxModelBytes)
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Scans a directory for subdirectories containing ONNX models.
         /// </summary>
         public static List<string> ScanForModels(string rootDirectory)
@@ -447,5 +542,122 @@ namespace Verdict.Services
                 .Select(dir => new DirectoryInfo(dir).Name)
                 .ToList();
         }
+
+        /// <summary>
+        /// Persists the download manifest so interrupted downloads can resume.
+        /// </summary>
+        private static async Task SaveDownloadManifestAsync(string manifestPath, string modelId, HashSet<string> completedFiles)
+        {
+            var manifest = new DownloadManifest
+            {
+                ModelId = modelId,
+                CompletedFiles = completedFiles.ToList(),
+                LastUpdated = DateTime.UtcNow
+            };
+            var json = JsonSerializer.Serialize(manifest);
+            await File.WriteAllTextAsync(manifestPath, json);
+        }
+
+        /// <summary>
+        /// Scans all known model directories for incomplete downloads that have a manifest
+        /// but aren't yet valid complete models. Returns tuples of (modelId, directoryPath).
+        /// </summary>
+        public static List<IncompleteDownload> GetIncompleteDownloads()
+        {
+            var results = new List<IncompleteDownload>();
+
+            // Scan both ONNX and GGUF model roots
+            var modelRoots = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Verdict", "Models"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "models")
+            };
+
+            foreach (var root in modelRoots)
+            {
+                if (!Directory.Exists(root)) continue;
+
+                foreach (var dir in Directory.GetDirectories(root))
+                {
+                    var manifestPath = Path.Combine(dir, DownloadManifestFile);
+                    if (!File.Exists(manifestPath)) continue;
+
+                    // Skip already-valid directories
+                    if (IsValidModelDirectory(dir)) continue;
+
+                    // Try to read the manifest to get the modelId
+                    string? modelId = null;
+                    int completedCount = 0;
+                    try
+                    {
+                        var json = File.ReadAllText(manifestPath);
+                        var manifest = JsonSerializer.Deserialize<DownloadManifest>(json);
+                        modelId = manifest?.ModelId;
+                        completedCount = manifest?.CompletedFiles?.Count ?? 0;
+                    }
+                    catch { /* corrupted manifest */ }
+
+                    if (!string.IsNullOrWhiteSpace(modelId) && modelId.Contains("/"))
+                    {
+                        results.Add(new IncompleteDownload
+                        {
+                            ModelId = modelId,
+                            DirectoryPath = dir,
+                            CompletedFileCount = completedCount
+                        });
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Resumes all incomplete downloads found across model directories.
+        /// Fires and forgets — reports completion via the provided callback.
+        /// </summary>
+        public static async Task ResumeAllIncompleteDownloadsAsync(Action<string, bool>? onComplete = null)
+        {
+            var incomplete = GetIncompleteDownloads();
+            if (incomplete.Count == 0) return;
+
+            var service = new ModelDownloadService();
+
+            foreach (var download in incomplete)
+            {
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Auto-Resume] Resuming download: {download.ModelId} ({download.CompletedFileCount} files already done)");
+                    await service.DownloadModelAsync(download.ModelId, download.DirectoryPath);
+                    onComplete?.Invoke(download.ModelId, true);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Auto-Resume] Failed to resume {download.ModelId}: {ex.Message}");
+                    onComplete?.Invoke(download.ModelId, false);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Represents an interrupted/incomplete model download that can be resumed.
+    /// </summary>
+    public class IncompleteDownload
+    {
+        public string ModelId { get; set; } = string.Empty;
+        public string DirectoryPath { get; set; } = string.Empty;
+        public int CompletedFileCount { get; set; }
+    }
+
+    /// <summary>
+    /// Tracks which files have been fully downloaded for a given model,
+    /// enabling interrupted downloads to resume without re-downloading completed files.
+    /// </summary>
+    internal class DownloadManifest
+    {
+        public string ModelId { get; set; } = string.Empty;
+        public List<string> CompletedFiles { get; set; } = new();
+        public DateTime LastUpdated { get; set; }
     }
 }

@@ -48,7 +48,7 @@ public class ProviderTests : BaseTestClass
         Assert(providers.Count > 0, "GetAvailableProviders returns at least one provider");
 
         // Check that OnnxProvider is discovered
-        var onnxProvider = providers.FirstOrDefault(p => p.ProviderName == "ONNX");
+        var onnxProvider = providers.FirstOrDefault(p => p.ProviderName == "HF ONNX (GenAI)");
         Assert(onnxProvider != null, "ProviderDiscoveryService discovers OnnxProvider");
         Assert(onnxProvider is OnnxProvider, "Discovered ONNX provider is OnnxProvider type");
 
@@ -73,7 +73,7 @@ public class ProviderTests : BaseTestClass
 
         var provider = new OnnxProvider();
 
-        Assert(provider.ProviderName == "ONNX", "OnnxProvider.ProviderName is 'ONNX'");
+        Assert(provider.ProviderName == "HF ONNX (GenAI)", "OnnxProvider.ProviderName is 'HF ONNX (GenAI)'");
         Assert(provider.Description.Contains("ONNX Runtime"), "OnnxProvider.Description mentions ONNX Runtime");
         Assert(provider.DefaultFriendlyName == "Local ONNX Model", "OnnxProvider.DefaultFriendlyName is 'Local ONNX Model'");
 
@@ -497,13 +497,13 @@ public class ProviderTests : BaseTestClass
             }
 
             // ── ONNX auto-download: if no model configured, download llama-3.2-1b-instruct-onnx ──
-            if (!canTest && !needsApiKey && provider.ProviderName == "ONNX")
+            if (!canTest && !needsApiKey && provider.ProviderName == "HF ONNX (GenAI)")
             {
                 canTest = TryAutoDownloadOnnxTestModel(config);
             }
 
             // ── HuggingFace auto-download: if no model configured, download TinyLlama GGUF ──
-            if (!canTest && !needsApiKey && provider.ProviderName == "Hugging Face")
+            if (!canTest && !needsApiKey && provider.ProviderName == "HF GGUF (LlamaSharp)")
             {
                 canTest = TryAutoDownloadHfTestModel(config);
             }
@@ -593,7 +593,7 @@ public class ProviderTests : BaseTestClass
 
         var provider = new HuggingFaceProvider();
 
-        Assert(provider.ProviderName == "Hugging Face", "HuggingFaceProvider.ProviderName is 'Hugging Face'");
+        Assert(provider.ProviderName == "HF GGUF (LlamaSharp)", "HuggingFaceProvider.ProviderName is 'HF GGUF (LlamaSharp)'");
         Assert(provider.Description.Contains("GGUF"), "HuggingFaceProvider.Description mentions GGUF");
         Assert(provider.Description.Contains("LLamaSharp"), "HuggingFaceProvider.Description mentions LLamaSharp");
         Assert(provider.DefaultFriendlyName == "HF TinyLlama (CPU)", "HuggingFaceProvider.DefaultFriendlyName is 'HF TinyLlama (CPU)'");
@@ -620,11 +620,11 @@ public class ProviderTests : BaseTestClass
         Console.WriteLine("\n─── HuggingFaceProvider Discovery ───");
 
         var providers = ProviderDiscoveryService.GetAvailableProviders();
-        var hfProvider = providers.FirstOrDefault(p => p.ProviderName == "Hugging Face");
+        var hfProvider = providers.FirstOrDefault(p => p.ProviderName == "HF GGUF (LlamaSharp)");
         Assert(hfProvider != null, "HuggingFaceProvider is in active providers");
         Assert(hfProvider is HuggingFaceProvider, "Discovered HF provider is HuggingFaceProvider type");
 
-        var byName = ProviderDiscoveryService.GetProviderByName("Hugging Face");
+        var byName = ProviderDiscoveryService.GetProviderByName("HF GGUF (LlamaSharp)");
         Assert(byName != null, "GetProviderByName(\"Hugging Face\") returns provider");
         Assert(byName is HuggingFaceProvider, "GetProviderByName returns HuggingFaceProvider instance");
     }

@@ -31,7 +31,7 @@ public partial class ModelDetailsDialog : Window
         private void UpdateApiKeyLink()
         {
             // Set the API key URL based on the provider
-            if (_module.ProviderName == "Hugging Face")
+            if (_module.ProviderName == "HF GGUF (LlamaSharp)")
             {
                 ApiKeyLink.NavigateUri = null;
                 ApiKeyLink.Inlines.Clear();
@@ -45,7 +45,7 @@ public partial class ModelDetailsDialog : Window
                 "Anthropic" => "https://console.anthropic.com/api-keys",
                 "Google Gemini" => "https://aistudio.google.com/app/apikey",
                 "Ollama" => "https://ollama.com/download",
-                "Hugging Face" => "https://huggingface.co/settings/tokens",
+                "HF GGUF (LlamaSharp)" => "https://huggingface.co/settings/tokens",
                 "Alibaba Cloud" => "https://dashscope.console.aliyun.com",
                 "NVIDIA" => "https://build.nvidia.com",
                 "Intel" => "https://vault.habana.ai",
@@ -59,7 +59,7 @@ public partial class ModelDetailsDialog : Window
     private void UpdateDownloadButtonVisibility()
     {
         bool isHfModel = !string.IsNullOrWhiteSpace(Model.ModelId) && Model.ModelId.Contains("/");
-        bool isDownloadable = _module.ProviderName == "Hugging Face" || _module.ProviderName == "ONNX";
+        bool isDownloadable = _module.ProviderName == "HF GGUF (LlamaSharp)" || _module.ProviderName == "HF ONNX (GenAI)";
         DownloadButton.Visibility = (isHfModel && isDownloadable) ? Visibility.Visible : Visibility.Collapsed;
         DeleteModelButton.Visibility = (isHfModel && isDownloadable) ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -69,10 +69,13 @@ public partial class ModelDetailsDialog : Window
         var modelId = Model.ModelId?.Trim();
         if (string.IsNullOrWhiteSpace(modelId) || !modelId.Contains("/")) return;
 
-        // Determine the local model directory
-        string modelsRoot = string.IsNullOrWhiteSpace(Model.Endpoint)
-            ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Verdict", "Models")
-            : Model.Endpoint;
+        // Determine the correct local model directory based on provider
+        string modelsRoot = !string.IsNullOrWhiteSpace(Model.Endpoint)
+            ? Model.Endpoint
+            : _module.ProviderName == "HF GGUF (LlamaSharp)"
+                ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "models")
+                : System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Verdict", "Models");
+
         string folderName = modelId.Split('/').Last();
         foreach (var c in System.IO.Path.GetInvalidFileNameChars())
             folderName = folderName.Replace(c, '_');
@@ -80,15 +83,41 @@ public partial class ModelDetailsDialog : Window
 
         if (!System.IO.Directory.Exists(modelDir))
         {
-            MessageBox.Show($"No local model files found at:\n{modelDir}", "Nothing to Delete", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
+            // Also check in the other possible location
+            string altRoot = _module.ProviderName == "HF GGUF (LlamaSharp)"
+                ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Verdict", "Models")
+                : System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "models");
+            string altDir = System.IO.Path.Combine(altRoot, folderName);
+            
+            if (!System.IO.Directory.Exists(altDir))
+            {
+                MessageBox.Show($"No local model files found.\n\nChecked:\n  {modelDir}\n  {altDir}", "Nothing to Delete", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            modelDir = altDir;
         }
 
+        // Show size of what's being deleted
+        long totalSize = 0;
+        try
+        {
+            totalSize = System.IO.Directory.GetFiles(modelDir, "*", System.IO.SearchOption.AllDirectories)
+                .Sum(f => new System.IO.FileInfo(f).Length);
+        }
+        catch { }
+
+        string sizeStr = totalSize > 0
+            ? totalSize >= 1_000_000_000 ? $"{totalSize / 1_000_000_000.0:F1} GB"
+            : totalSize >= 1_000_000 ? $"{totalSize / 1_000_000.0:F1} MB"
+            : $"{totalSize / 1024.0:F0} KB"
+            : "unknown size";
+
         var result = MessageBox.Show(
-            $"Delete all downloaded model files for '{modelId}'?\n\nThis will remove:\n{modelDir}\n\nYou can re-download afterwards.",
+            $"Delete '{modelId}'?\n\nSize: {sizeStr}\nPath: {modelDir}\n\nYou can re-download later.",
             "Delete Local Model",
             MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
+            MessageBoxImage.Warning,
+            MessageBoxResult.No);
 
         if (result == MessageBoxResult.Yes)
         {
@@ -97,7 +126,7 @@ public partial class ModelDetailsDialog : Window
                 System.IO.Directory.Delete(modelDir, recursive: true);
 
                 // Clear the model cache so deleted models don't show as ghosts
-                var cacheFile = System.IO.Path.Combine(modelsRoot, _module.ProviderName == "ONNX"
+                var cacheFile = System.IO.Path.Combine(modelsRoot, _module.ProviderName == "HF ONNX (GenAI)"
                     ? "onnx_model_cache.json"
                     : "huggingface_model_cache.json");
                 if (System.IO.File.Exists(cacheFile))
@@ -105,7 +134,7 @@ public partial class ModelDetailsDialog : Window
                     try { System.IO.File.Delete(cacheFile); } catch { /* best effort */ }
                 }
 
-                Model.Status = "Model files deleted";
+                Model.Status = $"Deleted ({sizeStr})";
             }
             catch (Exception ex)
             {
@@ -119,20 +148,38 @@ public partial class ModelDetailsDialog : Window
     {
         DownloadButton.IsEnabled = false;
         DownloadButton.Content = "Downloading...";
+        
+        // Fire-and-forget: download in background, notify when done
+        _ = DownloadInBackgroundAsync();
+    }
+
+    private async Task DownloadInBackgroundAsync()
+    {
         try
         {
             await DownloadSelectedModelAsync();
-            Model.Status = "Ready - download complete";
+            // Success notification on UI thread
+            await Dispatcher.InvokeAsync(() =>
+            {
+                Model.Status = "Ready - download complete";
+                DownloadButton.IsEnabled = true;
+                DownloadButton.Content = "Download";
+                MessageBox.Show(
+                    $"Model '{Model.ModelId}' downloaded successfully.",
+                    "Download Complete",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            });
         }
         catch (Exception ex)
         {
-            ShowError($"Download failed: {ex.Message}");
-            Model.Status = "Download failed";
-        }
-        finally
-        {
-            DownloadButton.IsEnabled = true;
-            DownloadButton.Content = "Download";
+            await Dispatcher.InvokeAsync(() =>
+            {
+                ShowError($"Download failed: {ex.Message}");
+                Model.Status = "Download failed";
+                DownloadButton.IsEnabled = true;
+                DownloadButton.Content = "Download";
+            });
         }
     }
 
@@ -143,7 +190,7 @@ public partial class ModelDetailsDialog : Window
             _module.ProviderName == "OpenAI" || _module.ProviderName == "Anthropic" ||
             _module.ProviderName == "DeepSeek" || _module.ProviderName == "Alibaba Cloud" ||
             _module.ProviderName == "NVIDIA" || _module.ProviderName == "Intel" ||
-            _module.ProviderName == "Hugging Face" || _module.ProviderName == "ONNX" ||
+            _module.ProviderName == "HF GGUF (LlamaSharp)" || _module.ProviderName == "HF ONNX (GenAI)" ||
             _module.ProviderName == "Ollama")
         {
             LoadModelsButton.Visibility = Visibility.Visible;
@@ -253,7 +300,7 @@ public partial class ModelDetailsDialog : Window
     private async void LoadModels_Click(object sender, RoutedEventArgs e)
     {
         // Only validate API key for providers that need it (ONNX and HuggingFace download from HF with no key)
-        if (_module.ProviderName != "Hugging Face" && _module.ProviderName != "ONNX" && string.IsNullOrWhiteSpace(Model.ApiKey))
+        if (_module.ProviderName != "HF GGUF (LlamaSharp)" && _module.ProviderName != "HF ONNX (GenAI)" && string.IsNullOrWhiteSpace(Model.ApiKey))
         {
             MessageBox.Show("Please enter your API key first.", "API Key Required", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -299,6 +346,11 @@ public partial class ModelDetailsDialog : Window
 
             // Show Download button if a HF model ID was selected
             UpdateDownloadButtonVisibility();
+
+            // Fetch and display the download size
+            bool isDownloadable = _module.ProviderName == "HF GGUF (LlamaSharp)" || _module.ProviderName == "HF ONNX (GenAI)";
+            if (isDownloadable)
+                _ = FetchAndDisplayModelSizeAsync();
         }
         catch (Exception ex)
         {
@@ -308,6 +360,55 @@ public partial class ModelDetailsDialog : Window
         finally
         {
             LoadingOverlay.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    /// <summary>
+    /// Fetches the total download size from HuggingFace for the current model ID
+    /// and displays it next to the Download button.
+    /// </summary>
+    private async Task FetchAndDisplayModelSizeAsync()
+    {
+        var modelId = Model.ModelId?.Trim();
+        if (string.IsNullOrWhiteSpace(modelId) || !modelId.Contains("/")) return;
+
+        try
+        {
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            http.DefaultRequestHeaders.Add("User-Agent", "Verdict/1.0");
+            var url = $"https://huggingface.co/api/models/{Uri.EscapeDataString(modelId)}";
+            var json = await http.GetStringAsync(url);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+            long totalSize = 0;
+            if (doc.RootElement.TryGetProperty("siblings", out var siblings))
+            {
+                foreach (var file in siblings.EnumerateArray())
+                {
+                    if (file.TryGetProperty("size", out var sz))
+                        totalSize += sz.GetInt64();
+                }
+            }
+
+            if (totalSize > 0)
+            {
+                string sizeStr = totalSize >= 1_000_000_000
+                    ? $"{totalSize / 1_000_000_000.0:F1} GB"
+                    : totalSize >= 1_000_000
+                        ? $"{totalSize / 1_000_000.0:F1} MB"
+                        : $"{totalSize / 1024.0:F0} KB";
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    DownloadSizePreview.Text = $"📦 {sizeStr}";
+                    DownloadSizePreview.Visibility = Visibility.Visible;
+                    DownloadProgressSection.Visibility = Visibility.Visible;
+                });
+            }
+        }
+        catch
+        {
+            // Silently fail — size is a nice-to-have, not critical
         }
     }
 

@@ -11,8 +11,10 @@
 - **LegalMind Features**: All 5 phases fully integrated
 
 ## Recent Changes (May 2026)
+- **2026-05-28 (v0.71)**: Download resilience overhaul — LFS stub auto-detection with `/raw/main/` retry, auto-resume of interrupted downloads on startup, manifest-based resume validation, download size preview before committing. Provider naming clarified ("HF GGUF (LlamaSharp)", "HF ONNX (GenAI)"), all 11 providers re-enabled. Green Windows-style download progress bar. Cleaned 2 GB of abandoned `.tmp_*` directories and 3 broken model directories. 674 tests passing, 0 failures.
+- **2026-05-28 (v0.70)**: UI layout overhaul — side columns narrowed 360→240px, court record panel proportional height, bench spacing 24px, input centered with MaxWidth=900, status bar phase-aware. All 7 default cases now have 8 fully-themed agents (Judge, Reporter, Lawyers, Observers). HF search filters to genai_config.json-compatible ONNX models. External-data `.onnx_data` models supported. llama-3.2-1b-instruct-onnx downloaded. 674 tests passing, 0 failures.
 - **2026-05-27**: Added `BurdenOfProof` service with mode-aware conviction thresholds. Criminal cases now require lean > 0.85 (beyond reasonable doubt) for guilty; jurors at 0.50–0.85 have "reasonable doubt" and vote not guilty. Civil cases unchanged at > 0.50 preponderance. Fixed hung-jury detection: unanimous-side vote now correctly returns a verdict regardless of lean spread. Fixed deliberation prompt to align LLM text with lean values.
-- **2026-05-26**: Factored `Agent.cs` into composable sub-objects (`AgentDemographics`, `BiasDimensionWeights`, `AgentModelOverrides`). Extracted `MemoryDecayService` for progressive memory fuzzification. Added 4 new test suites (577 total tests, all passing).
+- **2026-05-26**: Factored `Agent.cs` into composable sub-objects (`AgentDemographics`, `BiasDimensionWeights`, `AgentModelOverrides`). Extracted `MemoryDecayService` for progressive memory fuzzification. Added 4 new test suites.
 
 ## What's Left to Build
 - **UCMJ Courts-Martial Venue** (deferred to later version — see TODO.md)

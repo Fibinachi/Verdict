@@ -44,20 +44,23 @@
             
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="DeleteModelButton" Content="Delete Local" Click="DeleteModel_Click" 
-                        Width="80" Margin="0,0,6,0" Visibility="Collapsed" ToolTip="Delete downloaded model files to free space or fix partial downloads."/>
+                        Width="90" Margin="0,0,10,0" Padding="6,4" Visibility="Collapsed" ToolTip="Delete downloaded model files to free space or fix partial downloads."/>
                 <Button x:Name="DownloadButton" Content="Download" Click="Download_Click" 
-                        Width="80" Margin="0,0,6,0" Visibility="Collapsed"/>
+                        Width="90" Margin="0,0,10,0" Padding="6,4" Visibility="Collapsed"/>
                 <Button x:Name="LoadModelsButton" Content="Browse..." Click="LoadModels_Click" 
-                        Width="70" Margin="0,0,6,0" Visibility="Collapsed"/>
-                <Button Content="Save" Click="Save_Click" Width="60" IsDefault="True"/>
+                        Width="75" Margin="0,0,10,0" Padding="6,4" Visibility="Collapsed"/>
+                <Button Content="Save" Click="Save_Click" Width="65" Padding="6,4" IsDefault="True"/>
             </StackPanel>
         </Grid>
         
-        <!-- Download progress section -->
+        <!-- Download size preview & progress section -->
         <Border Grid.Row="4" x:Name="DownloadProgressSection" Visibility="Collapsed" Margin="0,8,0,0" Padding="8" BorderBrush="#FF4CAF50" BorderThickness="1" CornerRadius="4">
             <StackPanel>
-                <TextBlock x:Name="DownloadStatusText" Text="Downloading model..." Margin="0,0,0,4" FontSize="12"/>
-                <ProgressBar x:Name="DownloadProgressBar" Height="20" Minimum="0" Maximum="100" Value="0"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock x:Name="DownloadSizePreview" Text="" FontSize="12" FontWeight="SemiBold" Foreground="#E67E22" Visibility="Collapsed"/>
+                    <TextBlock x:Name="DownloadStatusText" Text="Downloading model..." FontSize="12" Margin="8,0,0,0"/>
+                </StackPanel>
+                <ProgressBar x:Name="DownloadProgressBar" Height="20" Minimum="0" Maximum="100" Value="0" Foreground="#FF10893E" Background="#FFE0E0E0"/>
                 <TextBlock x:Name="DownloadFileText" Text="" Margin="0,4,0,0" FontSize="11" Foreground="Gray"/>
             </StackPanel>
         </Border>

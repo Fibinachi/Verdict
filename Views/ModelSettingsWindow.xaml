@@ -59,7 +59,25 @@
                         <DataTemplate>
                             <StackPanel>
                                 <TextBlock Text="{Binding FriendlyName}" FontWeight="Bold"/>
-                                <TextBlock Text="{Binding Provider}" FontSize="10" Foreground="Gray"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Provider}" FontSize="10" Foreground="Gray"/>
+                                    <Border CornerRadius="3" Padding="3,1" Margin="5,0,0,0" Background="#34495E">
+                                        <TextBlock FontSize="8" Foreground="#BDC3C7">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Provider}" Value="HF GGUF (LlamaSharp)">
+                                                            <Setter Property="Text" Value="GGUF"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Provider}" Value="HF ONNX (GenAI)">
+                                                            <Setter Property="Text" Value="ONNX"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
                                 <TextBlock Text="{Binding Status}" FontSize="10" Foreground="#2ECC71"/>
                             </StackPanel>
                         </DataTemplate>

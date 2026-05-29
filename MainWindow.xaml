@@ -281,14 +281,14 @@
                     <ColumnDefinition Width="240"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Jury Box (12 Jurors in 4x3 + 2 Alternates below) -->
+                <!-- Jury Box (12 Jurors in 3x4 + 2 Alternates below) -->
                 <Border Grid.Column="0" Background="#34495E" CornerRadius="5" Padding="15">
                     <StackPanel>
                         <TextBlock Text="JURY BOX (12+2)" Foreground="#BDC3C7" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
                         <ItemsControl ItemsSource="{Binding Jurors}" ItemTemplate="{StaticResource AgentSeatTemplate}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <UniformGrid Columns="4"/>
+                                    <UniformGrid Columns="3"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
@@ -296,7 +296,7 @@
                         <ItemsControl ItemsSource="{Binding AlternateJurors}" ItemTemplate="{StaticResource AgentSeatTemplate}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <UniformGrid Columns="4"/>
+                                    <UniformGrid Columns="3"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
