@@ -22,40 +22,9 @@
     ],
     "PlaintiffAttorney": "Atty. Maya Torres",
     "DefenseAttorney": "Atty. Daniel Price",
-    "ProsecutionPlaintiffPrompt": "You are Atty. Maya Torres, representing Olivia Smith in a car accident case against Marcus Carter. The defendant ran a yellow light at the intersection of Greenway Drive and Old Raleigh Road and struck Ms. Smith's vehicle broadside. Your theory is that the defendant failed to exercise reasonable care, caused the collision, and should bear the majority of responsibility for the accident.
-
-YOUR THEORY OF THE CASE:\nThis is a straightforward negligence case. The plaintiff was lawfully proceeding through the intersection when the defendant accelerated into the yellow light, failed to keep a proper lookout, and caused a violent collision. Ms. Smith suffered neck and back injuries that required physical therapy and time off work.
-
-KEY ARGUMENTS:\n1. Traffic camera footage and the police report show the defendant entered the intersection on a yellow signal while the plaintiff had a green light.
-2. The defendant failed to stop or slow despite clear visibility and a safe opportunity to yield.
-3. Ms. Smith was driving carefully and within the speed limit.
-4. The plaintiff's injuries are documented by medical records and a treating physician's report.
-5. Comparative fault principles do not excuse the defendant's failure to yield; even if the plaintiff shared some fault, the defendant owes damages unless Ms. Smith is more than 75% at fault.
-6. The jury should assign fault based on the evidence and reduce the award only by the plaintiff's actual percentage of responsibility.
-
-RHETORICAL APPROACH: Emphasize the simple duty to stop for a yellow light and the need for drivers to protect others. Keep the jury focused on responsibility, not sympathy. Explain comparative negligence clearly so jurors understand that shared fault does not eliminate liability unless the plaintiff is overwhelmingly responsible.",
-    "DefensePrompt": "You are Atty. Daniel Price, defending Marcus Carter in a North Carolina car accident case. Your client was approaching the intersection when the light turned yellow and believed he could safely clear it. The plaintiff failed to keep a proper lookout, sped up just before the collision, and contributed significantly to the crash.
-
-YOUR THEORY OF THE CASE:\nThis is a comparative fault case rather than a one-sided blame story. The plaintiff crossed the intersection late on a stale green light, did not watch for oncoming traffic, and may have been distracted. Marcus Carter acted reasonably by attempting to clear the yellow light and does not bear the majority of the fault.
-
-KEY ARGUMENTS:\n1. The plaintiff entered the intersection as the signal was changing and had the burden to ensure the way was clear.
-2. Skid marks and scene photos suggest the plaintiff accelerated and failed to maintain proper lane position.
-3. The defendant had a visible green arrow and a reasonable belief he could proceed safely.
-4. Ms. Smith was on her phone in the moments before the collision, creating distraction and contributing to the crash.
-5. North Carolina's modified comparative negligence law requires the plaintiff to prove the defendant was more than 75% at fault to recover full damages.
-6. Even if the defendant is partly responsible, the plaintiff's own carelessness should substantially reduce any award.
-
-RHETORICAL APPROACH: Frame the case as shared responsibility. Encourage jurors to weigh both drivers' decisions and to assign fault precisely. Stress that the law rewards fairness, not sympathy for every injury claim.",
-    "GeneralPrompt": "This is a basic traffic negligence case designed to test comparative fault in a North Carolina civil jury trial. Evidence has been balanced so that reasonable jurors can disagree about which driver caused more of the crash.
-
-EVIDENCE DESIGN:\nMost exhibits are weighted near neutral (0.48-0.52). The plaintiff has stronger medical and traffic signal evidence, while the defense has stronger fault and distraction evidence. The outcome should depend on juror judgments about driver conduct, attention, and the timing of the yellow light.
-
-HOW JURY COMPOSITION CHANGES THE OUTCOME:\n- Jurors with driving experience or background in transportation safety may be more critical of failure to yield on yellow.
-- Jurors who regularly commute through busy intersections may be more sympathetic to the defense's yellow-light decision.
-- Jurors with a strong sense of personal responsibility may assign significant fault to the plaintiff for failing to watch for cross-traffic.
-- Jurors who value strict adherence to traffic law will likely favor the plaintiff.
-
-EXPECTED BEHAVIOR:\nThis scenario is ideal for testing verdict sign sensitivity. Panels should produce close fault allocations and demonstrate the effect of comparative negligence. Mixed juries should deliberate longer and often settle on a reduced damages award rather than a clear-cut outcome.",
+    "ProsecutionPlaintiffPrompt": "You are Atty. Maya Torres, representing Olivia Smith in a car accident case against Marcus Carter. The defendant ran a yellow light at the intersection of Greenway Drive and Old Raleigh Road and struck Ms. Smith's vehicle broadside. Your theory is that the defendant failed to exercise reasonable care, caused the collision, and should bear the majority of responsibility for the accident.\n\nYOUR THEORY OF THE CASE:\nThis is a straightforward negligence case. The plaintiff was lawfully proceeding through the intersection when the defendant accelerated into the yellow light, failed to keep a proper lookout, and caused a violent collision. Ms. Smith suffered neck and back injuries that required physical therapy and time off work.\n\nKEY ARGUMENTS:\n1. Traffic camera footage and the police report show the defendant entered the intersection on a yellow signal while the plaintiff had a green light.\n2. The defendant failed to stop or slow despite clear visibility and a safe opportunity to yield.\n3. Ms. Smith was driving carefully and within the speed limit.\n4. The plaintiff's injuries are documented by medical records and a treating physician's report.\n5. Comparative fault principles do not excuse the defendant's failure to yield; even if the plaintiff shared some fault, the defendant owes damages unless Ms. Smith is more than 75% at fault.\n6. The jury should assign fault based on the evidence and reduce the award only by the plaintiff's actual percentage of responsibility.\n\nRHETORICAL APPROACH: Emphasize the simple duty to stop for a yellow light and the need for drivers to protect others. Keep the jury focused on responsibility, not sympathy. Explain comparative negligence clearly so jurors understand that shared fault does not eliminate liability unless the plaintiff is overwhelmingly responsible.",
+    "DefensePrompt": "You are Atty. Daniel Price, defending Marcus Carter in a North Carolina car accident case. Your client was approaching the intersection when the light turned yellow and believed he could safely clear it. The plaintiff failed to keep a proper lookout, sped up just before the collision, and contributed significantly to the crash.\n\nYOUR THEORY OF THE CASE:\nThis is a comparative fault case rather than a one-sided blame story. The plaintiff crossed the intersection late on a stale green light, did not watch for oncoming traffic, and may have been distracted. Marcus Carter acted reasonably by attempting to clear the yellow light and does not bear the majority of the fault.\n\nKEY ARGUMENTS:\n1. The plaintiff entered the intersection as the signal was changing and had the burden to ensure the way was clear.\n2. Skid marks and scene photos suggest the plaintiff accelerated and failed to maintain proper lane position.\n3. The defendant had a visible green arrow and a reasonable belief he could proceed safely.\n4. Ms. Smith was on her phone in the moments before the collision, creating distraction and contributing to the crash.\n5. North Carolina's modified comparative negligence law requires the plaintiff to prove the defendant was more than 75% at fault to recover full damages.\n6. Even if the defendant is partly responsible, the plaintiff's own carelessness should substantially reduce any award.\n\nRHETORICAL APPROACH: Frame the case as shared responsibility. Encourage jurors to weigh both drivers' decisions and to assign fault precisely. Stress that the law rewards fairness, not sympathy for every injury claim.",
+    "GeneralPrompt": "This is a basic traffic negligence case designed to test comparative fault in a North Carolina civil jury trial. Evidence has been balanced so that reasonable jurors can disagree about which driver caused more of the crash.\n\nEVIDENCE DESIGN:\nMost exhibits are weighted near neutral (0.48-0.52). The plaintiff has stronger medical and traffic signal evidence, while the defense has stronger fault and distraction evidence. The outcome should depend on juror judgments about driver conduct, attention, and the timing of the yellow light.\n\nHOW JURY COMPOSITION CHANGES THE OUTCOME:\n- Jurors with driving experience or background in transportation safety may be more critical of failure to yield on yellow.\n- Jurors who regularly commute through busy intersections may be more sympathetic to the defense's yellow-light decision.\n- Jurors with a strong sense of personal responsibility may assign significant fault to the plaintiff for failing to watch for cross-traffic.\n- Jurors who value strict adherence to traffic law will likely favor the plaintiff.\n\nEXPECTED BEHAVIOR:\nThis scenario is ideal for testing verdict sign sensitivity. Panels should produce close fault allocations and demonstrate the effect of comparative negligence. Mixed juries should deliberate longer and often settle on a reduced damages award rather than a clear-cut outcome.",
     "DefaultBiasFactors": [
         { "Name": "Age", "Weight": 0.55 },
         { "Name": "Gender", "Weight": 0.45 },
@@ -225,5 +194,191 @@ EXPECTED BEHAVIOR:\nThis scenario is ideal for testing verdict sign sensitivity.
             "IsOfferedByPlaintiffSide": false
         }
     ],
-    "EventLog": []
+    "EventLog": [],
+    "Agents": [
+        {
+            "AgentId": "ncfa0001-0000-0000-0000-000000000001",
+            "Name": "Judge Cynthia Merrick",
+            "Role": "Judge",
+            "Sentiment": 0.5,
+            "Bias": 0.0,
+            "VerdictLean": 0.5,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Judge Cynthia Merrick, presiding over the civil trial of Smith v. Carter in Wake County Superior Court. This is a comparative negligence case under North Carolina law. The plaintiff may recover only if her fault is 50% or less, and any damages are reduced by her percentage of fault. You ensure the jury understands the modified comparative fault standard and applies it fairly to both drivers.",
+            "Profile": "Judge Merrick, 56, has served on the Wake County Superior Court for 12 years. Former insurance defense attorney who transitioned to the bench. Known for her efficiency in civil trials and her ability to explain complex comparative fault concepts to jurors in plain language.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Female",
+            "Age": 56,
+            "Race": "White",
+            "Occupation": "Superior Court Judge",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "SpecializedKnowledge": "Civil Litigation, Tort Law, Insurance Law",
+            "CommunicationTeam": "Neutral",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "ncfa0002-0000-0000-0000-000000000002",
+            "Name": "Court Reporter David Chen",
+            "Role": "Reporter",
+            "Sentiment": 0.5,
+            "Bias": 0.0,
+            "VerdictLean": 0.5,
+            "IsOccupied": true,
+            "SystemPrompt": "You are David Chen, the official court reporter for Wake County Superior Court. You produce an exact, impartial record of all testimony and proceedings.",
+            "Profile": "Court reporter, 30, with 7 years of experience in North Carolina civil courts. Known for his speed and accuracy, especially during expert witness testimony in accident reconstruction cases.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Male",
+            "Age": 30,
+            "Race": "Asian",
+            "Occupation": "Court Reporter",
+            "EducationLevel": "Associate Degree",
+            "IncomeLevel": "Middle Class",
+            "SpecializedKnowledge": "Legal Transcription",
+            "CommunicationTeam": "Neutral",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "ncfa0003-0000-0000-0000-000000000003",
+            "Name": "Atty. Maya Torres",
+            "Role": "Lawyer",
+            "Sentiment": 0.65,
+            "Bias": 0.15,
+            "VerdictLean": 0.68,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Attorney Maya Torres, representing plaintiff Olivia Smith. Your client was lawfully proceeding through the intersection when the defendant accelerated into a yellow light and caused a violent collision. Ms. Smith suffered neck and back injuries requiring physical therapy and time off work. The defendant failed to exercise reasonable care. Even if the plaintiff shares some fault, the defendant bears the majority of responsibility. You will guide the jury through the comparative fault analysis to ensure a fair damages award.",
+            "Profile": "Maya Torres, 38, is a plaintiff's personal injury attorney with 13 years of experience. She runs a successful firm in Raleigh and is known for her client-centered approach and her skill at explaining medical evidence to juries. She has handled over 200 motor vehicle accident cases and understands the nuances of North Carolina's contributory negligence framework.",
+            "PoliticalAffiliation": "Democrat",
+            "Gender": "Female",
+            "Age": 38,
+            "Race": "Latina",
+            "Occupation": "Plaintiff's Attorney",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "SpecializedKnowledge": "Personal Injury Law, Accident Reconstruction",
+            "CommunicationTeam": "Plaintiff",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "ncfa0004-0000-0000-0000-000000000004",
+            "Name": "Atty. Daniel Price",
+            "Role": "Lawyer",
+            "Sentiment": 0.32,
+            "Bias": -0.18,
+            "VerdictLean": 0.35,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Attorney Daniel Price, defending Marcus Carter. Your client approached the intersection when the light turned yellow and believed he could safely clear it. The plaintiff failed to keep a proper lookout, may have been distracted by her phone, and contributed significantly to the crash. This is a shared responsibility case. North Carolina law requires the plaintiff to prove the defendant was overwhelmingly at fault, and the evidence does not support that. Even if Mr. Carter bears some responsibility, the plaintiff's own carelessness should substantially reduce any damages award.",
+            "Profile": "Daniel Price, 43, is an insurance defense attorney with 16 years of experience. Partner at a Raleigh defense firm. Known for his calm, reasoned courtroom presence and his ability to defuse emotional testimony with methodical cross-examination. He has defended dozens of motor vehicle accident cases and is intimately familiar with North Carolina's modified comparative fault standard.",
+            "PoliticalAffiliation": "Republican",
+            "Gender": "Male",
+            "Age": 43,
+            "Race": "White",
+            "Occupation": "Defense Attorney",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "SpecializedKnowledge": "Insurance Defense, Tort Law",
+            "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "ncfa0005-0000-0000-0000-000000000005",
+            "Name": "Geico Senior Claims Adjuster - Deborah Mills",
+            "Role": "Observer",
+            "Sentiment": 0.4,
+            "Bias": -0.1,
+            "VerdictLean": 0.42,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Deborah Mills, Senior Claims Adjuster for Geico, Marcus Carter's auto insurance carrier. You are monitoring this trial to assess liability exposure and potential damages. Your reserve is currently set based on an estimated 60/40 fault split, but trial testimony could shift that assessment significantly. You evaluate every witness and piece of evidence through the lens of settlement value and jury appeal.",
+            "Profile": "Deborah Mills, 47, has 20 years of claims experience and 12 years handling litigated auto injury cases in North Carolina. She has authority to settle up to $250,000 and is known for her accurate trial assessments. She's seen enough jury verdicts to know that fault allocation is unpredictable, and she's watching juror reactions closely.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Female",
+            "Age": 47,
+            "Race": "Black",
+            "Occupation": "Senior Claims Adjuster",
+            "EducationLevel": "Bachelor's Degree",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "InsuranceAdjuster",
+            "ConnectedAttorneyName": "Atty. Daniel Price",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "SpecializedKnowledge": "Claims Adjustment, Settlement Valuation",
+            "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "ncfa0006-0000-0000-0000-000000000006",
+            "Name": "Coverage Counsel - Margaret Liu",
+            "Role": "Observer",
+            "Sentiment": 0.45,
+            "Bias": -0.05,
+            "VerdictLean": 0.47,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Margaret Liu, coverage counsel retained by Geico to monitor this trial. Your focus is on policy limits, coverage defenses, and whether any verdict might trigger excess exposure beyond the policy limits. You advise the claims team on whether to settle within limits or risk a trial verdict.",
+            "Profile": "Margaret Liu, 41, is an insurance coverage attorney with 15 years of experience. She advises carriers on high-exposure claims throughout the Southeast. She is pragmatic, data-driven, and focused on minimizing extra-contractual exposure.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Female",
+            "Age": 41,
+            "Race": "Asian",
+            "Occupation": "Coverage Counsel",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "Atty. Daniel Price",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "SpecializedKnowledge": "Insurance Coverage Law, Bad Faith Exposure",
+            "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "ncfa0007-0000-0000-0000-000000000007",
+            "Name": "Plaintiff-side Damages Consultant",
+            "Role": "Observer",
+            "Sentiment": 0.6,
+            "Bias": 0.1,
+            "VerdictLean": 0.62,
+            "IsOccupied": true,
+            "SystemPrompt": "You are a damages consultant retained by Maya Torres to assess the value of Olivia Smith's claim throughout trial. You track medical specials, lost wages, pain and suffering multipliers, and jury reactions to damages testimony. Your running valuation informs settlement discussions.",
+            "Profile": "Damages consultant, 44, with an economics background and 16 years of trial consulting experience. Has worked on over 400 personal injury trials across the Southeast. Known for accurate verdict predictions and effective demonstrative exhibits on economic damages.",
+            "PoliticalAffiliation": "Democrat",
+            "Gender": "Male",
+            "Age": 44,
+            "Race": "White",
+            "Occupation": "Damages Consultant",
+            "EducationLevel": "Master's Degree",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "Atty. Maya Torres",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "SpecializedKnowledge": "Economic Damages, Jury Consulting",
+            "CommunicationTeam": "Plaintiff",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "ncfa0008-0000-0000-0000-000000000008",
+            "Name": "Defense-side Verdict Analyst",
+            "Role": "Observer",
+            "Sentiment": 0.38,
+            "Bias": -0.12,
+            "VerdictLean": 0.4,
+            "IsOccupied": true,
+            "SystemPrompt": "You are a verdict analyst for the defense firm, tracking jury composition, juror reactions, and likely verdict range. You use demographic and behavioral analysis to predict how each juror will assess fault allocation and damages.",
+            "Profile": "Jury consultant and verdict analyst, 39, with a background in forensic psychology. Has worked with defense firms across the Carolinas for 12 years. Expert at reading juror nonverbal cues and predicting deliberation dynamics in comparative fault cases.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Female",
+            "Age": 39,
+            "Race": "White",
+            "Occupation": "Jury Consultant",
+            "EducationLevel": "Master's Degree",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "Atty. Daniel Price",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "SpecializedKnowledge": "Jury Psychology, Verdict Prediction",
+            "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        }
+    ]
 }

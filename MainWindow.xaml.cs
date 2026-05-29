@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -19,6 +20,15 @@ public partial class MainWindow : Window
 {
     private MainViewModel _viewModel;
     private readonly ISettingsService _settingsService = new SettingsService();
+
+    /// <summary>Exposes all agents in the current case for cross-window access.</summary>
+    public IEnumerable<Agent> GetAllAgents() => _viewModel.AllAgents;
+
+    /// <summary>Prosecution/Plaintiff team agents.</summary>
+    public System.Collections.ObjectModel.ObservableCollection<Agent> ProsecutionTeam => _viewModel.ProsecutionTeam;
+
+    /// <summary>Defense team agents.</summary>
+    public System.Collections.ObjectModel.ObservableCollection<Agent> DefenseTeam => _viewModel.DefenseTeam;
 
     static MainWindow()
     {
@@ -161,6 +171,15 @@ public partial class MainWindow : Window
 
     private void DefaultCase_SmokingMemo_Click(object sender, RoutedEventArgs e) =>
         LoadDefaultCase("smoking-memo.jur");
+
+    private void DefaultCase_LockedRoom_Click(object sender, RoutedEventArgs e) =>
+        LoadDefaultCase("circumstantial-locked-room.jur");
+
+    private void DefaultCase_FewBadApples_Click(object sender, RoutedEventArgs e) =>
+        LoadDefaultCase("few-bad-apples.jur");
+
+    private void DefaultCase_TwelveAgents_Click(object sender, RoutedEventArgs e) =>
+        LoadDefaultCase("twelve-mildly-bothered-agents.jur");
 
     // Transcript
 

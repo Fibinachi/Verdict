@@ -96,7 +96,7 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
         File.Move(tmpPath, path, overwrite: true);
     }
 
-    public async Task<List<string>> GetAvailableModelsAsync(AIModelConfiguration config)
+    public virtual async Task<List<string>> GetAvailableModelsAsync(AIModelConfiguration config)
     {
         var models = new List<string>();
 

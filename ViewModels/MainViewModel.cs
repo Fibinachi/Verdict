@@ -90,6 +90,36 @@ public class MainViewModel : ViewModelBase
         _ => "Unknown Stage"
     };
 
+    /// <summary>Dynamic label for the court record panel header.</summary>
+    public string CourtRecordLabel => _currentDebateStage switch
+    {
+        CourtPhase.CaseGeneration => "CASE GENERATION",
+        CourtPhase.LegalResearch => "LEGAL RESEARCH",
+        CourtPhase.OpeningStatements => "OPENING STATEMENTS",
+        CourtPhase.WitnessTestimony => "WITNESS TESTIMONY",
+        CourtPhase.CrossExamination => "CROSS EXAMINATION",
+        CourtPhase.PartyStatements => "PARTY STATEMENTS",
+        CourtPhase.ClosingArguments => "CLOSING ARGUMENTS",
+        CourtPhase.JuryInstructions => "JURY INSTRUCTIONS",
+        CourtPhase.JuryDeliberation => "JURY DELIBERATION",
+        CourtPhase.VerdictAnnouncement => "VERDICT",
+        _ => "COURT RECORD"
+    };
+
+    /// <summary>Human-readable trial phase label for the status bar.</summary>
+    public string TrialPhaseLabel => CurrentCase?.TrialPhase switch
+    {
+        TrialPhase.Discovery => "Discovery",
+        TrialPhase.Pretrial => "Pretrial",
+        TrialPhase.Trial => "Trial",
+        _ => "Pre-Trial"
+    };
+
+    /// <summary>Dynamic threshold label: LIABILITY SCORE for civil, CONVICTION SCORE for criminal.</summary>
+    public string VerdictThresholdLabel => CurrentCase?.Mode == CaseMode.Criminal
+        ? "CONVICTION:"
+        : "LIABILITY:";
+
     public CaseFile CurrentCase
     {
         get => _currentCase;
@@ -143,6 +173,7 @@ public class MainViewModel : ViewModelBase
                     agent.DecayMemories(0.92);
 
                 OnPropertyChanged(nameof(CurrentDebateStageDisplay));
+                OnPropertyChanged(nameof(CourtRecordLabel));
             }
         }
     }
@@ -156,6 +187,17 @@ public class MainViewModel : ViewModelBase
         // Move to next stage, or loop back to first if at end
         var nextIndex = (currentIndex + 1) % stages.Length;
         CurrentDebateStage = stages[nextIndex];
+    }
+
+    /// <summary>
+    /// Refreshes phase-dependent labels (TrialPhaseLabel, VerdictThresholdLabel, CourtRecordLabel).
+    /// Called from stage handlers after changing TrialPhase or related properties.
+    /// </summary>
+    public void RefreshPhaseLabels()
+    {
+        OnPropertyChanged(nameof(TrialPhaseLabel));
+        OnPropertyChanged(nameof(VerdictThresholdLabel));
+        OnPropertyChanged(nameof(CourtRecordLabel));
     }
     
     /// <summary>
@@ -2427,6 +2469,10 @@ public class MainViewModel : ViewModelBase
             TranscriptOutput += $"\"{TruncateContent(defOpening, 500)}\"\n";
         }
 
+        // Record post-opening opinion snapshots
+        foreach (var juror in jurors)
+            juror.RecordOpinionSnapshot("Opening Statements", "Both sides presented");
+
         // ═══ PHASE 4: WITNESS TESTIMONY + CROSS ═══
         TranscriptOutput += "\n─── WITNESS TESTIMONY ───\n";
         CurrentCase.CurrentDebateStage = CourtPhase.WitnessTestimony;
@@ -2453,6 +2499,10 @@ public class MainViewModel : ViewModelBase
         await Task.Delay(100);
         TranscriptOutput += "(Cross-examination of key evidence presented.)\n";
 
+        // Record post-witness opinion snapshots
+        foreach (var juror in jurors)
+            juror.RecordOpinionSnapshot("Witnesses/Cross", "All testimony heard");
+
         // ═══ PHASE 5: CLOSING ARGUMENTS ═══
         TranscriptOutput += "\n─── CLOSING ARGUMENTS ───\n";
         CurrentCase.CurrentDebateStage = CourtPhase.ClosingArguments;
@@ -2470,6 +2520,10 @@ public class MainViewModel : ViewModelBase
                 CurrentCase.DefensePrompt, "Closing Argument", "defense");
             TranscriptOutput += $"\n{CurrentCase.DefenseAttorney ?? "Defense"} (Closing):\n\"{TruncateContent(defClose, 500)}\"\n";
         }
+
+        // Record post-closing opinion snapshots
+        foreach (var juror in jurors)
+            juror.RecordOpinionSnapshot("Closing Arguments", "Final arguments heard");
 
         // Record post-trial opinion snapshots
         foreach (var juror in jurors)
@@ -3324,6 +3378,7 @@ public class MainViewModel : ViewModelBase
 
         TranscriptOutput = $"[CASE LOADED] Case '{loadedCase.CaseName}' loaded successfully. {loadedCase.Evidence.Count} exhibits in record.";
         UpdateWindowTitle();
+        RefreshPhaseLabels();
     }
 
 /// <summary>

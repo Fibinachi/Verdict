@@ -6,7 +6,7 @@
 - **Providers**: All 9 LLM providers implemented
 - **ViewModels**: MainViewModel, CaseSettingsViewModel, ModelSettingsViewModel
 - **Views**: All 10 XAML windows/user controls
-- **Test Harness**: 577 tests passing — models, services, providers, viewmodels, MemoryDecayService, AgentDemographics, BiasDimensionWeights, AgentModelOverrides
+- **Test Harness**: 674 tests passing — models, services, providers, viewmodels, MemoryDecayService, AgentDemographics, BiasDimensionWeights, AgentModelOverrides, EvidenceAnalysis, Debate, CourtroomManager, CaseEntityMapper, AgentAssignment, JuryDemographics, LegalDatabase, Logger, AgentInteraction, ToyJurorLogicEngine
 - **Burden of Proof**: Mode-aware conviction thresholds (criminal >0.85, civil >0.50)
 - **LegalMind Features**: All 5 phases fully integrated
 
@@ -15,24 +15,15 @@
 - **2026-05-26**: Factored `Agent.cs` into composable sub-objects (`AgentDemographics`, `BiasDimensionWeights`, `AgentModelOverrides`). Extracted `MemoryDecayService` for progressive memory fuzzification. Added 4 new test suites (577 total tests, all passing).
 
 ## What's Left to Build
-- **Comprehensive Test Coverage**: Need tests for:
-  - EvidenceAnalysisService (strength assessment, exposure calculation)
-  - DebateService (stage advancement, influence calculation, event broadcasting)
-  - CaseEntityMapper (entity mapping to CaseFile)
-  - AgentAssignmentService (case analysis, role assignment, default agent generation)
-  - LegalDatabaseService (citation search, relevance scoring)
-  - ReportGenerationService (PDF generation)
-  - AgentInteractionService (statement generation, examination, deliberation)
-  - CourtroomManagerService (initialization, slot occupancy, reset)
-  - Logger (logging functionality)
-  - All model edge cases (null handling, boundary conditions)
-  - Provider edge cases (connection failures, invalid configs)
-  - ViewModel edge cases (null case files, empty collections)
+- **UCMJ Courts-Martial Venue** (deferred to later version — see TODO.md)
+- **Calibration against real jury datasets** (data-acquisition gated — see docs/CalibrationAndValidation.md)
+- **Dynamic counsel table scaling**: verify UI handles 2→6 occupants per table cleanly
+- **Active speaker highlighting**: highlight agent whose turn it is to speak in courtroom UI
 
 ## Current Status
 - **Codebase**: Fully functional with all features implemented
 - **Documentation**: Updated docs/math.md with burden-of-proof section, AGENTS.md with refactoring log
-- **Testing**: 577 tests passing in comprehensive test harness
+- **Testing**: 674 tests passing in comprehensive test harness (1 known intermittent: ONNX local model detection)
 - **Build**: Compiles successfully with `dotnet build`
 
 ## Known Issues

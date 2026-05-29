@@ -6,6 +6,50 @@ using Verdict.Models;
 namespace Verdict.Services;
 
 /// <summary>
+/// Records the directionality of a bias factor on verdict outcomes,
+/// identifying which pipeline stage the direction applies to.
+/// </summary>
+public readonly struct BiasDirection
+{
+    /// <summary>Name of the bias factor (e.g., "Political Affiliation", "Religion").</summary>
+    public string FactorName { get; }
+
+    /// <summary>Direction of effect: PROSECUTION, DEFENSE, NEUTRAL, or CONTEXTUAL.</summary>
+    public string Direction { get; }
+
+    /// <summary>Pipeline stage where this direction is primarily active: g₁ (static bias), g₂ (evidence drift), or g₃ (deliberation).</summary>
+    public string Stage { get; }
+
+    public BiasDirection(string factorName, string direction, string stage)
+    {
+        FactorName = factorName;
+        Direction = direction;
+        Stage = stage;
+    }
+
+    /// <summary>
+    /// Returns the canonical bias direction mappings for all 13 factors.
+    /// These correspond to the Directionality column in docs/JurorBiasResearch.md.
+    /// </summary>
+    public static IReadOnlyList<BiasDirection> CanonicalDirections { get; } = new[]
+    {
+        new BiasDirection("Political Affiliation", "PROSECUTION/DEFENSE", "g₁"),
+        new BiasDirection("Education Level", "NEUTRAL", "g₁,g₂"),
+        new BiasDirection("Legal Knowledge", "NEUTRAL", "g₂,g₃"),
+        new BiasDirection("Juror Experience", "NEUTRAL", "g₃"),
+        new BiasDirection("Community Ties", "CONTEXTUAL", "g₃"),
+        new BiasDirection("Ethnicity", "CONTEXTUAL", "g₁,g₂"),
+        new BiasDirection("Age", "CONTEXTUAL", "g₁,g₂"),
+        new BiasDirection("Professional Background", "NEUTRAL", "g₂,g₃"),
+        new BiasDirection("Income Level", "CONTEXTUAL", "g₁,g₂"),
+        new BiasDirection("Gender", "CONTEXTUAL", "g₁,g₂"),
+        new BiasDirection("Religion", "CONTEXTUAL", "g₁,g₂"),
+        new BiasDirection("Communication Style", "NEUTRAL", "g₃"),
+        new BiasDirection("Firearm Ownership (NRA)", "DEFENSE", "g₁,g₂,g₃"),
+    };
+}
+
+/// <summary>
 /// Service for generating jury pools based on realistic demographic distributions
 /// derived from US Census data patterns for specific counties and regions.
 /// Uses CountyDemographicsDatabase for jurisdiction-specific distributions.

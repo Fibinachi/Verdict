@@ -83,6 +83,92 @@ public class OnnxProvider : HuggingFaceModelBase
         return models;
     }
 
+    // Cache of model IDs known to have genai_config.json, to avoid repeated API calls
+    private static readonly HashSet<string> _knownGenaiModels = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly HashSet<string> _knownNonGenaiModels = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Checks whether a HuggingFace model repo contains a genai_config.json file.
+    /// Results are cached statically to avoid repeated API calls.
+    /// </summary>
+    private static async Task<bool> HasGenaiConfigAsync(string modelId)
+    {
+        if (_knownGenaiModels.Contains(modelId)) return true;
+        if (_knownNonGenaiModels.Contains(modelId)) return false;
+
+        try
+        {
+            var url = $"https://huggingface.co/api/models/{Uri.EscapeDataString(modelId)}";
+            var response = await _httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return false;
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("siblings", out var siblings))
+            {
+                foreach (var file in siblings.EnumerateArray())
+                {
+                    var rfilename = file.TryGetProperty("rfilename", out var rf) ? rf.GetString() : "";
+                    if (rfilename == "genai_config.json" ||
+                        rfilename.EndsWith("/genai_config.json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _knownGenaiModels.Add(modelId);
+                        return true;
+                    }
+                }
+            }
+            _knownNonGenaiModels.Add(modelId);
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Overrides the base search to filter out HuggingFace models that lack genai_config.json,
+    /// which is required for OnnxRuntimeGenAI compatibility.
+    /// </summary>
+    public override async Task<List<string>> GetAvailableModelsAsync(AIModelConfiguration config)
+    {
+        var models = await base.GetAvailableModelsAsync(config);
+
+        // Filter remote entries (format: "name - modelId") — skip local [LOCAL] entries and separators
+        var filtered = new List<string>();
+        foreach (var entry in models)
+        {
+            // Keep local models, separators, and error messages
+            if (entry.StartsWith("[LOCAL]") || entry.StartsWith("---") || entry.StartsWith("⚠") || entry.StartsWith("Error"))
+            {
+                filtered.Add(entry);
+                continue;
+            }
+
+            // Extract modelId from "name - owner/modelId" format
+            var lastSep = entry.LastIndexOf(" - ", StringComparison.Ordinal);
+            if (lastSep < 0)
+            {
+                filtered.Add(entry); // Keep entries we can't parse
+                continue;
+            }
+
+            var modelId = entry[(lastSep + 3)..].Trim();
+            if (string.IsNullOrEmpty(modelId) || !modelId.Contains('/'))
+            {
+                filtered.Add(entry);
+                continue;
+            }
+
+            // Check if this model has genai_config.json (required for ONNX GenAI)
+            if (await HasGenaiConfigAsync(modelId))
+                filtered.Add(entry);
+            // else: silently skip — model lacks genai_config.json
+        }
+
+        return filtered;
+    }
+
     protected override string FormatRemoteModelEntry(string modelId, string name, long downloads, long sizeOnDisk)
     {
         string sizeStr = sizeOnDisk > 0 ? $"({FormatSize(sizeOnDisk)})" : "";

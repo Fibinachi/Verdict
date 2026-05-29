@@ -107,21 +107,28 @@ This document summarizes peer-reviewed research on how demographic and psycholog
 
 Based on the research synthesis, the following table provides recommended default weight values for each bias factor. These values represent the relative strength of each factor's influence on juror perception.
 
-| Factor | Default Weight | Research Basis |
-|--------|---------------|----------------|
-| Political Affiliation | 0.90 | Strongest predictor of verdict direction (Forresta 2025, Politics in Courtroom 2018) |
-| Education Level | 0.80 | High education correlates with analytical evaluation (RAND 2024) |
-| Legal Knowledge | 0.75 | Education and legal expertise strongly influence evidence evaluation (RAND 2024) |
-| Juror Experience | 0.70 | Experience affects deliberation participation and conformity (multiple studies) |
-| Community Ties | 0.65 | Social identity influences decision-making (Pozzulo 2024) |
-| Ethnicity | 0.60 | Strong influence, varies by context (Vettese 2025, RAND 2024) |
-| Age | 0.55 | Influences perspective and credibility assessment (Pozzulo 2017, Sheahan 2021) |
-| Professional Background | 0.55 | Occupation and expertise affect technical evidence and expert testimony weighting (RAND 2024) |
-| Income Level | 0.50 | Economic status affects perspective but moderated by other factors |
-| Gender | 0.45 | Moderate influence, context-dependent (Pozzulo 2010) |
-| Religion | 0.40 | Moderate influence, varies by case type (Vettese 2024, Fraser 2025) |
-| Communication Style | 0.35 | Moderates but less directly influences verdicts |
-| Firearm Ownership (NRA) | 0.12* | Affects defense lean, rigidity, and conformity; modeled as trait coefficient |
+| Factor | Default Weight | Directionality | Research Basis |
+|--------|---------------|---------------|----------------|
+| Political Affiliation | 0.90 | PROSECUTION (conservative) / DEFENSE (liberal) | Strongest predictor of verdict direction (Forresta 2025, Politics in Courtroom 2018) |
+| Education Level | 0.80 | NEUTRAL | High education correlates with analytical evaluation (RAND 2024) |
+| Legal Knowledge | 0.75 | NEUTRAL | Education and legal expertise strongly influence evidence evaluation (RAND 2024) |
+| Juror Experience | 0.70 | NEUTRAL | Experience affects deliberation participation and conformity (multiple studies) |
+| Community Ties | 0.65 | CONTEXTUAL | Social identity influences decision-making (Pozzulo 2024) |
+| Ethnicity | 0.60 | CONTEXTUAL | Strong influence, varies by context (Vettese 2025, RAND 2024) |
+| Age | 0.55 | CONTEXTUAL | Influences perspective and credibility assessment (Pozzulo 2017, Sheahan 2021) |
+| Professional Background | 0.55 | NEUTRAL | Occupation and expertise affect technical evidence and expert testimony weighting (RAND 2024) |
+| Income Level | 0.50 | CONTEXTUAL | Economic status affects perspective but moderated by other factors |
+| Gender | 0.45 | CONTEXTUAL | Moderate influence, context-dependent (Pozzulo 2010) |
+| Religion | 0.40 | CONTEXTUAL | Moderate influence, varies by case type (Vettese 2024, Fraser 2025) |
+| Communication Style | 0.35 | NEUTRAL | Moderates but less directly influences verdicts |
+| Firearm Ownership (NRA) | 0.12* | DEFENSE (self-defense cases) | Affects defense lean, rigidity, and conformity; modeled as trait coefficient |
+
+### Directionality Legend
+
+- **PROSECUTION**: Factor directionally pushes toward conviction/prosecution in most case types
+- **DEFENSE**: Factor directionally pushes toward acquittal/defense in most case types
+- **NEUTRAL**: Factor affects decision quality/style but has no consistent directional lean
+- **CONTEXTUAL**: Direction depends on case type, defendant characteristics, or other interacting factors
 
 ## Implementation Notes
 
@@ -131,6 +138,121 @@ These default values are used in:
 - `JuryDemographicsService.cs` - Juror profile generation
 
 The weights can be adjusted via the Model Weights window for specific case scenarios.
+
+## Case-Type Sensitivity
+
+Certain bias factors have **case-type-dependent effects** — their magnitude or direction changes based on the nature of the case. The following table documents known case-type interactions implemented in the engine.
+
+### Case-Type Modifier Table
+
+| Case Type | Affected Factors | Effect | Mechanism |
+|-----------|-----------------|--------|-----------|
+| **Sexual Assault** | BJW → defense (victim-blaming) | α_bjw applied negatively | `caseSubType == "sexualassault" → b −= α_bjw × BJW` |
+| **Sexual Assault** | Gender × Religion interaction | Victim credibility penalty | Conservative gender views + religiosity → reduced victim credibility |
+| **Violent Crime** | BJW → prosecution | α_bjw applied positively | `caseSubType == "violentcrime" → b += α_bjw × BJW` |
+| **Violent Crime** | NRA → prosecution | α_nra applied positively | NRA members lean prosecution in violent crime (self-defense framing) |
+| **Property Crime** | BJW → prosecution | α_bjw applied positively | Same as violent crime — "bad things happen to bad people" |
+| **Property Crime** | Income level amplified | Higher-income jurors more defense-leaning | Property crime → economic self-interest moderates |
+| **Fraud / White Collar** | Education amplified | Higher education → more skeptical of prosecution | Complex evidence requires analytical evaluation |
+| **Fraud / White Collar** | Income level amplified | Higher income → more defense-leaning | Economic class identification with white-collar defendants |
+| **Domestic Violence** | Gender amplified | Female jurors → more prosecution-leaning | Gender-based empathy and experience |
+| **Domestic Violence** | Religion amplified | Conservative religious → more defense-leaning (privacy/family) | Religious views on family privacy may reduce prosecution support |
+
+### BJW Direction by Case Type
+
+```
+SexualAssault   → b −= α_bjw × BeliefInJustWorld  [victim-blaming → defense]
+ViolentCrime     → b += α_bjw × BeliefInJustWorld  ["bad things happen to bad people" → prosecution]
+PropertyCrime    → b += α_bjw × BeliefInJustWorld  [same as violent crime]
+Fraud            → b += 0.05 × BeliefInJustWorld   [mild prosecution lean — "crime doesn't pay"]
+DomesticViolence → b += 0.05 × BeliefInJustWorld   [neutral/mild effect]
+default          → b += 0.05 × BeliefInJustWorld   [neutral/mild effect]
+```
+
+### Gender × Religion Interaction by Case Type
+
+| Case Type | Interaction Strength | Effect |
+|-----------|---------------------|--------|
+| Sexual Assault | Strong (×0.6) | Conservative religious males → higher rape myth acceptance → lower victim credibility |
+| Domestic Violence | Moderate (×0.4) | Similar mechanism, less pronounced |
+| Violent Crime | Mild (×0.2) | Gender/religion interaction less relevant to general violence |
+| Other | None | No special gender×religion interaction |
+
+## Implicit Bias (Greenwald et al.)
+
+### Overview
+
+Implicit bias refers to unconscious associations that influence behavior independent of explicit (conscious) attitudes. In the jury context, implicit bias accounts for approximately **15% of variance** in juror decisions above and beyond explicit demographic factors (Greenwald, Poehlman, Uhlmann, & Banaji, 2009; Greenwald & Banaji, 1995).
+
+### Role in the VERDICT Engine
+
+Implicit bias is modeled as a latent variable (`implicitBias ~ Uniform(−0.6, 0.6) × 1.2`) that propagates into several trait and coefficient systems:
+
+| System | Implicit Bias Role | Magnitude |
+|--------|-------------------|-----------|
+| **RWA (Authoritarianism)** | Amplifies authoritarian tendencies | ×0.3 |
+| **SDO (Social Dominance)** | Not directly applied (SDO is more explicit) | — |
+| **Punitiveness** | Amplifies punitive tendencies | ×0.4 |
+| **Credibility Assessment** | Unconscious credibility discount for out-group witnesses | Via compound bias |
+| **Media Sensitivity** | Affects susceptibility to emotionally-charged evidence | Via media traits |
+| **Rape Myth Acceptance** | Not directly applied | — |
+| **Religiosity** | Mild amplification | ×0.2 |
+| **Political Polarity (PolId)** | Mild amplification of explicit political lean | ×0.2 |
+| **Job Security** | Mild influence on economic anxiety | ×0.2 |
+
+### Research Basis
+
+- **Greenwald, A.G., & Banaji, M.R. (1995).** "Implicit social cognition: Attitudes, self-esteem, and stereotypes." *Psychological Review*, 102(1), 4–27.
+- **Greenwald, A.G., Poehlman, T.A., Uhlmann, E.L., & Banaji, M.R. (2009).** "Understanding and using the Implicit Association Test: III. Meta-analysis of predictive validity." *Journal of Personality and Social Psychology*, 97(1), 17–41.
+- **Levinson, J.D., Cai, H., & Young, D. (2014).** "Guilty by implicit racial bias: The guilty/not guilty Implicit Association Test." *Ohio State Journal of Criminal Law*, 8, 187–208.
+
+### Distinction from Explicit Bias
+
+- **Explicit bias**: Captured by PolId, ConservRelig, Punitiveness — conscious attitudes the juror would self-report.
+- **Implicit bias**: Captured by the `implicitBias` term — unconscious associations operating below awareness.
+- The two interact: implicit bias amplifies explicit positions but also introduces independent variance, creating jurors whose conscious and unconscious lean diverge.
+
+## Known Limitations
+
+The VERDICT Juror Opinion Engine is a quantitative simulation model. Like all models, it has known limitations that users and researchers should be aware of when interpreting results:
+
+### 1. No Interpersonal Dynamics
+- The model treats each juror independently during evidence stages (g₁, g₂).
+- It does **not** model: side conversations, non-verbal communication, seating proximity effects, or informal alliances formed during breaks.
+- Real juries develop complex social dynamics (cliques, rivalries, leadership contests) that the conformity parameter (ρ) only approximates.
+
+### 2. No Emotional Contagion
+- The model does not capture emotional spread: a crying juror influencing others' emotional states, collective anger at a defendant, or shared sympathy for a victim.
+- Emotional valence is collapsed into the single `VerdictLean` dimension.
+- Research (Barsade, 2002; Hatfield, Cacioppo, & Rapson, 1994) shows that emotional contagion significantly affects group decision-making.
+
+### 3. No Multi-Day Fatigue
+- The simulation treats each evidence item and deliberation round as atomic events with no temporal fatigue.
+- Real trials span days or weeks; juror attention, patience, and cognitive resources degrade over time.
+- Long-trial effects (boredom, frustration, desire to "just get it over with") are not modeled.
+
+### 4. No Strategic Juror Behavior
+- Jurors in the model do not act strategically: they don't hold out for concessions, trade votes, or engage in logrolling.
+- Real juries exhibit strategic behavior: reluctant agreement to avoid hung jury, compromise verdicts, and charge bargaining within the jury room.
+
+### 5. No Jury Instruction Comprehension Variance
+- All jurors are assumed to understand and apply jury instructions identically.
+- Research shows substantial variance in juror comprehension of legal instructions, correlated with education and cognitive reflection (Reifman, Gusick, & Ellsworth, 1992).
+
+### 6. Single-Axis Verdict Dimension
+- The model collapses all case complexity into a single `VerdictLean` dimension (0..1).
+- Multi-charge cases, lesser-included offenses, and special verdict forms are not represented.
+- Civil damage calculations use a simplified `ConsideredDamages` field rather than full itemization.
+
+### 7. No Voir Dire Dynamics
+- Jury selection (voir dire) is not modeled; all jurors are "seated" and participate.
+- Real juries are shaped by peremptory challenges and challenges for cause, which systematically bias composition.
+
+### 8. No Deliberation Time Pressure
+- The model does not account for time limits, judicial pressure (Allen charges), or external deadlines.
+- Time pressure significantly affects concession rates and verdict outcomes in real juries.
+
+These limitations are acknowledged design choices. The engine prioritizes **trait-to-verdict causal pathways** and **demographic sensitivity** over full social-psychological realism. Future versions may address specific limitations based on user feedback and research advances.
 
 ## References
 
@@ -173,3 +295,7 @@ The weights can be adjusted via the Model Weights window for specific case scena
 19. Pennycook, G., et al. (2016). "Atheists and agnostics are more reflective than religious believers." Frontiers in Psychology, 7, 1028.
 
 20. Jost, J.T., Glaser, J., Kruglanski, A.W., & Sulloway, F.J. (2003). "Political conservatism as motivated social cognition." Psychological Bulletin, 129(3), 339–375.
+
+21. Greenwald, A.G., & Banaji, M.R. (1995). "Implicit social cognition: Attitudes, self-esteem, and stereotypes." Psychological Review, 102(1), 4–27.
+
+22. Greenwald, A.G., Poehlman, T.A., Uhlmann, E.L., & Banaji, M.R. (2009). "Understanding and using the Implicit Association Test: III. Meta-analysis of predictive validity." Journal of Personality and Social Psychology, 97(1), 17–41.

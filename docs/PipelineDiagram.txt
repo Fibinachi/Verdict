@@ -1,0 +1,123 @@
+VERDICT Juror Opinion Engine — Pipeline Diagram
+================================================
+
+        ┌─────────────────────────────────────────────────────────────┐
+        │                    AGENT DEMOGRAPHICS                       │
+        │  Age, Gender, Race, Occupation, Education, Income,          │
+        │  Religion, PoliticalAffiliation, MediaConsumption, etc.     │
+        └────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 │  SampleDemographics()
+                                 │  SampleTraits(), SampleReligion(),
+                                 │  SamplePolitics(), SampleMedia(),
+                                 │  SampleEconomics(), SampleEducationType(),
+                                 │  SampleBlueCollarDiy(), SampleMemberships(),
+                                 │  SampleIndividualDifferences()
+                                 │
+                                 ▼
+        ┌─────────────────────────────────────────────────────────────┐
+        │                    LATENT TRAITS                            │
+        │  ┌──────────────┬──────────────────┬─────────────────────┐  │
+        │  │ Core         │ Cognitive Bias   │ Individual Diff.     │  │
+        │  │ RWA (0..10)  │ Anchoring        │ NeedForCognition     │  │
+        │  │ SDO (0..10)  │ HindsightBias    │ BeliefInJustWorld    │  │
+        │  │ Punitiveness │ ConfirmationBias │ DeathPenaltyQual     │  │
+        │  │ RapeMyth     │ NarrativeCoher.  │ TrustInInstitutions  │  │
+        │  │ Religiosity  │ OutcomeBias      │ TraitEmpathy         │  │
+        │  │ ConservRelig │ SocialConsensus  │ NeedForClosure       │  │
+        │  │ PolId (−1..1)│ StatusQuoBias    │ CognitiveReflection  │  │
+        │  │ PolStrength  │                  │ SmNewsReliance       │  │
+        │  └──────────────┴──────────────────┴─────────────────────┘  │
+        └────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 │  Coherence check (≥ 0.9)
+                                 │  Pass traits to three-stage pipeline
+                                 │
+                ╔════════════════╧════════════════╗
+                ║   THREE-STAGE VERDICT PIPELINE  ║
+                ╚════════════════╤════════════════╝
+                                 │
+        ┌────────────────────────▼────────────────────────────────────┐
+        │  STAGE 1: STATIC BIAS (g₁)                                   │
+        │  ─────────────────────────────                               │
+        │  b = Σ αᵢ · traitᵢ                                           │
+        │    = α_pol_id·PolId + α_conserv_relig·ConservRelig           │
+        │    + α_nra·Nra + α_news_lean·NewsLean·(−1)                   │
+        │    + α_prior_victim·PriorVictim + α_prior_system·(−1)        │
+        │    + α_bjw·BJW (case-type dependent)                         │
+        │    + α_death_penalty·DPQual + α_trust_institutions·Trust     │
+        │    + α_trait_empathy·Empathy·(−1)                            │
+        │    + α_gender·GenderWeight + α_ethnicity·EthnicityWeight     │
+        │                                                               │
+        │  g₁ = clamp(β₀ + β₁·b, 0.0, 1.0)                             │
+        │                                                               │
+        │  Parameters: β₀=0.0, β₁=1.0                                   │
+        └────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 │  Evidence enters pipeline
+                                 │  Δevidence_adjusted = Δevidence_raw × temporal_weight
+                                 │  (primacy × recency weighting)
+                                 │
+        ┌────────────────────────▼────────────────────────────────────┐
+        │  STAGE 2: EVIDENCE DRIFT (g₂)                                │
+        │  ──────────────────────────────                              │
+        │  λ = logistic(Σ ηᵢ · traitᵢ)          [rigidity]             │
+        │                                                               │
+        │  IF evidence conflicts with PolId AND |PolId| > 0.4:         │
+        │    λ += EduWeight · PolWeight · 0.20   [motivated reasoning]  │
+        │    λ = min(λ, 1.0)                                           │
+        │    multiplier = 1.0 − λ                [dampen counter-evid]  │
+        │  ELSE:                                                        │
+        │    multiplier = 1.0                    [full aligned evidence]│
+        │                                                               │
+        │  g₂ = clamp01(g₁ + γ₁ · Δevidence_adjusted · multiplier)     │
+        │                                                               │
+        │  Parameters: γ₁=1.0                                          │
+        └────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 │  Compute per-juror: hardness (h), influence (w)
+                                 │  Two-pass: g₂ first, then M = weighted vote average
+                                 │
+        ┌────────────────────────▼────────────────────────────────────┐
+        │  STAGE 3: DELIBERATION + CONFORMITY (g₃)                     │
+        │  ────────────────────────────────────────                    │
+        │  V_i = 1.0 if g₂ᵢ > threshold else 0.0  [binary vote]      │
+        │  threshold = 0.85 (criminal) / 0.50 (civil)                  │
+        │                                                               │
+        │  M = Σ(wᵢ·Vᵢ) / Σ(wᵢ)                  [jury consensus]     │
+        │                                                               │
+        │  target = group_majority == 1.0                               │
+        │    ? max(threshold+0.01, M)    [pull toward conviction]      │
+        │    : min(threshold−0.01, M)    [pull toward acquittal]       │
+        │                                                               │
+        │  h_i = min(h_base + 0.45·exp(−15·|g₂−threshold|), 0.98)    │
+        │  φ = logistic(0.6 · Σ ρᵢ · traitᵢ)  [conformity]            │
+        │                                                               │
+        │  g₃ = clamp01(g₂ᵢ + (1−h_i)·φ·(target − g₂ᵢ))              │
+        │                                                               │
+        │  P = logistic(θ₀ + θ₁·g₃)             [verdict probability] │
+        │  Parameters: θ₀=0.0, θ₁=5.0                                  │
+        └────────────────────────┬────────────────────────────────────┘
+                                 │
+        ┌────────────────────────▼────────────────────────────────────┐
+        │  FINAL: VerdictLean (0.05 .. 0.95)                           │
+        │  ────────────────────────────────                             │
+        │  VerdictLean = clamp(0.05, 0.95, P)                          │
+        │                                                               │
+        │  > 0.85 → Guilty (criminal, beyond reasonable doubt)         │
+        │  > 0.50 → Liable (civil, preponderance)                      │
+        └────────────────────────┬────────────────────────────────────┘
+                                 │
+        ┌────────────────────────▼────────────────────────────────────┐
+        │                       VERDICT                                │
+        │  Criminal: Guilty / Not Guilty / Hung Jury                   │
+        │  Civil:    Liable  / Not Liable  / Hung Jury                 │
+        └─────────────────────────────────────────────────────────────┘
+
+
+Coefficient Systems:
+  α (Alpha)  — Static bias direction (Stage 1)
+  η (Eta)    — Rigidity to counterevidence (Stage 2)
+  ζ (Zeta)   — Hardness against conformity (Stage 3)
+  χ (Chi)    — Influence weight in deliberation (Stage 3)
+  ρ (Rho)    — Conformity susceptibility (Stage 3)

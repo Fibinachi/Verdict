@@ -183,7 +183,10 @@ public class ProviderTests : BaseTestClass
         try
         {
             Directory.CreateDirectory(modelDir);
-            File.WriteAllText(Path.Combine(modelDir, "model.onnx"), "dummy");
+            // Create a file that reports >= 50MB without allocating disk (sparse/allocation trick)
+            // The scanner requires .onnx files to be >= 50MB to filter out LFS pointer stubs.
+            using (var fs = new FileStream(Path.Combine(modelDir, "model.onnx"), FileMode.Create))
+                fs.SetLength(50_000_001); // 50MB + 1 byte to pass MinOnnxModelBytes
             File.WriteAllText(Path.Combine(modelDir, "genai_config.json"), "{}");
             
             config.Endpoint = rootDir;

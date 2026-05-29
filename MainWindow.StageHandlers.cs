@@ -22,6 +22,7 @@ public partial class MainWindow
     {
         _viewModel.CurrentCase.TrialPhase = TrialPhase.Discovery;
         _viewModel.CurrentCase.CurrentDebateStage = CourtPhase.CaseGeneration;
+        _viewModel.RefreshPhaseLabels();
         _viewModel.TranscriptOutput = "[PHASE] Discovery\n\n";
         await _viewModel.RunDiscoveryPhase();
     }
@@ -30,6 +31,7 @@ public partial class MainWindow
     {
         _viewModel.CurrentCase.TrialPhase = TrialPhase.Pretrial;
         _viewModel.CurrentCase.CurrentDebateStage = CourtPhase.LegalResearch;
+        _viewModel.RefreshPhaseLabels();
         _viewModel.TranscriptOutput = "[PHASE] Pretrial\n\n";
         await _viewModel.RunPretrialEvaluation();
     }
@@ -91,6 +93,7 @@ public partial class MainWindow
         if (_viewModel.CurrentCase.TrialPhase != TrialPhase.Trial)
         {
             _viewModel.CurrentCase.TrialPhase = TrialPhase.Trial;
+            _viewModel.RefreshPhaseLabels();
             _viewModel.TranscriptOutput = "[PHASE] Trial\n\nThe trial is now in session.\n";
         }
     }

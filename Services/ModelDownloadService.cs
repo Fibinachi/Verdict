@@ -420,13 +420,19 @@ namespace Verdict.Services
         {
             if (!Directory.Exists(directoryPath)) return false;
 
-            var onnxFiles = Directory.GetFiles(directoryPath, "*.onnx", SearchOption.TopDirectoryOnly);
             var hasGenaiConfig = File.Exists(Path.Combine(directoryPath, GenaiConfigFile));
 
             if (!hasGenaiConfig) return false;
 
-            // Require at least one non-stub .onnx file (not LFS pointer, at least 50MB)
-            return onnxFiles.Any(f => !IsLfsPointerStub(f) && new FileInfo(f).Length >= MinOnnxModelBytes);
+            // Check for self-contained .onnx files (model weights in the .onnx itself)
+            var onnxFiles = Directory.GetFiles(directoryPath, "*.onnx", SearchOption.TopDirectoryOnly);
+            if (onnxFiles.Any(f => !IsLfsPointerStub(f) && new FileInfo(f).Length >= MinOnnxModelBytes))
+                return true;
+
+            // Check for external-data format: small .onnx header + large .onnx_data file
+            // (common with llmware/ models that split weights into a separate data file)
+            var onnxDataFiles = Directory.GetFiles(directoryPath, "*.onnx_data", SearchOption.TopDirectoryOnly);
+            return onnxDataFiles.Any(f => !IsLfsPointerStub(f) && new FileInfo(f).Length >= MinOnnxModelBytes);
         }
 
         /// <summary>

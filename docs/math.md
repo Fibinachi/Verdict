@@ -72,18 +72,26 @@ recency_retention = exp(−0.05 × (N − 1 − t))   [exponential decay for agi
 temporal_weight = primacy_anchor × recency_retention
 Δevidence_adjusted = Δevidence_raw × temporal_weight
 
+// ── evidence_direction (v0.61): explicit field indicating which side the evidence favors ──
+// +1 = favors prosecution/plaintiff, −1 = favors defense, 0 = neutral or unspecified
+// Falls back to sign(Δevidence_adjusted) when not explicitly provided by the caller.
+
 λ = rigidity(traits) = logistic(η_intercept + Σ ηᵢ · traitᵢ)  
 
-conflicts = sign(Δevidence_adjusted) × PolId < 0   [Task 2: directional — evidence conflicts with bias profile]
+effectiveEvidenceDir = evidence_direction != 0 ? sign(evidence_direction) : sign(Δevidence_adjusted)
+conflicts = effectiveEvidenceDir × PolId < 0   [directional: evidence direction conflicts with bias profile]
 
 if conflicts AND |PolId| > 0.4:                  [Block 2 fix: only strong partisans deploy motivated reasoning]
-    λ += edu_weight × pol_weight × 0.20          [reduced from 0.45 — narrower motivated-reasoning effect]
-    λ = min(λ, 1.0)
-    multiplier = 1.0 - λ                       [dampen counter-evidence]
+    motivated_term = edu_weight × pol_weight × 0.20
+    λ = ComputeRigidityWithMotivatedTerm(traits, coefs, motivated_term)
+    // v0.61: motivated_term is blended inside the logistic input — NOT added post-hoc.
+    // This prevents λ from saturating at 1.0 for all educated partisans.
+    multiplier = 1.0 − λ                       [dampen counter-evidence]
 else:
     multiplier = 1.0                           [zero resistance to aligned evidence]
 
 g₂ = clamp01(g₁ + γ₁ · Δevidence_adjusted · multiplier)
+```
 
 **Current coefficients (η):**
 | Factor | Weight | Interpretation |
@@ -120,26 +128,41 @@ V_i = 1.0 if g₂ᵢ > conviction_threshold else 0.0   [Task 1: binary functiona
 
 M = Σ(wᵢ · Vᵢ) / Σ(wᵢ)              [jury consensus: weighted average of binary VOTES, not continuous lean]
 
-// ── Directional target vector (Block 1: resolves binary/continuous discontinuity) ──
-// M ∈ {0,1}ⁿ but g₂ᵢ ∈ [0,1] continuous — raw delta (M − g₂ᵢ) distorts near thresholds.
-// Fix: pull directionally toward conviction-side or acquittal-side boundary based on majority.
+// ── Directional target vector with explicit if/else (v0.61 fix) ──
+// v0.61: explicit if/else replaces malformed inline ternary.
+// v0.61: acquittal branch pulls toward (threshold − 0.01) instead of min(M, threshold − 0.01).
+// The old form caused identity collapse — when M < threshold, min(M, threshold−0.01) = M,
+// meaning acquittal-pulling jurors were actually pulled toward M (the group mean).
 group_majority = M >= 0.50 ? 1.0 : 0.0
 
-target = group_majority == 1.0```
+if group_majority == 1.0:
+    target = max(threshold + 0.01, M)      [pull toward conviction/liability boundary]
+else:
+    target = threshold − 0.01              [pull toward acquittal/non-liability — NOT toward M]
+// Rationale: "beyond reasonable doubt" is an absolute standard, not a crowd-sourced one.
+// The acquittal pull is fixed at the threshold regardless of how large the acquittal
+// majority is (51% vs 100%). The conviction side scales with M because stronger
+// consensus intuitively exerts more pressure, but the acquittal anchor is the legal
+// standard itself — reasonable doubt is not proportional to the majority size.
 
-    ? max(threshold + 0.01, M)      [pull toward conviction/liability boundary]verdict_lean = clamp(0.05, 0.95, P)  [was (0.2, 0.8) — expanded to clear criminal beyond-reasonable-doubt]
-
-    : min(threshold − 0.01, M)      [pull toward acquittal/non-liability boundary]// ── Expanded clamping (Block 3: allows criminal convictions above 0.85) ──
-
-
-
-// ── Dynamic threshold friction (Block 2: spikes resistance near legal thresholds) ──P = logistic(θ₀ + θ₁ · g₃)         [verdict probability — THE ONLY logistic squashing in the pipeline]
-
-distance = |g₂ᵢ − threshold|g₃ = clamp01(g₂ᵢ + (1 − h_i) · φ · (target − g₂ᵢ))   [deliberation update with directional target]
-
-friction = 0.45 · exp(−15.0 · distance)φ = conformity(traits)             [susceptibility to peer influence]
-
+// ── Dynamic threshold friction (Block 2: spikes resistance near legal thresholds) ──
+// v0.61: friction depends on g₂ (stage 2), NOT g₃ (stage 3). No circular dependency.
+distance = |g₂ᵢ − threshold|
+friction = 0.45 · exp(−15.0 · distance)
 h_i = min(h_base + friction, 0.98)  [capped at 0.98 — just below absolute immunity]
+
+g₃ = clamp01(g₂ᵢ + (1 − h_i) · φ · (target − g₂ᵢ))   [deliberation update with directional target]
+φ = conformity(traits)             [susceptibility to peer influence]
+
+// ── v0.61: Explicit P-before-definition ordering ──
+// 1. target (above)
+// 2. g₃ (above)
+// 3. P = logistic(θ₀ + θ₁ · g₃)
+// 4. verdict_lean = clamp(0.05, 0.95, P)
+P = logistic(θ₀ + θ₁ · g₃)           [verdict probability — THE ONLY logistic squashing in the pipeline]
+verdict_lean = clamp(0.05, 0.95, P)  [expanded clamping allows criminal convictions above 0.85]
+```
+
 
 **Current coefficients (θ):**
 | Parameter | Value | Description |
@@ -159,32 +182,26 @@ belief state approaches the legal threshold (Block 2: threshold friction).
 h_base = logistic(ζ_intercept + Σ ζᵢ · traitᵢ)
 h_i = min(h_base + 0.45 · exp(−15.0 · |g₂ᵢ − threshold|), 0.98)
 
+**v0.61:** Friction depends only on g₂ (Stage 2 output), not on g₃. This removes the circular
+dependency where hardness fed into g₃ but friction depended on g₃'s relationship to threshold.
+
 Zeta increased for strong ideologues (Block 7): RWA +0.05, Pol_Strength +0.05
 
 | Factor | Weight | Interpretation |
-|--------|--------|----------------|
-| RWA | 0.25 | Authoritarianism resists conformity pressure |
-| SDO | 0.20 | Social dominance → harder to move |
-| Conserv_Relig | 0.25 | Religious conservatism → conviction hardness |
-| Pol_Strength | 0.20 | Political identity strength → harder to sway |
-| Primary_History | 0.10 | Prior political engagement |
-| Activism | 0.08 | Civic activism → independent thinker |
-| Online_Partisan | 0.08 | Online echo chamber → resistant |
-| Trade_School | 0.03 | Trade education → minor hardness |
-| HBCU | 0.03 | HBCU education → minor hardness |
-| Community_College | 0.02 | Community college → moderate conviction |
-| Bible_College | 0.06 | Bible college → strong religious convictions |
-| Blue_Collar | 0.04 | Blue collar → moderate hardness |
-| Diyer | 0.02 | DIY identity → minor hardness |
-| Income_Band | 0.05 | Income → slight hardness effect |
-| Need_Closure | 0.10 | NFC → harder to move once decided |
-| Cognitive_Reflection | −0.08 | CRT → more open to persuasion |
-| Education_Years | 0.12* | * computed as 12.0 (years proxy) |
-
+```raw
+implicit_bias ~ Uniform(-0.6, 0.6) × 1.2  [negative skew]
+```
+```python
 #### Influence Weight (w) — Persuasive power: χ coefficients
 Higher w → greater influence during deliberation.
-w = min(1.0 + max(0, x)² × 0.08,  3.5)   [Task 4: bounded quadratic — max 3.5× cap prevents domination]
+
+**v0.61:** Uses softplus instead of quadratic. Softplus(x) = log(1 + exp(x)) is smooth,
+monotonic, and avoids the saturation problem that caused elite-educated clusters to always
+hit the 3.5 cap under the old quadratic formula.
+
+w = min(1.0 + 0.08 × softplus(x),  3.5)
   where x = χ_intercept + Σ χᵢ · traitᵢ
+  where softplus(x) = log(1 + exp(x))
 
 | Factor | Weight | Interpretation |
 |--------|--------|----------------|
@@ -202,53 +219,6 @@ w = min(1.0 + max(0, x)² × 0.08,  3.5)   [Task 4: bounded quadratic — max 3.
 | Diyer | 0.01 | DIY identity → minor influence |
 | Age | 0.02 | Life experience → mild influence |
 | Certainty | 0.03 | Certainty (G2−0.5) → small boost |
-
-#### Conformity (φ) — Susceptibility to consensus: ρ coefficients (reduced ~30-40%, Block 7)
-Higher φ → more conforming to jury majority.
-φ = logistic(0.6 × (ρ_intercept + Σ ρᵢ · traitᵢ))  [was logistic(sum) — narrower effective range]
-
-| Factor | Weight | Interpretation |
-|--------|--------|----------------|
-| RWA | 0.12 | Authoritarianism → conforming (was 0.20) |
-| SDO | 0.07 | Social dominance → slightly conforming (was 0.12) |
-| Conserv_Relig | 0.10 | Religious conservatism → conforming (was 0.18) |
-| Pol_Id | 0.06 | Political identity → conforming (was 0.10) |
-| Pol_Strength | 0.07 | Strong identity → conforming (was 0.12) |
-| Sm_Polar | 0.06 | Polarized SM → slightly conforming |
-| Blue_Collar | 0.02 | Blue collar → minor conformity |
-| NRA | −0.04 | NRA members → LESS conforming, softened (was −0.10) |
-| Religiosity | 0.10 | Religious → more conforming |
-| Need_Closure | 0.08 | NFC → wants resolution, conforms (was 0.12) |
-| NFC (Need for Cognition) | −0.08 | High NFC → independent thinker |
-| SM_News_Reliance | 0.08 | SM news → susceptible to groupthink |
----
----
-## 3. Trait Generation from Agent Demographics
-## 3. Trait Generation from Agent Demographics
-### 3.1 Demographic → Trait Mapping (Research-Backed)
-### 3.1 Demographic → Trait Mapping (Research-Backed)
-Each juror agent has observable demographics. These are mapped to the latent trait space using **bias-category weights** that represent the relative influence of each demographic dimension. Default weights are derived from meta-analyses of jury research (see `docs/JurorBiasResearch.md`).
-Each juror agent has observable demographics. These are mapped to the latent trait space using **bias-category weights** that represent the relative influence of each demographic dimension. Default weights are derived from meta-analyses of jury research (see `docs/JurorBiasResearch.md`).
-
-#### Bias Factor Weights (Default Values)
-| Factor | Weight | Source |
-|--------|--------|--------|
-| Political Affiliation | 0.90 | Strongest predictor (Forresta 2025) |
-| Education Level | 0.80 | Analytical evaluation (RAND 2024) |
-| Legal Knowledge | 0.75 | Expertise influences interpretation |
-| Juror Experience | 0.70 | Deliberation participation |
-| Community Ties | 0.65 | Social identity influences decisions |
-| Ethnicity | 0.60 | Racial bias in verdicts |
-| Age | 0.55 | Perspective and credibility assessment |
-| Income Level | 0.50 | Economic perspective |
-| Gender | 0.45 | Context-dependent influence |
-| Religion | 0.40 | Case-type variation |### 3.2 Implicit Bias
-| Religion | 0.40 | Case-type variation |### 3.2 Implicit Bias
-
-
-| Communication Style | 0.35 | Narrative influence || Communication Style | 0.35 | Narrative influence |
-```raw
-implicit_bias ~ Uniform(-0.6, 0.6) × 1.2  [negative skew]
 ```
 Simulates unconscious associations distinct from explicit attitudes. Accounts for ~15% of variance in juror decisions (Greenwald et al.).
 
@@ -264,8 +234,11 @@ else:                     compound_bias = 0
 
 **Education × Political Rigidity Interaction:**
 ```raw
-edu_pol_rigidity: DELETED from static generation (2026-05-27 Task 5).
-Now deployed DYNAMICALLY in Stage 2: if evidence conflicts with PolId → λ += edu_weight × pol_weight × 0.45
+edu_pol_rigidity: DEPLOYED DYNAMICALLY in Stage 2 (v0.61 update).
+When evidence conflicts with PolId (effectiveEvidenceDir × PolId < 0):
+    motivated_term = edu_weight × pol_weight × 0.20
+    λ = ComputeRigidityWithMotivatedTerm(traits, coefs, motivated_term)
+    // motivated_term is blended inside the logistic input — NOT added post-hoc.
 ```
 *Rationale: Educated partisans show MORE motivated reasoning, not less (Kahan et al. 2012).*
 

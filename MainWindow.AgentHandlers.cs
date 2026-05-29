@@ -224,6 +224,9 @@ public partial class MainWindow
                 item.Visibility = (agent != null && agent.IsOccupied &&
                     (agent.Role == AgentRole.Juror || agent.Role == AgentRole.AlternateJuror))
                     ? Visibility.Visible : Visibility.Collapsed;
+            else if (item.Header.ToString() == "Opinion Drift ▸")
+                item.Visibility = (agent != null && agent.IsOccupied)
+                    ? Visibility.Visible : Visibility.Collapsed;
             else
                 item.Visibility = Visibility.Visible;
         }
@@ -273,5 +276,39 @@ public partial class MainWindow
 
         var reportWindow = new JurorReportWindow(agent, _viewModel.CurrentCase?.Mode ?? Models.CaseMode.Civil) { Owner = this };
         reportWindow.ShowDialog();
+    }
+
+    private void OpinionDrift_Click(object sender, RoutedEventArgs e)
+    {
+        var menuItem = sender as FrameworkElement;
+        var agent = menuItem?.Tag as Agent;
+        if (agent == null || !agent.IsOccupied) return;
+
+        if (agent.OpinionHistory.Count == 0)
+        {
+            MessageBox.Show($"{agent.Name} has no opinion history yet. Run a trial or deliberation to collect data.",
+                "No Data", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var chartWindow = new JurorLeanChartWindow(new[] { agent }) { Owner = this, Title = $"Opinion Drift — {agent.Name}" };
+        chartWindow.ShowDialog();
+    }
+
+    private void OpinionChartAll_Click(object sender, RoutedEventArgs e)
+    {
+        var allJurors = _viewModel.AllAgents
+            .Where(a => a.IsOccupied && a.CanVote)
+            .ToList();
+
+        if (allJurors.All(j => j.OpinionHistory.Count == 0))
+        {
+            MessageBox.Show("No opinion history recorded yet. Run a trial or deliberation to collect data.",
+                "No Data", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var chartWindow = new JurorLeanChartWindow(allJurors) { Owner = this };
+        chartWindow.ShowDialog();
     }
 }

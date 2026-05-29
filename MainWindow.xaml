@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Verdict"
         xmlns:conv="clr-namespace:Verdict.Converters"
         mc:Ignorable="d"
-        Title="{Binding WindowTitle}" Height="950" Width="1500"
+        Title="{Binding WindowTitle}" Height="950" Width="1500" MinHeight="700" MinWidth="1100"
         Background="#2C3E50">
     <Window.Resources>
         <ResourceDictionary>
@@ -26,6 +26,7 @@
                             <MenuItem Header="Generate Juror..." Click="GenerateLikelyJuror_Click" Tag="{Binding}"/>
                             <MenuItem Header="Chat" Click="AgentChat_Click" Tag="{Binding}"/>
                             <MenuItem Header="Juror Report" Click="JurorReport_Click" Tag="{Binding}"/>
+                            <MenuItem Header="Opinion Drift ▸" Click="OpinionDrift_Click" Tag="{Binding}"/>
                             <MenuItem Header="Save Character" Click="ExportCharacter_Click"/>
                             <MenuItem Header="Delete" Click="DeleteAgent_Click" Foreground="Red"/>
                         </ContextMenu>
@@ -109,6 +110,13 @@
                               ToolTip="Civil negligence case with comparative fault. Tests how jurors assign percentages of blame between plaintiff and defendant."/>
                     <MenuItem Header="Smoking Memo (Punitive)" Click="DefaultCase_SmokingMemo_Click"
                               ToolTip="Corporate liability case involving a smoking-gun internal memo. Tests jury punitive damage capacity and outrage response."/>
+                    <Separator/>
+                    <MenuItem Header="Circumstantial Locked Room" Click="DefaultCase_LockedRoom_Click"
+                              ToolTip="State v. Marcus Webb — Circumstantial-evidence-only criminal case. No murder weapon, no eyewitness, no confession. Tests how jurors weigh inference vs. direct proof."/>
+                    <MenuItem Header="Few Bad Apples (Following Orders)" Click="DefaultCase_FewBadApples_Click"
+                              ToolTip="State v. Kowalski &amp; Reyes — Police academy hazing death. Defendants claim they were following orders. Tests chain-of-command and institutional-betrayal dynamics."/>
+                    <MenuItem Header="Twelve Mildly Bothered Agents" Click="DefaultCase_TwelveAgents_Click"
+                              ToolTip="People v. Daniel Torres — Adaptation of 12 Angry Men. Seemingly strong prosecution case unravels under deliberation. Tests turnaround verdict dynamics."/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="_Save Case" Click="SaveSimulation_Click"/>
@@ -158,6 +166,9 @@
                 <Separator/>
                 <MenuItem Header="_Dynamic Role Assignment" Click="DynamicRoleAssignment_Click"/>
                 <Separator/>
+                <MenuItem Header="_Opinion Drift Chart" Click="OpinionChartAll_Click"
+                          ToolTip="View a chart showing how each juror's verdict lean has changed over the course of the trial."/>
+                <Separator/>
                 <MenuItem Header="_Load Agent..." Click="LoadAgent_Click"/>
                 <MenuItem Header="_Build Agent" Click="BuildAgent_Click"/>
                 <MenuItem Header="_Design Prompts" Click="DesignPrompts_Click"/>
@@ -180,35 +191,36 @@
         <StatusBar DockPanel.Dock="Bottom" Background="#1A252F" Foreground="White" Padding="10,5">
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="COURT STAGE:" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,10,0"/>
+                    <TextBlock Text="PHASE:" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding TrialPhaseLabel, Mode=OneWay}" FontWeight="SemiBold" Foreground="#3498DB" Margin="0,0,6,0"/>
+                    <TextBlock Text="▸" Foreground="#7F8C8D" Margin="0,0,6,0"/>
                     <TextBlock Text="{Binding CurrentDebateStageDisplay, Mode=OneWay}" FontWeight="SemiBold" Foreground="#2ECC71"/>
-                    <Button Content="DELIBERATE (Turn)" Click="AdvanceStage_Click" Margin="15,0,0,0" Padding="8,2" Background="#2980B9" Foreground="White" FontSize="10"/>
+                    <Button Content="ADVANCE" Click="AdvanceStage_Click" Margin="15,0,0,0" Padding="8,2" Background="#2980B9" Foreground="White" FontSize="10"/>
                     <Button Content="AUTOPILOT" Click="AutoDeliberate_Click" Margin="8,0,0,0" Padding="8,2" Background="#E67E22" Foreground="White" FontSize="10" FontWeight="Bold"/>
-
                 </StackPanel>
             </StatusBarItem>
-            <Separator Margin="20,0"/>
+            <Separator Margin="15,0"/>
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="LIKELY JURY VERDICT:" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,10,0"/>
+                    <TextBlock Text="VERDICT:" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,8,0"/>
                     <TextBlock Text="{Binding LikelyVerdict, Mode=OneWay}" FontWeight="SemiBold"/>
                 </StackPanel>
             </StatusBarItem>
-            <Separator Margin="20,0"/>
+            <Separator Margin="15,0"/>
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="LIABILITY SCORE:" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,10,0"/>
-                    <ProgressBar Value="{Binding JuryLiabilityAverage, Mode=OneWay}" Minimum="0" Maximum="1" Width="150" Height="15" Foreground="#2ECC71" Background="#34495E"/>
-                    <TextBlock Text="{Binding JuryLiabilityAverage, Mode=OneWay, StringFormat=P0}" Margin="10,0,0,0"/>
+                    <TextBlock Text="{Binding VerdictThresholdLabel, Mode=OneWay}" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,8,0"/>
+                    <ProgressBar Value="{Binding JuryLiabilityAverage, Mode=OneWay}" Minimum="0" Maximum="1" Width="120" Height="14" Foreground="#2ECC71" Background="#34495E"/>
+                    <TextBlock Text="{Binding JuryLiabilityAverage, Mode=OneWay, StringFormat=P0}" Margin="8,0,0,0"/>
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>
 
-        <Grid Margin="30">
+        <Grid Margin="20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/> <!-- Bench -->
-                <RowDefinition Height="Auto"/> <!-- Reply Window -->
-                <RowDefinition Height="*"/>    <!-- Floor Area -->
+                <RowDefinition Height="1.5*"/> <!-- Reply Window -->
+                <RowDefinition Height="2.5*"/>    <!-- Floor Area -->
                 <RowDefinition Height="Auto"/> <!-- Prompt Entry -->
             </Grid.RowDefinitions>
 
@@ -223,7 +235,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemContainerStyle>
                         <Style TargetType="ContentPresenter">
-                            <Setter Property="Margin" Value="12,0"/>
+                            <Setter Property="Margin" Value="24,0"/>
                         </Style>
                     </ItemsControl.ItemContainerStyle>
                     <ItemsControl.ItemTemplateSelector>
@@ -243,11 +255,15 @@
                         Margin="0,0,20,0"/>
             </Grid>
 
-            <!-- Reply Window -->
-            <Border Grid.Row="1" Background="#1A252F" BorderBrush="#34495E" BorderThickness="2" Padding="15" CornerRadius="10" Margin="0,20">
+            <!-- Court Record / Replies -->
+            <Border Grid.Row="1" Background="#1A252F" BorderBrush="#34495E" BorderThickness="2" Padding="15" CornerRadius="10" Margin="0,15">
                 <DockPanel>
-                    <TextBlock Text="COURT RECORD / REPLIES" DockPanel.Dock="Top" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,0,10" FontSize="12"/>
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Height="100">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="{Binding CourtRecordLabel, Mode=OneWay}" Foreground="#E67E22" FontWeight="Bold" FontSize="13"/>
+                        <TextBlock Text=" ▸ " Foreground="#7F8C8D" FontSize="11" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding CurrentDebateStageDisplay, Mode=OneWay}" Foreground="#2ECC71" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <TextBox x:Name="ReplyOutput" Text="{Binding TranscriptOutput, Mode=OneWay}" 
                                  Foreground="#ECF0F1" TextWrapping="Wrap" FontSize="14"
                                  Background="Transparent" BorderThickness="0"
@@ -260,9 +276,9 @@
             <!-- Main Floor Area -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="360"/>
+                    <ColumnDefinition Width="240"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="360"/>
+                    <ColumnDefinition Width="240"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Jury Box (12 Jurors in 4x3 + 2 Alternates below) -->
@@ -342,14 +358,14 @@
             </Grid>
 
             <!-- Prompt Entry -->
-            <Border Grid.Row="3" Background="#1A252F" BorderBrush="#34495E" BorderThickness="2" Padding="15" CornerRadius="10" Margin="0,20,0,0">
+            <Border Grid.Row="3" Background="#1A252F" BorderBrush="#34495E" BorderThickness="2" Padding="12" CornerRadius="10" Margin="0,15,0,0" MaxWidth="900" HorizontalAlignment="Center">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="INPUT PROMPT" Grid.Row="0" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,0,10" FontSize="12"/>
+                    <TextBlock Text="INPUT PROMPT" Grid.Row="0" Foreground="#E67E22" FontWeight="Bold" Margin="0,0,0,6" FontSize="11"/>
 
                     <Grid Grid.Row="1" VerticalAlignment="Stretch">
                         <Grid.ColumnDefinitions>
@@ -361,9 +377,9 @@
                                   Background="#2C3E50"
                                   Foreground="#ECF0F1"
                                  BorderThickness="0"
-                                 Padding="10"
-                                 FontSize="14"
-                                 MinHeight="60"
+                                 Padding="8"
+                                 FontSize="13"
+                                 MinHeight="50"
                                  VerticalAlignment="Stretch"
                                  TextWrapping="Wrap"
                                  AcceptsReturn="True"
@@ -373,8 +389,8 @@
                         <Button Content="SEND"
                                 Grid.Column="1"
                                 Click="SendMessage_Click"
-                                Width="80"
-                                Margin="10,0,0,0"
+                                Width="70"
+                                Margin="8,0,0,0"
                                 Background="#E67E22"
                                 Foreground="White"
                                 FontWeight="Bold"/>

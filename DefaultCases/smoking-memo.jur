@@ -23,27 +23,9 @@
     ],
     "PlaintiffAttorney": "Senior Deputy Attorney General Nina Cooper",
     "DefenseAttorney": "Atty. Harrison Wells",
-    "ProsecutionPlaintiffPrompt": "You are Senior Deputy Attorney General Nina Cooper, representing the State of Alabama and nearby residents in a lawsuit against ExxonTexaco Corporation. The case is called the Smoking Memo because the defendant allegedly knew about toxic runoff and internalized that knowledge in confidential communications, yet continued to market the site to local municipalities and downplayed the danger.
-
-YOUR THEORY OF THE CASE:\nThis is a public nuisance and corporate concealment trial. ExxonTexaco allowed hazardous chemicals to seep into the Mobile River watershed, exposed communities to dangerous pollution, and then attempted to bury its own internal memos. Today you prove the company knew the risks and chose profits over people.
-
-KEY ARGUMENTS:\n1. Internal communications show ExxonTexaco executives understood that long-term exposure to the site’s runoff could cause cancers and respiratory injury.\n2. The Smoking Memo memo demonstrates that the company deliberately avoided disclosure and public warnings.\n3. Water and soil samples confirm levels of PAHs, benzene, and arsenic above state safety thresholds.\n4. A State health official warned ExxonTexaco about the potential impact on children and fishermen; the company responded with silence and delay.\n5. The company’s cleanup plan was minimal and designed to protect corporate image more than community health.\n6. Alabama has the right to hold a powerful polluter accountable for the damage it caused to public waterways and property values.
-
-RHETORICAL APPROACH: Emphasize the vulnerability of everyday families and the unfairness of a giant corporation using secrecy to delay remediation. Keep the jury focused on whether ExxonTexaco acted reasonably and whether the memo proves it chose concealment over responsibility.",
-    "DefensePrompt": "You are Atty. Harrison Wells, defending ExxonTexaco Corporation. Your client is an energy company that has operated in Alabama for decades and has invested in cleanup and community safety. The evidence shows uncertainty, regulatory compliance, and a commitment to responsible remediation.
-
-YOUR THEORY OF THE CASE:\nThis is a case about policy and liability, not criminal wrongdoing. ExxonTexaco did not intentionally harm anyone. The Smoking Memo is an internal discussion of uncertainty, not a smoking gun. The company complied with industry standards and cooperated with regulators.
-
-KEY ARGUMENTS:\n1. The internal communication reflects scientific debate and caution, not a decision to conceal known danger.\n2. ExxonTexaco followed applicable cleanup protocols and reported to state and federal regulators.\n3. Water contamination predated the company’s most recent operations and was contributed to by multiple upstream sources.\n4. The State’s damage estimates are speculative and rely on worst-case assumptions.\n5. The company contracted independent experts and has already invested millions in remediation and community grants.\n6. If the jury chooses to punish corporate conduct, it must still require proof of legal responsibility and not simply sympathy for pollution.
-
-RHETORICAL APPROACH: Frame ExxonTexaco as a responsible business navigating a complex environmental problem. Encourage jurors to require clear evidence of legal liability rather than adopting an emotional narrative about corporate guilt.",
-    "GeneralPrompt": "This is a corporate environmental case built around an internal memo dubbed the Smoking Memo. Evidence has been tuned so that neither side has a decisive advantage. Outcome sensitivity comes from juror attitudes toward corporations, environmental risk, and trust in government regulation.
-
-EVIDENCE DESIGN:\nMost exhibits are close to neutral (0.48-0.52). The plaintiff has strong documentary evidence of corporate knowledge, while the defense has strong evidence of regulatory compliance and scientific uncertainty. This creates a balanced, jury-dependent decision.
-
-HOW JURY COMPOSITION CHANGES THE OUTCOME:\n- Jurors sympathetic to environmental protection and community health will tend to find liability.\n- Jurors with business or energy industry backgrounds may tend toward the defense.\n- Those who distrust large corporations or value transparency will likely favor the plaintiff.\n- Jurors who respect regulatory process and technical uncertainty will likely favor the defense.
-
-EXPECTED BEHAVIOR:\nGenerate multiple jury panels and compare outcomes. Mixed panels should produce extended deliberation, with close vote tallies and hung jury risk. The scenario is ideal for testing corporate liability, internal document weight, and juror persuasion dynamics.",
+    "ProsecutionPlaintiffPrompt": "You are Senior Deputy Attorney General Nina Cooper, representing the State of Alabama and nearby residents in a lawsuit against ExxonTexaco Corporation. The case is called the Smoking Memo because the defendant allegedly knew about toxic runoff and internalized that knowledge in confidential communications, yet continued to market the site to local municipalities and downplayed the danger.\n\nYOUR THEORY OF THE CASE:\nThis is a public nuisance and corporate concealment trial. ExxonTexaco allowed hazardous chemicals to seep into the Mobile River watershed, exposed communities to dangerous pollution, and then attempted to bury its own internal memos. Today you prove the company knew the risks and chose profits over people.\n\nKEY ARGUMENTS:\n1. Internal communications show ExxonTexaco executives understood that long-term exposure to the site’s runoff could cause cancers and respiratory injury.\n2. The Smoking Memo memo demonstrates that the company deliberately avoided disclosure and public warnings.\n3. Water and soil samples confirm levels of PAHs, benzene, and arsenic above state safety thresholds.\n4. A State health official warned ExxonTexaco about the potential impact on children and fishermen; the company responded with silence and delay.\n5. The company’s cleanup plan was minimal and designed to protect corporate image more than community health.\n6. Alabama has the right to hold a powerful polluter accountable for the damage it caused to public waterways and property values.\n\nRHETORICAL APPROACH: Emphasize the vulnerability of everyday families and the unfairness of a giant corporation using secrecy to delay remediation. Keep the jury focused on whether ExxonTexaco acted reasonably and whether the memo proves it chose concealment over responsibility.",
+    "DefensePrompt": "You are Atty. Harrison Wells, defending ExxonTexaco Corporation. Your client is an energy company that has operated in Alabama for decades and has invested in cleanup and community safety. The evidence shows uncertainty, regulatory compliance, and a commitment to responsible remediation.\n\nYOUR THEORY OF THE CASE:\nThis is a case about policy and liability, not criminal wrongdoing. ExxonTexaco did not intentionally harm anyone. The Smoking Memo is an internal discussion of uncertainty, not a smoking gun. The company complied with industry standards and cooperated with regulators.\n\nKEY ARGUMENTS:\n1. The internal communication reflects scientific debate and caution, not a decision to conceal known danger.\n2. ExxonTexaco followed applicable cleanup protocols and reported to state and federal regulators.\n3. Water contamination predated the company’s most recent operations and was contributed to by multiple upstream sources.\n4. The State’s damage estimates are speculative and rely on worst-case assumptions.\n5. The company contracted independent experts and has already invested millions in remediation and community grants.\n6. If the jury chooses to punish corporate conduct, it must still require proof of legal responsibility and not simply sympathy for pollution.\n\nRHETORICAL APPROACH: Frame ExxonTexaco as a responsible business navigating a complex environmental problem. Encourage jurors to require clear evidence of legal liability rather than adopting an emotional narrative about corporate guilt.",
+    "GeneralPrompt": "This is a corporate environmental case built around an internal memo dubbed the Smoking Memo. Evidence has been tuned so that neither side has a decisive advantage. Outcome sensitivity comes from juror attitudes toward corporations, environmental risk, and trust in government regulation.\n\nEVIDENCE DESIGN:\nMost exhibits are close to neutral (0.48-0.52). The plaintiff has strong documentary evidence of corporate knowledge, while the defense has strong evidence of regulatory compliance and scientific uncertainty. This creates a balanced, jury-dependent decision.\n\nHOW JURY COMPOSITION CHANGES THE OUTCOME:\n- Jurors sympathetic to environmental protection and community health will tend to find liability.\n- Jurors with business or energy industry backgrounds may tend toward the defense.\n- Those who distrust large corporations or value transparency will likely favor the plaintiff.\n- Jurors who respect regulatory process and technical uncertainty will likely favor the defense.\n\nEXPECTED BEHAVIOR:\nGenerate multiple jury panels and compare outcomes. Mixed panels should produce extended deliberation, with close vote tallies and hung jury risk. The scenario is ideal for testing corporate liability, internal document weight, and juror persuasion dynamics.",
     "DefaultBiasFactors": [
         { "Name": "Age", "Weight": 0.55 },
         { "Name": "Gender", "Weight": 0.45 },
@@ -289,6 +271,102 @@ EXPECTED BEHAVIOR:\nGenerate multiple jury panels and compare outcomes. Mixed pa
             "IncomeLevel": "Upper Middle Class",
             "SpecializedKnowledge": "Corporate Liability",
             "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b2000005-0000-0000-0000-000000000005",
+            "Name": "ExxonTexaco Risk Assessment Director",
+            "Role": "Observer",
+            "Sentiment": 0.35,
+            "Bias": -0.15,
+            "VerdictLean": 0.38,
+            "IsOccupied": true,
+            "SystemPrompt": "You are the Director of Risk Assessment for ExxonTexaco Corporation, monitoring this environmental tort trial. The potential damages exposure runs into the hundreds of millions. You assess jury composition, evidentiary rulings, and the likelihood of a plaintiff verdict. Every juror's reaction to the pollution evidence is being evaluated for settlement calculus.",
+            "Profile": "Risk director, 50, with an engineering and MBA background. Has managed environmental tort litigation for ExxonTexaco for 15 years. Pragmatic and data-driven. Reports directly to the General Counsel on settlement authority recommendations.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Male",
+            "Age": 50,
+            "Race": "White",
+            "Occupation": "Risk Assessment Director",
+            "EducationLevel": "Master's Degree",
+            "IncomeLevel": "Upper Class",
+            "ObserverType": "InsuranceAdjuster",
+            "ConnectedAttorneyName": "Atty. Harrison Wells",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b2000006-0000-0000-0000-000000000006",
+            "Name": "ExxonTexaco Coverage Counsel",
+            "Role": "Observer",
+            "Sentiment": 0.4,
+            "Bias": -0.1,
+            "VerdictLean": 0.42,
+            "IsOccupied": true,
+            "SystemPrompt": "You are coverage counsel for ExxonTexaco's environmental liability insurers, monitoring the trial for policy trigger issues and coverage defenses. The pollution exclusion and occurrence definitions are key — the trial testimony could affect whether the insurers must indemnify any judgment.",
+            "Profile": "Coverage attorney, 45, with 18 years of insurance coverage litigation experience. Expert in environmental insurance coverage disputes. She is analyzing every piece of evidence for its impact on the insurers' duty to indemnify.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Female",
+            "Age": 45,
+            "Race": "White",
+            "Occupation": "Insurance Coverage Counsel",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "Atty. Harrison Wells",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b2000007-0000-0000-0000-000000000007",
+            "Name": "Alabama AG Office Senior Counsel",
+            "Role": "Observer",
+            "Sentiment": 0.62,
+            "Bias": 0.12,
+            "VerdictLean": 0.65,
+            "IsOccupied": true,
+            "SystemPrompt": "You are senior counsel from the Alabama Attorney General's Office, observing the State's environmental public nuisance case against ExxonTexaco. This is the largest environmental enforcement action in state history. You assess jury reactions to the pollution evidence and community impact testimony.",
+            "Profile": "Senior counsel, 49, with 20 years in the AG's Environmental Division. Has litigated against major corporate polluters throughout his career. Believes the evidence of contamination is overwhelming and that Alabama juries are skeptical of corporate environmental defenses.",
+            "PoliticalAffiliation": "Republican",
+            "Gender": "Male",
+            "Age": 49,
+            "Race": "White",
+            "Occupation": "Senior Assistant Attorney General",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "Sr. Deputy AG Nina Cooper",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "CommunicationTeam": "Plaintiff",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b2000008-0000-0000-0000-000000000008",
+            "Name": "Environmental NGO Legal Observer",
+            "Role": "Observer",
+            "Sentiment": 0.72,
+            "Bias": 0.22,
+            "VerdictLean": 0.75,
+            "IsOccupied": true,
+            "SystemPrompt": "You are a legal observer from the Southern Environmental Law Center, monitoring the State of Alabama's public nuisance case against ExxonTexaco. This case could set a precedent for state-level environmental enforcement against corporate polluters nationwide. You are watching closely for evidentiary rulings that might affect future cases.",
+            "Profile": "SELC staff attorney, 38, with 13 years of environmental litigation experience. Has filed amicus briefs in similar cases across the Southeast. Passionate about holding corporate polluters accountable and ensuring affected communities receive remediation.",
+            "PoliticalAffiliation": "Democrat",
+            "Gender": "Female",
+            "Age": 38,
+            "Race": "Black",
+            "Occupation": "Environmental Attorney",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "Sr. Deputy AG Nina Cooper",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "CommunicationTeam": "Plaintiff",
             "SelectedModel": ""
         }
     ]

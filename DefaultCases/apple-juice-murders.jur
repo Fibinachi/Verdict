@@ -22,41 +22,9 @@
     ],
     "PlaintiffAttorney": "District Attorney Mara Castillo",
     "DefenseAttorney": "Atty. Darius King",
-    "ProsecutionPlaintiffPrompt": "You are District Attorney Mara Castillo, prosecuting Andre Walker in the Apple Juice Murders. The defendant is a retired NFL star whose celebrity status has created intense public scrutiny. Your theory: Walker drove to the Bel Air estate of his ex-wife, Lena Hart, confronted her and her friend Daniel Price, and killed them in a violent frenzy. He later attempted to mislead police by staging evidence and offering inconsistent statements. This is a deliberate, planned murder; the myths of freeway pursuit and self-defense are distractions.
-
-KEY ARGUMENTS:
-1. The glove recovered outside the estate matches Walker's reported clothing and contains the victims' blood.
-2. The defendant's sock with blood on it shows he tried to discard evidence after the killings.
-3. Walker's mobile phone data places him at the scene during the critical hour, contradicting his earlier account.
-4. The autopsy shows two stab wounds delivered with force, inconsistent with a defensive withdrawal.
-5. Witness statements place him in the house shortly before the victims were killed.
-6. The defendant's own statements to police changed over time and reveal consciousness of guilt.
-
-RHETORICAL APPROACH: Emphasize that this is not a tragic accident or a celebrity's self-defense claim. Focus on the evidence chain, motive, and the defendant's actions before and after the killings. Anchor jurors in reasonable doubt by showing that the alternative narrative is unsupported and the defendant's behavior is inconsistent with an innocent person.",
-    "DefensePrompt": "You are Atty. Darius King, defending Andre Walker in the Apple Juice Murders. The defendant is a former professional football player who believed his life was in danger. Your theory: Walker arrived at his ex-wife's home intending to negotiate a custody matter, was ambushed by her friend and a small mob, and acted to protect himself from imminent deadly harm. The State's case is built on a rush to judgment against a celebrity and a flawed interpretation of evidence.
-
-KEY ARGUMENTS:
-1. Walker was in the house to retrieve personal property and discuss custody; he never intended violence.
-2. The surveillance and 911 recordings show a chaotic, aggressive confrontation and make a defensive reaction plausible.
-3. The blood evidence can also be explained by a scuffle and by Walker's attempt to flee a dangerous situation.
-4. Walker was intoxicated, tired, and emotionally overwhelmed by the confrontation; his recollection may be inconsistent without being guilty.
-5. The State's expert conceded there is no clear proof of premeditation; the evidence is consistent with a sudden fight.
-6. The police timeline is compressed and the prosecution's narrative depends on inferences, not direct proof.
-
-RHETORICAL APPROACH: Humanize Walker as a frightened man cornered by an angry, unpredictable group. Stress the burden on the State to eliminate every reasonable doubt. Frame the incident as an accident fueled by fear, not a planned murder.",
-    "GeneralPrompt": "This scenario is a close celebrity homicide trial nicknamed the Apple Juice Murders. Evidence is deliberately balanced so that jury composition and juror bias swing the outcome. The case is designed to test reasonable doubt dynamics, celebrity bias, and the effect of life experience on juror decision-making.
-
-EVIDENCE DESIGN:
-Most exhibits are close to neutral (0.48-0.52). The prosecution and defense both have credible evidence, but neither side has a decisive advantage. The case will often resolve differently depending on juror demographics, personal experience with domestic conflict, familiarity with celebrity culture, and attitudes toward law enforcement.
-
-HOW JURY COMPOSITION CHANGES THE OUTCOME:
-- Jurors with family members in law enforcement or athletics may give Walker the benefit of the doubt.
-- Jurors sensitive to domestic violence or vulnerable friends may lean toward conviction.
-- Older jurors often favor self-defense narratives; younger jurors may distrust celebrity privilege and favor the prosecution.
-- Jurors with high education may scrutinize the forensic evidence more closely and can break a tie in either direction.
-
-EXPECTED BEHAVIOR:
-Run deliberation with different jury profiles and observe varied outcomes. Strong mixed panels should produce extended deliberation and close final tallies. The scenario is ideal for exploring narrative framing and jury persuasion.",
+    "ProsecutionPlaintiffPrompt": "You are District Attorney Mara Castillo, prosecuting Andre Walker in the Apple Juice Murders. The defendant is a retired NFL star whose celebrity status has created intense public scrutiny. Your theory: Walker drove to the Bel Air estate of his ex-wife, Lena Hart, confronted her and her friend Daniel Price, and killed them in a violent frenzy. He later attempted to mislead police by staging evidence and offering inconsistent statements. This is a deliberate, planned murder; the myths of freeway pursuit and self-defense are distractions.\n\nKEY ARGUMENTS:\n1. The glove recovered outside the estate matches Walker's reported clothing and contains the victims' blood.\n2. The defendant's sock with blood on it shows he tried to discard evidence after the killings.\n3. Walker's mobile phone data places him at the scene during the critical hour, contradicting his earlier account.\n4. The autopsy shows two stab wounds delivered with force, inconsistent with a defensive withdrawal.\n5. Witness statements place him in the house shortly before the victims were killed.\n6. The defendant's own statements to police changed over time and reveal consciousness of guilt.\n\nRHETORICAL APPROACH: Emphasize that this is not a tragic accident or a celebrity's self-defense claim. Focus on the evidence chain, motive, and the defendant's actions before and after the killings. Anchor jurors in reasonable doubt by showing that the alternative narrative is unsupported and the defendant's behavior is inconsistent with an innocent person.",
+    "DefensePrompt": "You are Atty. Darius King, defending Andre Walker in the Apple Juice Murders. The defendant is a former professional football player who believed his life was in danger. Your theory: Walker arrived at his ex-wife's home intending to negotiate a custody matter, was ambushed by her friend and a small mob, and acted to protect himself from imminent deadly harm. The State's case is built on a rush to judgment against a celebrity and a flawed interpretation of evidence.\n\nKEY ARGUMENTS:\n1. Walker was in the house to retrieve personal property and discuss custody; he never intended violence.\n2. The surveillance and 911 recordings show a chaotic, aggressive confrontation and make a defensive reaction plausible.\n3. The blood evidence can also be explained by a scuffle and by Walker's attempt to flee a dangerous situation.\n4. Walker was intoxicated, tired, and emotionally overwhelmed by the confrontation; his recollection may be inconsistent without being guilty.\n5. The State's expert conceded there is no clear proof of premeditation; the evidence is consistent with a sudden fight.\n6. The police timeline is compressed and the prosecution's narrative depends on inferences, not direct proof.\n\nRHETORICAL APPROACH: Humanize Walker as a frightened man cornered by an angry, unpredictable group. Stress the burden on the State to eliminate every reasonable doubt. Frame the incident as an accident fueled by fear, not a planned murder.",
+    "GeneralPrompt": "This scenario is a close celebrity homicide trial nicknamed the Apple Juice Murders. Evidence is deliberately balanced so that jury composition and juror bias swing the outcome. The case is designed to test reasonable doubt dynamics, celebrity bias, and the effect of life experience on juror decision-making.\n\nEVIDENCE DESIGN:\nMost exhibits are close to neutral (0.48-0.52). The prosecution and defense both have credible evidence, but neither side has a decisive advantage. The case will often resolve differently depending on juror demographics, personal experience with domestic conflict, familiarity with celebrity culture, and attitudes toward law enforcement.\n\nHOW JURY COMPOSITION CHANGES THE OUTCOME:\n- Jurors with family members in law enforcement or athletics may give Walker the benefit of the doubt.\n- Jurors sensitive to domestic violence or vulnerable friends may lean toward conviction.\n- Older jurors often favor self-defense narratives; younger jurors may distrust celebrity privilege and favor the prosecution.\n- Jurors with high education may scrutinize the forensic evidence more closely and can break a tie in either direction.\n\nEXPECTED BEHAVIOR:\nRun deliberation with different jury profiles and observe varied outcomes. Strong mixed panels should produce extended deliberation and close final tallies. The scenario is ideal for exploring narrative framing and jury persuasion.",
     "DefaultBiasFactors": [
         { "Name": "Age", "Weight": 0.55 },
         { "Name": "Gender", "Weight": 0.45 },
@@ -329,6 +297,102 @@ Run deliberation with different jury profiles and observe varied outcomes. Stron
             "IncomeLevel": "Upper Middle Class",
             "SpecializedKnowledge": "Homicide Prosecution",
             "CommunicationTeam": "Plaintiff",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b1000005-0000-0000-0000-000000000005",
+            "Name": "County Risk Manager - Robert Kim",
+            "Role": "Observer",
+            "Sentiment": 0.48,
+            "Bias": -0.02,
+            "VerdictLean": 0.5,
+            "IsOccupied": true,
+            "SystemPrompt": "You are Robert Kim, San Bernardino County Risk Manager, monitoring this high-profile celebrity murder trial. A wrongful conviction or procedural error in a case of this visibility could expose the county to massive civil liability. You assess the DA's case strength and jury dynamics from a risk management perspective.",
+            "Profile": "Robert Kim, 44, has managed litigation risk for San Bernardino County for 10 years. Former civil defense attorney. He tracks every high-exposure criminal trial for potential §1983 civil rights liability and wrongful conviction exposure.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Male",
+            "Age": 44,
+            "Race": "Asian",
+            "Occupation": "County Risk Manager",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "InsuranceAdjuster",
+            "ConnectedAttorneyName": "District Attorney Mara Castillo",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "CommunicationTeam": "Plaintiff",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b1000006-0000-0000-0000-000000000006",
+            "Name": "DA Office Chief of Homicide",
+            "Role": "Observer",
+            "Sentiment": 0.68,
+            "Bias": 0.18,
+            "VerdictLean": 0.7,
+            "IsOccupied": true,
+            "SystemPrompt": "You are the Chief of the Homicide Unit, observing DA Castillo's prosecution of the Apple Juice Murders. This is the highest-profile case in the office. You assess how the evidence is landing with the jury and whether celebrity bias is helping or hurting the prosecution.",
+            "Profile": "Homicide chief, 53, with 26 years of prosecution experience. Has supervised Castillo for 8 years and trusts her instincts. Concerned about the defense's ability to humanize the defendant through his NFL career. Watches jurors for signs of celebrity sympathy.",
+            "PoliticalAffiliation": "Democrat",
+            "Gender": "Male",
+            "Age": 53,
+            "Race": "White",
+            "Occupation": "Chief of Homicide Unit",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "District Attorney Mara Castillo",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "CommunicationTeam": "Plaintiff",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b1000007-0000-0000-0000-000000000007",
+            "Name": "Defense Firm Senior Partner",
+            "Role": "Observer",
+            "Sentiment": 0.22,
+            "Bias": -0.28,
+            "VerdictLean": 0.2,
+            "IsOccupied": true,
+            "SystemPrompt": "You are the senior partner at King & Associates, observing Atty. Darius King's defense of Andre Walker. You assess jury dynamics, the impact of celebrity status on juror perceptions, and whether the self-defense narrative is resonating.",
+            "Profile": "Senior partner, 58, with 30 years of criminal defense experience. Has represented celebrities and professional athletes in high-profile cases. Believes the prosecution's case relies too heavily on inference and that the self-defense argument will resonate with at least some jurors.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Female",
+            "Age": 58,
+            "Race": "Black",
+            "Occupation": "Senior Defense Partner",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "Atty. Darius King",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "CommunicationTeam": "Defendant",
+            "SelectedModel": ""
+        },
+        {
+            "AgentId": "b1000008-0000-0000-0000-000000000008",
+            "Name": "NFL Players Association Counsel",
+            "Role": "Observer",
+            "Sentiment": 0.25,
+            "Bias": -0.25,
+            "VerdictLean": 0.28,
+            "IsOccupied": true,
+            "SystemPrompt": "You are counsel for the NFL Players Association, monitoring the Andre Walker trial. The outcome has implications for the NFLPA's player support programs and public perception of former players. You assess whether Walker is receiving a fair trial or being tried in the court of public opinion.",
+            "Profile": "NFLPA counsel, 42, former public defender. The Players Association has a vested interest in ensuring due process for former players. She is watching for media-driven bias and whether the celebrity of the defendant is a factor in the courtroom.",
+            "PoliticalAffiliation": "Independent",
+            "Gender": "Female",
+            "Age": 42,
+            "Race": "Black",
+            "Occupation": "NFLPA Legal Counsel",
+            "EducationLevel": "Doctorate",
+            "IncomeLevel": "Upper Middle Class",
+            "ObserverType": "ClaimsAnalyst",
+            "ConnectedAttorneyName": "Atty. Darius King",
+            "CanCommunicateWithJury": false,
+            "IsExposurePlanner": true,
+            "CommunicationTeam": "Defendant",
             "SelectedModel": ""
         }
     ]
