@@ -2238,6 +2238,8 @@ public class MainViewModel : ViewModelBase
             sb.AppendLine($"    Education: {juror.EducationLevel}  |  Income: {juror.IncomeLevel}");
             sb.AppendLine($"    Political: {juror.PoliticalAffiliation}  |  Bias: {juror.Bias:F2}");
             sb.AppendLine($"    Sentiment: {juror.Sentiment:P1}  |  Memories: {juror.TrialEvents.Count}");
+            if (!isCriminal && juror.ConsideredDamages > 0)
+                sb.AppendLine($"    Considered Damages: ${juror.ConsideredDamages:N0}");
             if (topMemories.Any())
             {
                 sb.AppendLine($"    Top impressions:");
@@ -2281,6 +2283,22 @@ public class MainViewModel : ViewModelBase
         }
 
         sb.AppendLine($"  Overall juror sentiment: {avgSentiment:P1}");
+
+        // Damages summary for civil cases
+        if (!isCriminal)
+        {
+            var withDamages = jurors.Where(j => j.ConsideredDamages > 0).ToList();
+            if (withDamages.Any())
+            {
+                double medD = withDamages.OrderBy(j => j.ConsideredDamages)
+                    .ElementAt(withDamages.Count / 2).ConsideredDamages;
+                sb.AppendLine($"  Jury Damages Consensus: median ${medD:N0} (range ${withDamages.Min(j => j.ConsideredDamages):N0} – ${withDamages.Max(j => j.ConsideredDamages):N0})");
+                sb.AppendLine($"  Evidence Estimated Damages: ${CurrentCase.Evidence.Sum(e => e.EstimatedDamages):N0}");
+                if (CurrentCase.Verdict.DamagesAwarded > 0)
+                    sb.AppendLine($"  Final Damages Awarded: ${CurrentCase.Verdict.DamagesAwarded:N0}");
+            }
+            sb.AppendLine($"  Settlement Value: ${CurrentCase.EstimatedSettlement:N0} | Insurance Reserve: ${CurrentCase.InsuranceReserve:N0}");
+        }
         sb.AppendLine();
 
         TranscriptOutput += sb.ToString();
@@ -2348,21 +2366,86 @@ public class MainViewModel : ViewModelBase
         var early = string.IsNullOrEmpty(_earlyThoughtLeaderName) ? "(not identified)" : _earlyThoughtLeaderName;
         string proLabel = BurdenOfProof.ProsecutionLabel(isCriminal);
         string defLabel = BurdenOfProof.DefenseLabel();
+
+        // ── Compute damages award for civil cases where the plaintiff won ──
+        string damagesLine = "";
+        if (!isCriminal && canReturnVerdict && proCount > defCount)
+        {
+            // Collect considered damages from jurors who voted liable
+            var liableJurors = voters
+                .Where(v => BurdenOfProof.GetPositionLabel(v.VerdictLean, false) == "LIABLE")
+                .ToList();
+
+            if (liableJurors.Any() && liableJurors.Any(j => j.ConsideredDamages > 0))
+            {
+                // Use median for robustness against outliers (real juries converge on middle ground)
+                var damagesValues = liableJurors
+                    .Where(j => j.ConsideredDamages > 0)
+                    .Select(j => j.ConsideredDamages)
+                    .OrderBy(d => d)
+                    .ToList();
+
+                double medianDamages;
+                int mid = damagesValues.Count / 2;
+                if (damagesValues.Count % 2 == 0)
+                    medianDamages = (damagesValues[mid - 1] + damagesValues[mid]) / 2.0;
+                else
+                    medianDamages = damagesValues[mid];
+
+                // Round to nearest hundred for a realistic award
+                medianDamages = Math.Round(medianDamages / 100.0) * 100.0;
+
+                CurrentCase.Verdict.DamagesAwarded = (decimal)medianDamages;
+
+                // Update exposure numbers to reflect the jury's actual award
+                CurrentCase.EstimatedSettlement = medianDamages * 0.85;
+                CurrentCase.InsuranceReserve = medianDamages * 1.15;
+
+                // Format for display
+                string damagesDisplay = medianDamages >= 1_000_000
+                    ? $"${medianDamages / 1_000_000:F2} million"
+                    : $"${medianDamages:N0}";
+
+                damagesLine = $"\nDAMAGES AWARDED: {damagesDisplay} " +
+                    $"(jury median; range: ${damagesValues.Min():N0} – ${damagesValues.Max():N0})\n" +
+                    $"  Updated Settlement Value: ${CurrentCase.EstimatedSettlement:N0} | " +
+                    $"Insurance Reserve: ${CurrentCase.InsuranceReserve:N0}";
+            }
+            else
+            {
+                // No juror formed a damages opinion — fall back to evidence estimates
+                double evidenceTotal = CurrentCase.Evidence.Sum(e => e.EstimatedDamages);
+                if (evidenceTotal > 0)
+                {
+                    CurrentCase.Verdict.DamagesAwarded = (decimal)evidenceTotal;
+                    damagesLine = $"\nDAMAGES AWARDED: ${evidenceTotal:N0} (based on evidence estimates; jury did not reach a damages consensus)";
+                }
+                else
+                {
+                    damagesLine = "\nDAMAGES AWARDED: Nominal ($1) — no evidence of monetary damages was presented.";
+                    CurrentCase.Verdict.DamagesAwarded = 1m;
+                }
+            }
+        }
+
         string summary = $"Jury Deliberation Complete\n" +
                         $"Rounds: {_deliberationRound}/{CurrentCase.DeliberationRounds} | " +
                         $"Early Thought Leader: {early}\n" +
                         $"Final Vote: {proCount} {proLabel} / {defCount} {defLabel}" + (undCount > 0 ? $" / {undCount} Undecided" : "") + $"\n" +
                         $"Lean Spread: {minLean:F2} \u2013 {maxLean:F2} (spread: {spread:F2})\n\n" +
-                        $"{verdictLine}\n\n" +
+                        $"{verdictLine}{damagesLine}\n\n" +
                         $"--- Individual Juror Positions ---";
 
         TranscriptOutput = $"{TranscriptOutput}\n\n{new string('=', 50)}\n{summary}";
 
-        // Show each juror's final position
+        // Show each juror's final position with their considered damages
         foreach (var j in voters.OrderByDescending(v => v.VerdictLean))
         {
             string position = BurdenOfProof.GetPositionLabel(j.VerdictLean, isCriminal);
-            TranscriptOutput += $"\n  {j.Name}: Lean={j.VerdictLean:F2} Bias={j.Bias:F2} \u2192 {position}";
+            string damagesInfo = !isCriminal && j.ConsideredDamages > 0
+                ? $" | Damages: ${j.ConsideredDamages:N0}"
+                : "";
+            TranscriptOutput += $"\n  {j.Name}: Lean={j.VerdictLean:F2} Bias={j.Bias:F2} \u2192 {position}{damagesInfo}";
         }
 
         TranscriptOutput += $"\n{new string('=', 50)}";
@@ -2798,6 +2881,27 @@ public class MainViewModel : ViewModelBase
                         roundOutput += string.Join("\n", influenced) + "\n";
                 }
 
+                // Show damages shifts (civil cases only)
+                if (result.DamagesShifts.Count > 0)
+                {
+                    var dShifts = result.DamagesShifts
+                        .Where(s => Math.Abs(s.NewDamages - s.OldDamages) > 100)
+                        .OrderByDescending(s => Math.Abs(s.NewDamages - s.OldDamages))
+                        .Take(3)
+                        .Select(s =>
+                        {
+                            string oldStr = s.OldDamages > 0 ? $"${s.OldDamages:N0}" : "$0";
+                            string newStr = $"${s.NewDamages:N0}";
+                            return $"  {s.Juror.Name} damages: {oldStr} → {newStr}";
+                        })
+                        .ToList();
+                    if (dShifts.Any())
+                    {
+                        roundOutput += "  [Damages influence]\n";
+                        roundOutput += string.Join("\n", dShifts) + "\n";
+                    }
+                }
+
                 // Periodic jury snapshot every 4 rounds or at detection of shift
                 bool isCriminal = CurrentCase.Mode == CaseMode.Criminal;
                 if (_deliberationRound % 4 == 0)
@@ -2809,7 +2913,22 @@ public class MainViewModel : ViewModelBase
                     string proLabel = isCriminal ? "Guilty" : "Liable";
                     string defLabel = isCriminal ? "Not Guilty" : "Not Liable";
                     roundOutput += $"  ── Snapshot ── {proCount} {proLabel} / {defCount} {defLabel} | " +
-                        $"Lean range: {minLean:P0} – {maxLean:P0} | Spread: {maxLean - minLean:P0}\n";
+                        $"Lean range: {minLean:P0} – {maxLean:P0} | Spread: {maxLean - minLean:P0}";
+
+                    // Include damages range for civil cases
+                    if (!isCriminal)
+                    {
+                        var jurorsWithDamages = jurors.Where(j => j.ConsideredDamages > 0).ToList();
+                        if (jurorsWithDamages.Any())
+                        {
+                            double minD = jurorsWithDamages.Min(j => j.ConsideredDamages);
+                            double maxD = jurorsWithDamages.Max(j => j.ConsideredDamages);
+                            double medD = jurorsWithDamages.OrderBy(j => j.ConsideredDamages)
+                                .ElementAt(jurorsWithDamages.Count / 2).ConsideredDamages;
+                            roundOutput += $" | Damages: ${minD:N0} – ${maxD:N0} (median ${medD:N0})";
+                        }
+                    }
+                    roundOutput += "\n";
                 }
 
                 TranscriptOutput += roundOutput;
@@ -2910,6 +3029,22 @@ public class MainViewModel : ViewModelBase
                     line += $"\n  \u2192 Influenced: {string.Join(", ", influenced)}";
             }
 
+            // Show damages shifts for civil cases
+            if (result.DamagesShifts.Count > 0)
+            {
+                var dShifts = result.DamagesShifts
+                    .Where(s => Math.Abs(s.NewDamages - s.OldDamages) > 100)
+                    .Take(3)
+                    .Select(s =>
+                    {
+                        string o = s.OldDamages > 0 ? $"${s.OldDamages:N0}" : "$0";
+                        return $"{s.Juror.Name} ({o} → ${s.NewDamages:N0})";
+                    })
+                    .ToList();
+                if (dShifts.Any())
+                    line += $"\n  \u2192 Damages influenced: {string.Join(", ", dShifts)}";
+            }
+
             // Show current vote tally
             var voters = jurors.Where(j => j.IsOccupied && j.CanVote).ToList();
             int proCount = voters.Count(v => v.VerdictLean > 0.5);
@@ -2919,6 +3054,18 @@ public class MainViewModel : ViewModelBase
                 ? $"Guilty: {proCount} | Not Guilty: {defCount}" + (undCount > 0 ? $" | Undecided: {undCount}" : "")
                 : $"Liable: {proCount} | Not Liable: {defCount}" + (undCount > 0 ? $" | Undecided: {undCount}" : "");
             line += $"\n  Vote: {voteTally}";
+
+            // Add damages tally for civil cases
+            if (!isCriminal)
+            {
+                var withDamages = voters.Where(v => v.ConsideredDamages > 0).ToList();
+                if (withDamages.Any())
+                {
+                    double medD = withDamages.OrderBy(v => v.ConsideredDamages)
+                        .ElementAt(withDamages.Count / 2).ConsideredDamages;
+                    line += $"\n  Damages: median ${medD:N0} (range ${withDamages.Min(v => v.ConsideredDamages):N0} – ${withDamages.Max(v => v.ConsideredDamages):N0})";
+                }
+            }
 
             TranscriptOutput = $"{TranscriptOutput}\n\n--- Round {_deliberationRound} ---\n{line}";
             BroadcastEvent(line, Enum.GetValues<AgentRole>().ToList(), isSidebar: false);

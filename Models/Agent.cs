@@ -629,6 +629,32 @@ public class Agent : ObservableObject
         Sentiment = Math.Clamp(Sentiment + (shift * (1.0 + Math.Abs(Bias))), 0.0, 1.0);
     }
 
+    /// <summary>
+    /// Updates the Valuation display string from the current ConsideredDamages value.
+    /// Rounds to nearest thousand and formats as "$XK" or "$X.XM" for large amounts.
+    /// </summary>
+    public void UpdateValuationFromDamages()
+    {
+        double amount = ConsideredDamages;
+        if (amount <= 0)
+        {
+            Valuation = "$0";
+            return;
+        }
+
+        if (amount >= 1_000_000)
+        {
+            double millions = amount / 1_000_000.0;
+            Valuation = $"${millions:F1}M";
+        }
+        else
+        {
+            double rounded = Math.Round(amount / 1000.0) * 1000.0;
+            double inThousands = rounded / 1000.0;
+            Valuation = $"${inThousands:F0}K";
+        }
+    }
+
     // ──────────────────────────────────────────────
     //  CopyTo – uses new sub-object CopyFrom methods
     // ──────────────────────────────────────────────

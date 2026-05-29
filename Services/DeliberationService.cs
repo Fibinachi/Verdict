@@ -17,9 +17,12 @@ public class DeliberationTurnResult
     public double Direction { get; set; } // +1 = prosecution, -1 = defense, 0 = neutral
     public bool IsAmbivalent { get; set; }
     public List<(Agent Juror, double Shift)> InfluenceShifts { get; set; } = new();
+    public List<(Agent Juror, double OldDamages, double NewDamages)> DamagesShifts { get; set; } = new();
     public int RoundNumber { get; set; }
     public bool UsedFallback { get; set; }
     public string? FallbackReason { get; set; }
+    /// <summary>Dollar amount mentioned by this juror during deliberation, if any.</summary>
+    public double MentionedDamages { get; set; }
 }
 
 /// <summary>
@@ -156,17 +159,38 @@ public class DeliberationService : IDeliberationService
             ? caseData.Instructions!.Text.Substring(0, Math.Min(600, caseData.Instructions.Text.Length))
             : "Standard jury instructions apply.";
 
+        // For civil cases, include damages context so jurors discuss dollar amounts
+        string damagesContext = "";
+        if (!isCriminal)
+        {
+            double jurorDamages = juror.ConsideredDamages;
+            double evidenceTotal = caseData.Evidence.Sum(e => e.EstimatedDamages);
+            string damagesDisplay = jurorDamages > 0
+                ? $"${jurorDamages:N0}"
+                : "(you have not yet formed a damages amount)";
+
+            damagesContext = $"\nDAMAGES CONSIDERATION:\n" +
+                $"- The evidence suggests total damages of approximately ${evidenceTotal:N0}.\n" +
+                $"- Your current considered damages amount is: {damagesDisplay}.\n" +
+                $"- The judge has instructed you to determine fair compensation based on the evidence.\n" +
+                $"- Consider: medical costs, lost wages, pain and suffering, property damage, and any punitive factors.\n" +
+                $"- Your personal financial background (income: {juror.IncomeLevel}) and life experience " +
+                $"shape how you value these harms — be honest about what amount feels fair to you.\n";
+        }
+
         return $"You are a juror deliberating in a jury room. Stay in character based on your profile.\n\n" +
             $"{jurorProfile}\n\n" +
             $"CASE: {caseData.CaseName} ({(isCriminal ? "Criminal" : "Civil")})\n" +
             $"ISSUES: {verdictIssue}\n\n" +
             $"EVIDENCE REVIEWED:\n{evidenceContext}\n\n" +
-            $"JURY INSTRUCTIONS:\n{instructionsExcerpt}\n\n" +
+            $"JURY INSTRUCTIONS:\n{instructionsExcerpt}\n" +
+            $"{damagesContext}\n" +
             $"PRIOR DELIBERATION:\n{prevTurns}\n\n" +
             $"IMPORTANT: Your lean value above indicates you are CURRENTLY leaning toward {currentSide}. " +
             $"Your statement must reflect this lean — do not contradict it. " +
             $"Give your honest assessment. Reference specific evidence from the EVIDENCE REVIEWED list above. " +
             $"Explain how your personal background (age, occupation, life experience) shapes how you interpret this evidence. " +
+            $"{(isCriminal ? "" : "If you believe the defendant is liable, state what dollar amount of damages you think is appropriate and why. ")}" +
             $"Speak naturally as this juror, 3-5 sentences. Be specific about what evidence matters most to you and why.";
     }
 
@@ -255,6 +279,48 @@ public class DeliberationService : IDeliberationService
         // Record in deliberation history
         deliberationHistory.Add($"{speaker.Name}: \"{llmResponse}\"");
 
+        // Parse any damages amount mentioned by the speaker
+        double mentionedDamages = ParseDamagesFromStatement(llmResponse);
+        var damagesShifts = new List<(Agent Juror, double OldDamages, double NewDamages)>();
+
+        // If the speaker mentioned a specific damages amount and this is a civil case,
+        // propagate damages influence to other jurors
+        if (mentionedDamages > 0 && caseData.Mode == CaseMode.Civil && direction > 0)
+        {
+            // Update speaker's own considered damages toward their stated amount
+            double speakerOld = speaker.ConsideredDamages;
+            if (speakerOld > 0)
+                speaker.ConsideredDamages = (speakerOld * 0.6) + (mentionedDamages * 0.4);
+            else
+                speaker.ConsideredDamages = mentionedDamages;
+            speaker.UpdateValuationFromDamages();
+            damagesShifts.Add((speaker, speakerOld, speaker.ConsideredDamages));
+
+            // Influence other jurors' damages toward the speaker's amount
+            foreach (var juror in jurorList.Where(j => j.AgentId != speaker.AgentId && j.CanVote))
+            {
+                double oldDamages = juror.ConsideredDamages;
+                // Susceptibility: weaker opinions are more persuadable on damages too
+                double opinionStrength = Math.Abs(juror.VerdictLean - 0.5);
+                double susceptibility = Math.Clamp(1.0 - opinionStrength, 0.1, 1.0);
+
+                // How much the juror's damages move toward the speaker's
+                double influenceWeight = persuasiveness * susceptibility * 0.25;
+
+                if (juror.ConsideredDamages > 0)
+                {
+                    juror.ConsideredDamages = (juror.ConsideredDamages * (1.0 - influenceWeight))
+                        + (mentionedDamages * influenceWeight);
+                }
+                else
+                {
+                    juror.ConsideredDamages = mentionedDamages * influenceWeight;
+                }
+                juror.UpdateValuationFromDamages();
+                damagesShifts.Add((juror, oldDamages, juror.ConsideredDamages));
+            }
+        }
+
         // Reinforce trial-event memories for all jurors when the speaker
         // references specific exhibits. This counteracts decay and keeps
         // evidence fresh during deliberation.
@@ -271,9 +337,11 @@ public class DeliberationService : IDeliberationService
             Direction = direction,
             IsAmbivalent = isAmbivalent,
             InfluenceShifts = shifts,
+            DamagesShifts = damagesShifts,
             RoundNumber = roundNumber,
             UsedFallback = fallbackReason != null,
-            FallbackReason = fallbackReason
+            FallbackReason = fallbackReason,
+            MentionedDamages = mentionedDamages
         };
     }
 
@@ -369,6 +437,86 @@ public class DeliberationService : IDeliberationService
         }
 
         return (direction, persuasiveness, isAmbivalent);
+    }
+
+    /// <summary>
+    /// Parses a dollar amount mentioned in a juror's deliberation statement.
+    /// Handles formats like "$500,000", "$2.5 million", "500k", "750 thousand".
+    /// Returns the highest amount found, or 0 if no amount was mentioned.
+    /// </summary>
+    public static double ParseDamagesFromStatement(string statement)
+    {
+        double highestAmount = 0;
+
+        // Pattern 1: $X,XXX,XXX.XX or $X XXX XXX or $X.XX
+        var dollarMatches = System.Text.RegularExpressions.Regex.Matches(
+            statement, @"\$([0-9,]+(?:\.[0-9]+)?)");
+        foreach (System.Text.RegularExpressions.Match match in dollarMatches)
+        {
+            if (double.TryParse(match.Groups[1].Value.Replace(",", ""),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double amount))
+            {
+                if (amount > highestAmount) highestAmount = amount;
+            }
+        }
+
+        // Pattern 2: "X million" or "X.X million"
+        var millionMatches = System.Text.RegularExpressions.Regex.Matches(
+            statement.ToLower(), @"(\d+(?:\.\d+)?)\s*million");
+        foreach (System.Text.RegularExpressions.Match match in millionMatches)
+        {
+            if (double.TryParse(match.Groups[1].Value,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double amount))
+            {
+                double dollarAmount = amount * 1_000_000;
+                if (dollarAmount > highestAmount) highestAmount = dollarAmount;
+            }
+        }
+
+        // Pattern 3: "X billion" 
+        var billionMatches = System.Text.RegularExpressions.Regex.Matches(
+            statement.ToLower(), @"(\d+(?:\.\d+)?)\s*billion");
+        foreach (System.Text.RegularExpressions.Match match in billionMatches)
+        {
+            if (double.TryParse(match.Groups[1].Value,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double amount))
+            {
+                double dollarAmount = amount * 1_000_000_000;
+                if (dollarAmount > highestAmount) highestAmount = dollarAmount;
+            }
+        }
+
+        // Pattern 4: "Xk" or "XK" or "X thousand"
+        var kMatches = System.Text.RegularExpressions.Regex.Matches(
+            statement.ToLower(), @"(\d+(?:\.\d+)?)\s*[kK](?!\w)");
+        foreach (System.Text.RegularExpressions.Match match in kMatches)
+        {
+            if (double.TryParse(match.Groups[1].Value,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double amount))
+            {
+                double dollarAmount = amount * 1_000;
+                if (dollarAmount > highestAmount) highestAmount = dollarAmount;
+            }
+        }
+
+        var thousandMatches = System.Text.RegularExpressions.Regex.Matches(
+            statement.ToLower(), @"(\d+(?:\.\d+)?)\s*thousand");
+        foreach (System.Text.RegularExpressions.Match match in thousandMatches)
+        {
+            if (double.TryParse(match.Groups[1].Value,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double amount))
+            {
+                double dollarAmount = amount * 1_000;
+                if (dollarAmount > highestAmount) highestAmount = dollarAmount;
+            }
+        }
+
+        return highestAmount;
     }
 
     public List<string> ExtractKeyPoints(Agent juror, CaseFile caseData)
