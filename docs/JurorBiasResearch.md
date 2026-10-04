@@ -10,13 +10,13 @@ This document summarizes peer-reviewed research on how demographic and psycholog
 
 **Primary Finding**: Political ideology significantly influences verdict decisions, with measurable effects on conviction rates.
 
-- **Forresta (2025)** - "Beyond a reasonable doubt: the impact of jurors' political affiliations on jury trials" (Journal of Law and Economics):
+- **Foresta (2025)** - "Beyond a reasonable doubt: the impact of jurors' political affiliations on jury trials" (Journal of Law and Economics):
   - Independent jurors decrease guilty verdicts by 2.93%
   - Democratic jurors show a negative but not statistically significant impact on conviction rates
   - Democratic jurors are 3.7 percentage points more likely to be removed from a seated jury (indicating awareness of bias potential)
   - **Evidence Link**: https://eprints.soton.ac.uk/494474
 
-- **Politics in the Courtroom (2018)** - Swedish study on political party affiliation:
+- **Politics in the Courtroom (2019)** - Swedish study on political party affiliation:
   - Far-right Swedish Democrat jurors increased convictions by 17 percentage points for defendants with Arabic names
   - Far-left Vänster party increased convictions by 14 percentage points with female victims
   - **Evidence Link**: https://academic.oup.com/jeea/article/17/3/834/4981454
@@ -67,27 +67,27 @@ This document summarizes peer-reviewed research on how demographic and psycholog
   - Age interacts with race in credibility assessments
   - **Evidence Link**: https://link.springer.com/article/10.1007/s11896-016-9201-1
 
-- **Sheahan et al. (2021)** - Abuse cases:
-  - Defendant age affects juror decisions, with younger defendants receiving more leniency in some contexts
+- **Sheahan, Pica, & Pozzulo (2021)** - Abuse cases ("Abuse Is Abuse," *Journal of Interpersonal Violence* 36(1–2)):
+  - **Correction:** this study found **no main effect of defendant age on dichotomous verdicts**; where defendant age mattered, young-adult defendants received *higher* guilt ratings, not leniency. Victim age was the stronger driver.
   - **Evidence Link**: https://journals.sagepub.com/doi/10.1177/0886260517731316
 
 ### Education Level
 
 **Primary Finding**: Higher education levels correlate with more rigorous evidence evaluation and skepticism toward weak evidence. Education type also independently affects deliberation dynamics.
 
-- **RAND Study (2024)** and supporting literature:
+- **RAND Study (2026)** and supporting literature:
   - Higher education associated with more analytical thinking in verdict decisions
   - More educated jurors are more skeptical of weak evidence
   - Education inversely correlates with punitiveness in many contexts
 
-- **Education Type Effects** (multiple studies):
-  - **Elite private colleges**: Graduates exert outsized influence in deliberation (Chi=0.08). Higher SES and network confidence translate to jury room authority.
-  - **State flagship universities**: Moderate influence (Chi=0.05). Broad educational foundation without elite signaling.
-  - **Other private colleges**: Above-average influence (Chi=0.04). Similar to elite but less pronounced.
-  - **Trade schools**: Practical credibility (Chi=0.03). Valued for hands-on expertise in relevant cases.
-  - **HBCUs**: Distinct perspective (Chi=0.02). Historically Black Colleges bring unique life experience to deliberation.
-  - **Community colleges**: Working-class credibility (Chi=0.02). Practical, accessible education background.
-  - **Bible colleges**: Religious moral authority (Chi=0.02, Zeta=0.06, Eta=0.05). Religious education creates stronger conviction and resistance to counterevidence. Moral framework affects both influence and rigidity.
+- **Education Type Effects** (author-set engineering parameters — **no published study differentiates juror deliberation influence by college type**, and no jury study uses parameters named Chi/Zeta/Eta):
+  - **Elite private colleges**: Modeled as exerting outsized influence in deliberation (Chi=0.08). *Caution:* the closest real finding runs the other way — James found *no significant differences* in jurors' ability to influence others by length of education. Treat these coefficients as placeholders pending calibration, not empirical quantities.
+  - **State flagship universities**: Moderate influence (Chi=0.05). Author judgment.
+  - **Other private colleges**: Above-average influence (Chi=0.04). Author judgment.
+  - **Trade schools**: Practical credibility (Chi=0.03). Author judgment.
+  - **HBCUs**: Distinct perspective (Chi=0.02). Author judgment.
+  - **Community colleges**: Working-class credibility (Chi=0.02). Author judgment.
+  - **Bible colleges**: Religious moral authority (Chi=0.02, Zeta=0.06, Eta=0.05). Author judgment.
 
 ### Gender
 
@@ -105,23 +105,25 @@ This document summarizes peer-reviewed research on how demographic and psycholog
 
 ## Default Bias Factor Weight Values
 
-Based on the research synthesis, the following table provides recommended default weight values for each bias factor. These values represent the relative strength of each factor's influence on juror perception.
+Based on the research synthesis, the following table provides recommended default weight values for each bias factor. **Method note:** the *rank ordering* of factors reflects reported effect directions in the literature, but the *specific numeric values* (0.90, 0.80, …) are author-set engineering parameters — no cited study reports normalized 0–1 simulation weights, and no documented mapping from reported effect sizes (percentage points, odds ratios, correlations) to these values exists. Treat them as calibrated starting points, adjustable via the Model Weights window, not as literature-derived quantities.
 
 | Factor | Default Weight | Directionality | Research Basis |
 |--------|---------------|---------------|----------------|
-| Political Affiliation | 0.90 | PROSECUTION (conservative) / DEFENSE (liberal) | Strongest predictor of verdict direction (Forresta 2025, Politics in Courtroom 2018) |
-| Education Level | 0.80 | NEUTRAL | High education correlates with analytical evaluation (RAND 2024) |
-| Legal Knowledge | 0.75 | NEUTRAL | Education and legal expertise strongly influence evidence evaluation (RAND 2024) |
+| Political Affiliation | 0.90 | PROSECUTION (conservative) / DEFENSE (liberal) | Strongest predictor of verdict direction (Foresta 2025, Politics in Courtroom 2019) |
+| Education Level | 0.80 | NEUTRAL | High education correlates with analytical evaluation (author judgment; RAND 2026 covers gender/race/age only) |
+| Legal Knowledge | 0.75 | NEUTRAL | Education and legal expertise influence evidence evaluation (author judgment; see Need for Cognition, Cacioppo & Petty 1982) |
 | Juror Experience | 0.70 | NEUTRAL | Experience affects deliberation participation and conformity (multiple studies) |
 | Community Ties | 0.65 | CONTEXTUAL | Social identity influences decision-making (Pozzulo 2024) |
-| Ethnicity | 0.60 | CONTEXTUAL | Strong influence, varies by context (Vettese 2025, RAND 2024) |
-| Age | 0.55 | CONTEXTUAL | Influences perspective and credibility assessment (Pozzulo 2017, Sheahan 2021) |
-| Professional Background | 0.55 | NEUTRAL | Occupation and expertise affect technical evidence and expert testimony weighting (RAND 2024) |
+| Ethnicity | 0.60 | CONTEXTUAL | Strong influence, varies by context (Vettese & Pozzulo 2025) |
+| Age | 0.55 | CONTEXTUAL | Influences perspective and credibility assessment (Pozzulo et al. 2017) |
+| Professional Background | 0.55 | NEUTRAL | Occupation and expertise affect technical evidence weighting (author judgment) |
 | Income Level | 0.50 | CONTEXTUAL | Economic status affects perspective but moderated by other factors |
 | Gender | 0.45 | CONTEXTUAL | Moderate influence, context-dependent (Pozzulo 2010) |
-| Religion | 0.40 | CONTEXTUAL | Moderate influence, varies by case type (Vettese 2024, Fraser 2025) |
+| Religion | 0.40 | CONTEXTUAL | Moderate influence, varies by case type (Vettese et al. 2024, Fraser & Fehr 2025) |
 | Communication Style | 0.35 | NEUTRAL | Moderates but less directly influences verdicts |
-| Firearm Ownership (NRA) | 0.12* | DEFENSE (self-defense cases) | Affects defense lean, rigidity, and conformity; modeled as trait coefficient |
+| Firearm Ownership (NRA) | 0.12¹ | DEFENSE (self-defense cases) | Affects defense lean, rigidity, and conformity; modeled as trait coefficient (author-set; no literature source for this magnitude) |
+
+*¹ The 0.12 firearm-ownership coefficient is an author-set engineering parameter with no literature source for its magnitude.*
 
 ### Directionality Legend
 
@@ -161,6 +163,7 @@ Certain bias factors have **case-type-dependent effects** — their magnitude or
 ### BJW Direction by Case Type
 
 ```
+// Directions below are literature-grounded (Lerner 1980; rape-myth literature); magnitudes (α_bjw, 0.05) are author-set.
 SexualAssault   → b −= α_bjw × BeliefInJustWorld  [victim-blaming → defense]
 ViolentCrime     → b += α_bjw × BeliefInJustWorld  ["bad things happen to bad people" → prosecution]
 PropertyCrime    → b += α_bjw × BeliefInJustWorld  [same as violent crime]
@@ -178,17 +181,19 @@ default          → b += 0.05 × BeliefInJustWorld   [neutral/mild effect]
 | Violent Crime | Mild (×0.2) | Gender/religion interaction less relevant to general violence |
 | Other | None | No special gender×religion interaction |
 
+*Note: these multipliers are author-set engineering parameters. The gender×religion interaction on rape myth acceptance is empirically unestablished — Barnett, Sligar & Wang (2016, N=653) explicitly tested it and found it non-significant. Directions reflect additive main effects in the literature; the case-type gradient is author judgment.*
+
 ## Implicit Bias (Greenwald et al.)
 
 ### Overview
 
-Implicit bias refers to unconscious associations that influence behavior independent of explicit (conscious) attitudes. In the jury context, implicit bias accounts for approximately **15% of variance** in juror decisions above and beyond explicit demographic factors (Greenwald, Poehlman, Uhlmann, & Banaji, 2009; Greenwald & Banaji, 1995).
+Implicit bias refers to unconscious associations that influence behavior independent of explicit (conscious) attitudes. Greenwald, Poehlman, Uhlmann, & Banaji (2009) meta-analyzed IAT predictive validity across domains and found mean predictive validity r̄ = .236 (approximately 5.6% of variance) — **not** 15%, and in **no juror-decision domain**; the meta-analysis never tested incremental validity above explicit demographic factors. The engine models implicit bias as a latent variable (`implicitBias ~ Uniform(−0.6, 0.6) × 1.2`); its magnitude and propagation weights below are author-set engineering parameters, not literature-derived quantities.
 
 ### Role in the VERDICT Engine
 
 Implicit bias is modeled as a latent variable (`implicitBias ~ Uniform(−0.6, 0.6) × 1.2`) that propagates into several trait and coefficient systems:
 
-| System | Implicit Bias Role | Magnitude |
+| System | Implicit Bias Role | Magnitude (author-set) |
 |--------|-------------------|-----------|
 | **RWA (Authoritarianism)** | Amplifies authoritarian tendencies | ×0.3 |
 | **SDO (Social Dominance)** | Not directly applied (SDO is more explicit) | — |
@@ -204,7 +209,7 @@ Implicit bias is modeled as a latent variable (`implicitBias ~ Uniform(−0.6, 0
 
 - **Greenwald, A.G., & Banaji, M.R. (1995).** "Implicit social cognition: Attitudes, self-esteem, and stereotypes." *Psychological Review*, 102(1), 4–27.
 - **Greenwald, A.G., Poehlman, T.A., Uhlmann, E.L., & Banaji, M.R. (2009).** "Understanding and using the Implicit Association Test: III. Meta-analysis of predictive validity." *Journal of Personality and Social Psychology*, 97(1), 17–41.
-- **Levinson, J.D., Cai, H., & Young, D. (2014).** "Guilty by implicit racial bias: The guilty/not guilty Implicit Association Test." *Ohio State Journal of Criminal Law*, 8, 187–208.
+- **Levinson, J.D., Cai, H., & Young, D. (2010).** "Guilty by implicit racial bias: The guilty/not guilty Implicit Association Test." *Ohio State Journal of Criminal Law*, 8, 187–208.
 
 ### Distinction from Explicit Bias
 
@@ -256,17 +261,17 @@ These limitations are acknowledged design choices. The engine prioritizes **trai
 
 ## References
 
-1. Forresta, A. (2025). "Beyond a reasonable doubt: the impact of jurors' political affiliations on jury trials." Journal of Law and Economics, 68, 361-386. https://eprints.soton.ac.uk/494474
+1. Foresta, A. (2025). "Beyond a reasonable doubt: the impact of jurors' political affiliations on jury trials." Journal of Law and Economics, 68, 361-386. https://eprints.soton.ac.uk/494474
 
 2. Vettese, A., Pica, E., & Pozzulo, J. (2024). "House of Worship Mass Shooting: The Influence of Defendant Age, Religion, and Victim Religion on Mock-Juror Decision-Making." Journal of Police and Criminal Psychology, 39, 693–705. https://doi.org/10.1007/s11896-024-09695-6
 
 3. Vettese, A., & Pozzulo, J. (2025). "When Indigenous Canadians Take the Stand: The Influence of Age and Race on Mock-Juror Perceptions and Verdict Decisions." Journal of Police and Criminal Psychology. https://doi.org/10.1007/s11896-025-09742-w
 
-4. RAND Corporation. (2024). "The Role of Juror Demographics in Civil Trials." Working Paper WRA4984-1. https://www.rand.org/pubs/working_papers/WRA4984-1.html
+4. RAND Corporation. (2026). "The Role of Juror Demographics in Civil Trials." Working Paper WRA4984-1. https://www.rand.org/pubs/working_papers/WRA4984-1.html
 
 5. Social Cognitive Processes Study. (2022). "Social cognitive processes explain bias in juror decisions." PMC, 9949508. https://pmc.ncbi.nlm.nih.gov/articles/PMC9949508/
 
-6. Politics in the Courtroom Study. (2018). "Political Ideology and Jury Decision Making." Journal of the European Economic Association, 17(3), 834–878. https://academic.oup.com/jeea/article/17/3/834/4981454
+6. Politics in the Courtroom Study. (2019). "Political Ideology and Jury Decision Making." Journal of the European Economic Association, 17(3), 834–878. https://academic.oup.com/jeea/article/17/3/834/4981454
 
 7. Fraser & Fehr. (2025). "Studying Religious Symbols and Bias in Court Proceedings." Osgoode Hall Journal. https://digitalcommons.osgoode.yorku.ca/cgi/viewcontent.cgi?article=4067&context=ohlj
 
