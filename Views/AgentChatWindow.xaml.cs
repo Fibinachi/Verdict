@@ -95,6 +95,22 @@ public partial class AgentChatWindow : Window
                 $"Respond in character as this {_agent.Role}. Keep responses concise (2-4 sentences). " +
                 $"This is a private conversation, not a courtroom proceeding.";
 
+            // One-way memory diode: the interview may READ trial memories, but the trial
+            // can never see the interview. Trial events are injected here as read-only
+            // context; chat exchanges are saved to Memories with Source="Chat" and never
+            // to TrialEvents, so the trial record stays sealed from interrogation.
+            var trialContext = _agent.TrialEvents?
+                .OrderByDescending(e => e.Strength)
+                .Take(10)
+                .Select(e => e.Content)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .ToList();
+            if (trialContext is { Count: > 0 })
+            {
+                systemPrompt += "\n\nWhat you remember from the trial:\n- "
+                    + string.Join("\n- ", trialContext);
+            }
+
             // Call the LLM with agent-level overrides
             if (_agent.ModelTemperatureOverride.HasValue)
                 modelConfig.CustomSettings["Temperature"] = _agent.ModelTemperatureOverride.Value.ToString();
