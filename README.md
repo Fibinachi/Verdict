@@ -1,6 +1,43 @@
-# Verdict - Courtroom Simulation
+# Verdict — Agentic Jury Simulation
 
-A WPF desktop application for modeling jury verdict outcomes using AI agents. The application simulates a courtroom environment where AI-powered agents (jurors, judge, lawyers, witnesses) interact and form opinions based on trial events, evidence, and testimony.
+A courtroom simulator where twelve AI jurors — each with a persistent memory, demographic biases, and a model of how human memory actually degrades — hear a case, weigh evidence, and deliberate to a verdict.
+
+## The idea
+
+Most agent frameworks treat memory as retrieval: score it, keep it or drop it. Verdict treats memory as *fidelity loss*. As a juror's memories decay, their content degrades in precision — "$2,546" becomes "about $2,500," then "$2,000–3,000," then "some amount of money." Vivid narrative testimony persists; dry figures evaporate. That's not a heuristic — it's how human memory works (fuzzy-trace theory: verbatim traces fade, gist endures), operationalized in `Services/MemoryDecayService.cs`.
+
+Each juror carries a persistent memory file encoding cultural priors — likely news sources, institutional trust, life experience — that conditions how they interpret every new piece of evidence. Belief updating is path-dependent: two jurors can hear the same testimony and remember different trials.
+
+## Why it matters
+
+- **Juror bias weights grounded in literature** — default weights drawn from 50+ peer-reviewed studies (`docs/JurorBiasResearch.md`): political affiliation effects (Forresta 2025), religious identity and credibility (Pozzulo et al. 2024), racial bias patterns (RAND 2024), and more.
+- **Full trial architecture** — judge, prosecution, defense, witnesses, court reporter, and gallery agents, not just a jury in a vacuum. Transcript processing, evidence admission with exhibit tracking, sidebar discussions, and deliberation.
+- **Memory rehearsal** — exhibit references during testimony refresh related memories against decay, modeling the testing effect.
+- **Case files** — complete simulation state saves to `.jur` files; PDF reports via QuestPDF.
+
+## Status
+
+Research-grounded defaults, pre-empirical-calibration — see `docs/CalibrationAndValidation.md` for the validation plan (target datasets: RAND Civil Jury Study, NCSC, BJS). The architecture is built for calibration, not vibes.
+
+## Stack
+
+.NET 9 WPF (MVVM) · Multi-provider LLM abstraction (OpenAI, Anthropic, Gemini, DeepSeek, Grok, Ollama) · 17 dedicated services
+
+## Docs
+
+- `docs/JurorBiasResearch.md` — the literature behind the bias weights
+- `docs/Architecture.md` — system design
+- `docs/AlgorithmicOverview.md` — how opinions form and shift
+- `docs/CalibrationAndValidation.md` — validation plan and metrics
+- `docs/TraitModel.md`, `docs/WeightMapping.md` — the juror model
+
+---
+
+Built by Charles Prescott — legal AI evaluation designer. I build AI systems that model how humans reason about law: this one simulates juries, [GRID](https://github.com/Fibinachi/grid-demos) maps religious infrastructure. [charles@gridataset.com](mailto:charles@gridataset.com)
+
+---
+
+## Technical reference
 
 ## Overview
 
@@ -299,5 +336,6 @@ Use the **Stage** menu to switch between trial phases (Discovery, Pretrial, Tria
 ## License
 
 This project is for demonstration and research purposes.
-#   V e r d i c t  
+#   V e r d i c t 
+ 
  
