@@ -3645,11 +3645,13 @@ public class MainViewModel : ViewModelBase
 
     /// <summary>
     /// Generates a PDF report for the current case.
+    /// TODO(2026-10-04): Disabled — PDF generation removed for licensing reasons
+    /// (itext7 AGPL / QuestPDF vs PolyForm Noncommercial). Re-enable when a
+    /// license-compatible PDF library is integrated.
     /// </summary>
     public void GeneratePDFReport(string filePath)
     {
-        _caseService.GenerateReport(filePath, CurrentCase, AllAgents);
-        TranscriptOutput = $"[REPORT] PDF case report generated at {filePath}";
+        TranscriptOutput = "[REPORT] PDF export is temporarily unavailable — returning in a future release.";
     }
 
     /// <summary>

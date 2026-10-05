@@ -22,10 +22,6 @@ public interface ICaseService
     /// </summary>
     CaseFile? LoadCase(string filePath);
 
-    /// <summary>
-    /// Generates a professional PDF case report for the given case.
-    /// </summary>
-    void GenerateReport(string filePath, CaseFile currentCase, IEnumerable<Agent> allAgents);
 }
 
 public class CaseService : ICaseService
@@ -106,16 +102,4 @@ public class CaseService : ICaseService
         }
     }
 
-    /// <summary>
-    /// Generates a professional PDF case report.
-    /// </summary>
-    public void GenerateReport(string filePath, CaseFile currentCase, IEnumerable<Agent> allAgents)
-    {
-        ArgumentNullException.ThrowIfNull(currentCase);
-        ArgumentNullException.ThrowIfNull(filePath);
-        ArgumentNullException.ThrowIfNull(allAgents);
-
-        var reportService = new ReportGenerationService();
-        reportService.GenerateReport(filePath, currentCase, allAgents);
-    }
 }

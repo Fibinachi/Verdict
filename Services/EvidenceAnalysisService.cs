@@ -2,9 +2,6 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using iText.Kernel.Pdf;
-using iText.Layout;
-using iText.Layout.Properties;
 using Verdict.Models;
 
 namespace Verdict.Services;
@@ -23,7 +20,7 @@ public interface IEvidenceAnalysisService
 
 public class EvidenceAnalysisService : IEvidenceAnalysisService
 {
-    // ── Probative value methods delegated to EvidenceProbativeService ──
+    // â”€â”€ Probative value methods delegated to EvidenceProbativeService â”€â”€
 
     /// <inheritdoc cref="EvidenceProbativeService.GetMediaImpactMultiplier"/>
     public static double GetMediaImpactMultiplier(string evidenceCategory)
@@ -227,19 +224,19 @@ public class EvidenceAnalysisService : IEvidenceAnalysisService
 
         // --- Explicit multiplier phrases ---
 
-        // "treble damages", "trebling", "treble" → 3x
+        // "treble damages", "trebling", "treble" â†’ 3x
         if (lower.Contains("treble") || lower.Contains("trebling"))
             return 3.0;
 
-        // "triple damages" → 3x
+        // "triple damages" â†’ 3x
         if (lower.Contains("triple damages") || lower.Contains("triple the"))
             return 3.0;
 
-        // "double damages" or "doubled" → 2x
+        // "double damages" or "doubled" â†’ 2x
         if (lower.Contains("double damages") || lower.Contains("doubled"))
             return 2.0;
 
-        // "statutory multiplier" → check for specific number after it
+        // "statutory multiplier" â†’ check for specific number after it
         var multiplierMatch = System.Text.RegularExpressions.Regex.Match(
             lower, @"multipl(?:ier|ied|y)\s*(?:of\s*)?(\d+(?:\.\d+)?)\s*x");
         if (multiplierMatch.Success)
@@ -413,8 +410,8 @@ public class EvidenceAnalysisService : IEvidenceAnalysisService
                 return (fallback, ParseDollarAmounts(userSummary + " " + fileContent));
             }
 
-            // Custom system prompt for thorough document analysis — no word limits
-            string systemPrompt = "You are a senior legal analyst and damages expert. Your role is to thoroughly analyze legal documents and provide a comprehensive, detailed analysis that will be used by AI agents (judge, jurors, lawyers) to understand the evidence. There are NO word limits — be as detailed and thorough as possible. \n\n" +
+            // Custom system prompt for thorough document analysis â€” no word limits
+            string systemPrompt = "You are a senior legal analyst and damages expert. Your role is to thoroughly analyze legal documents and provide a comprehensive, detailed analysis that will be used by AI agents (judge, jurors, lawyers) to understand the evidence. There are NO word limits â€” be as detailed and thorough as possible. \n\n" +
                 "Your analysis must cover:\n" +
                 "1. Document type and purpose\n" +
                 "2. All parties mentioned and their roles\n" +
@@ -525,43 +522,16 @@ public class EvidenceAnalysisService : IEvidenceAnalysisService
          return sb.ToString();
      }
 
-     /// <summary>
-     /// Extracts text content from a PDF file using iText7.
-     /// </summary>
-     /// <param name="filePath">Path to the PDF file</param>
-     /// <returns>Extracted text content</returns>
-     private string ExtractTextFromPdf(string filePath)
-     {
-         var text = new StringBuilder();
-
-         using (var reader = new PdfReader(filePath))
-         {
-             using (var pdfDoc = new PdfDocument(reader))
-             {
-                 int numberOfPages = pdfDoc.GetNumberOfPages();
-                 
-                 for (int pageNumber = 1; pageNumber <= numberOfPages; pageNumber++)
-                 {
-                     var page = pdfDoc.GetPage(pageNumber);
-                     var locationTextExtractor = new iText.Kernel.Pdf.Canvas.Parser.Listener.LocationTextExtractionStrategy();
-                     new iText.Kernel.Pdf.Canvas.Parser.PdfCanvasProcessor(locationTextExtractor).ProcessPageContent(page);
-                     
-                     var pageText = locationTextExtractor.GetResultantText();
-                     if (!string.IsNullOrWhiteSpace(pageText))
-                     {
-                         text.AppendLine(pageText);
-                     }
-                     
-                     // Limit total text to prevent overwhelming the LLM
-                     if (text.Length > 100000) // ~100k characters limit
-                     {
-                         text.AppendLine("\n...[content truncated due to length]");
-                         break;
-                     }
-                 }
-             }
-         }
-
-         return text.ToString();
-     }
- }
+    /// <summary>
+    /// Extracts text content from a PDF file.
+    /// TODO(2026-10-04): Disabled — iText7 removed for licensing reasons (AGPL
+    /// conflicts with PolyForm Noncommercial). Reintroduce with a license-compatible
+    /// PDF text extraction library when ready.
+    /// </summary>
+    /// <param name="filePath">Path to the PDF file</param>
+    /// <returns>Extracted text content</returns>
+    private string ExtractTextFromPdf(string filePath)
+    {
+        return $"[PDF text extraction temporarily unavailable (licensing). File: {Path.GetFileName(filePath)}]";
+    }
+}

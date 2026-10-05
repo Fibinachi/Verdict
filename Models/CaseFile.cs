@@ -69,7 +69,7 @@ namespace Verdict.Models
             AvailableModels.Add(new AIModelConfiguration
             {
                 FriendlyName = "ONNX Local",
-                Provider = "ONNX",
+                Provider = "HF ONNX (GenAI)",
                 ModelId = "llmware/llama-3.2-1b-instruct-onnx",
                 Endpoint = ""
             });

@@ -32,6 +32,12 @@ public partial class CounselDiscussionWindow : Window
 
         SimulateButton.IsEnabled = false;
 
+        // Minimal structured ruling pipeline:
+        // 1) Keep counsel dialogue for the log/memories (non-juror)
+        // 2) Ask the judge for an admissibility-style ruling with a strict format
+        // 3) Store that structured output into judge memory for traceability
+
+
         var lawyers = _mainVm.AllAgents.Where(a => a.Role == AgentRole.Lawyer && a.IsOccupied).ToList();
         if (lawyers.Count < 2)
         {

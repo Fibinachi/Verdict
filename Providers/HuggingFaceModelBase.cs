@@ -416,7 +416,7 @@ public abstract class HuggingFaceModelBase : ILLMProviderModule
             // Check that at least one matching file is substantial.
             // For .onnx/.gguf files, require >50MB (real models are always large).
             // For other files (.json, etc.), require >100KB to skip tiny stubs.
-            long minSize = (pattern == "*.onnx" || pattern == "*.gguf") ? 50_000_000 : 100_000;
+            long minSize = (pattern == "*.onnx" || pattern == "*.gguf") ? 5_000_000 : 100_000;
 
             // Also check for LFS pointer stubs (small text files that point to missing LFS objects)
             if (files.Any(f => {

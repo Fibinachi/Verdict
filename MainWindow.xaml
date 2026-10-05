@@ -1,4 +1,4 @@
-﻿<Window x:Class="Verdict.MainWindow"
+<Window x:Class="Verdict.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -129,7 +129,7 @@
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="_Import Transcript..." Click="ImportTranscript_Click"/>
-                <MenuItem Header="Export _PDF Report" Click="GenerateReport_Click"/>
+                <MenuItem Header="Export _PDF Report" Click="GenerateReport_Click" IsEnabled="False" ToolTip="Coming soon — PDF export returning in a future release"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>

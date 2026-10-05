@@ -652,7 +652,10 @@ public class DeliberationService : IDeliberationService
         else
             idx = _random.Value.Next(6, allTemplates.Length); // Counter/neutral pool
 
-        return allTemplates[idx];
+        // Label fallback output so it is visually obvious in the UI and transcript
+        // that this is a canned default (provider unreachable: missing/invalid API
+        // key, context overflow, etc.), not genuine juror output.
+        return "[Default response: API key missing or unavailable] " + allTemplates[idx];
     }
 
     private static readonly Lazy<Random> _random = new(() => new Random());

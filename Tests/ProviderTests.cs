@@ -53,8 +53,8 @@ public class ProviderTests : BaseTestClass
         Assert(onnxProvider is OnnxProvider, "Discovered ONNX provider is OnnxProvider type");
 
         // Check GetProviderByName works
-        var byName = ProviderDiscoveryService.GetProviderByName("ONNX");
-        Assert(byName != null, "GetProviderByName(\"ONNX\") returns provider");
+        var byName = ProviderDiscoveryService.GetProviderByName("HF ONNX (GenAI)");
+        Assert(byName != null, "GetProviderByName(\"HF ONNX (GenAI)\") returns provider");
         Assert(byName is OnnxProvider, "GetProviderByName returns OnnxProvider instance");
 
         // Check that all providers implement the interface correctly
@@ -74,7 +74,7 @@ public class ProviderTests : BaseTestClass
         var provider = new OnnxProvider();
 
         Assert(provider.ProviderName == "HF ONNX (GenAI)", "OnnxProvider.ProviderName is 'HF ONNX (GenAI)'");
-        Assert(provider.Description.Contains("ONNX Runtime"), "OnnxProvider.Description mentions ONNX Runtime");
+        Assert(provider.Description.Contains("OnnxRuntimeGenAI"), "OnnxProvider.Description mentions OnnxRuntimeGenAI");
         Assert(provider.DefaultFriendlyName == "Local ONNX Model", "OnnxProvider.DefaultFriendlyName is 'Local ONNX Model'");
 
         // Config fields
@@ -83,8 +83,8 @@ public class ProviderTests : BaseTestClass
         
         var modelIdField = fields.FirstOrDefault(f => f.Key == "ModelId");
         Assert(modelIdField != null, "OnnxProvider has ModelId config field");
-        Assert(modelIdField!.Label == "HF Model ID or Local Path", "ModelId field label is 'HF Model ID or Local Path'");
-        Assert(modelIdField.Description.Contains("llmware/llama"), "ModelId field describes Hugging Face model IDs");
+        Assert(modelIdField!.Label == "HF ONNX Model ID", "ModelId field label is 'HF ONNX Model ID'");
+        Assert(modelIdField.Description.Contains("Recommended"), "ModelId field describes recommended models");
         Assert(modelIdField.DefaultValue == "", "ModelId default value is empty");
 
         var endpointField = fields.FirstOrDefault(f => f.Key == "Endpoint");
@@ -183,10 +183,9 @@ public class ProviderTests : BaseTestClass
         try
         {
             Directory.CreateDirectory(modelDir);
-            // Create a file that reports >= 50MB without allocating disk (sparse/allocation trick)
-            // The scanner requires .onnx files to be >= 50MB to filter out LFS pointer stubs.
+            // Create a minimally-sized valid .onnx file (≥ MinOnnxModelBytes = 5 MB)
             using (var fs = new FileStream(Path.Combine(modelDir, "model.onnx"), FileMode.Create))
-                fs.SetLength(50_000_001); // 50MB + 1 byte to pass MinOnnxModelBytes
+                fs.SetLength(5_000_001); // 5 MB + 1 byte to pass MinOnnxModelBytes
             File.WriteAllText(Path.Combine(modelDir, "genai_config.json"), "{}");
             
             config.Endpoint = rootDir;

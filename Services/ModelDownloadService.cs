@@ -62,7 +62,7 @@ namespace Verdict.Services
         private const string GenaiConfigFile = "genai_config.json";
 
         /// <summary>Min file size for a real .onnx model (not an LFS stub).</summary>
-        private const long MinOnnxModelBytes = 50_000_000; // 50 MB — real ONNX models are always >50MB
+        private const long MinOnnxModelBytes = 5_000_000; // 5 MB — quantized INT4 models can be ~25-50MB
 
         /// <summary>Manifest file recording completed downloads for resumability.</summary>
         private const string DownloadManifestFile = "_download_manifest.json";
@@ -422,7 +422,7 @@ namespace Verdict.Services
         /// <summary>
         /// Checks if a directory contains a valid ONNX model for OnnxRuntimeGenAI.
         /// Searches recursively because some models (e.g., onnx-community) nest
-        /// the actual model files inside cpu_and_mobile/ or gpu/ subdirectories.
+        /// the actual model files inside cpu_and_mobile/.../ or onnx/ subdirectories.
         /// Also validates that .onnx files are not LFS pointer stubs.
         /// </summary>
         public static bool IsValidModelDirectory(string directoryPath)
@@ -447,17 +447,21 @@ namespace Verdict.Services
             }
 
             // No manifest: fall back to file-based validation (legacy/manual models)
+            // Search recursively for nested model structures (onnx-community puts models
+            // inside cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4/ or onnx/ subdirectories)
+            return AnySubdirectoryHasModelFiles(directoryPath);
+        }
+
+        /// <summary>
+        /// Recursively checks if any subdirectory (including self) contains valid ONNX model files.
+        /// </summary>
+        private static bool AnySubdirectoryHasModelFiles(string directoryPath)
+        {
             if (HasOnnxModelFiles(directoryPath)) return true;
 
-            // Search one level deep for model subdirectories (cpu_and_mobile/*, gpu/*, etc.)
             foreach (var subDir in Directory.GetDirectories(directoryPath))
             {
-                if (HasOnnxModelFiles(subDir)) return true;
-
-                foreach (var nestedDir in Directory.GetDirectories(subDir))
-                {
-                    if (HasOnnxModelFiles(nestedDir)) return true;
-                }
+                if (AnySubdirectoryHasModelFiles(subDir)) return true;
             }
 
             return false;
@@ -471,19 +475,17 @@ namespace Verdict.Services
         public static string? FindModelDirectory(string baseDirectory)
         {
             if (!Directory.Exists(baseDirectory)) return null;
+            return FindModelDirectoryRecursive(baseDirectory);
+        }
 
-            // Check top-level first
-            if (HasOnnxModelFiles(baseDirectory)) return baseDirectory;
+        private static string? FindModelDirectoryRecursive(string directoryPath)
+        {
+            if (HasOnnxModelFiles(directoryPath)) return directoryPath;
 
-            // Search for nested model directories
-            foreach (var subDir in Directory.GetDirectories(baseDirectory))
+            foreach (var subDir in Directory.GetDirectories(directoryPath))
             {
-                if (HasOnnxModelFiles(subDir)) return subDir;
-
-                foreach (var nestedDir in Directory.GetDirectories(subDir))
-                {
-                    if (HasOnnxModelFiles(nestedDir)) return nestedDir;
-                }
+                var result = FindModelDirectoryRecursive(subDir);
+                if (result != null) return result;
             }
 
             return null;
@@ -502,10 +504,12 @@ namespace Verdict.Services
             if (onnxFiles.Any(f => !IsLfsPointerStub(f) && new FileInfo(f).Length >= MinOnnxModelBytes))
                 return true;
 
-            // Check for external-data format: small .onnx header + large .onnx_data file
-            // (common with llmware/ models that split weights into a separate data file)
-            var onnxDataFiles = Directory.GetFiles(directoryPath, "*.onnx_data", SearchOption.TopDirectoryOnly);
-            return onnxDataFiles.Any(f => !IsLfsPointerStub(f) && new FileInfo(f).Length >= MinOnnxModelBytes);
+            // Check for external-data format — ONNX standard uses "model.onnx.data" (extension .data)
+            // but some repos use "model.onnx_data" (extension .onnx_data). Check both patterns.
+            var dataFiles = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(f => f.EndsWith(".onnx_data", StringComparison.OrdinalIgnoreCase)
+                         || f.EndsWith(".onnx.data", StringComparison.OrdinalIgnoreCase));
+            return dataFiles.Any(f => !IsLfsPointerStub(f) && new FileInfo(f).Length >= MinOnnxModelBytes);
         }
 
         /// <summary>

@@ -13,7 +13,11 @@ Each juror carries a persistent memory file encoding cultural priors — likely 
 - **Juror bias weights grounded in literature** — default weights drawn from 50+ peer-reviewed studies (`docs/JurorBiasResearch.md`): political affiliation effects (Forresta 2025), religious identity and credibility (Pozzulo et al. 2024), racial bias patterns (RAND 2024), and more.
 - **Full trial architecture** — judge, prosecution, defense, witnesses, court reporter, and gallery agents, not just a jury in a vacuum. Transcript processing, evidence admission with exhibit tracking, sidebar discussions, and deliberation.
 - **Memory rehearsal** — exhibit references during testimony refresh related memories against decay, modeling the testing effect.
+<<<<<<< HEAD
 - **Case files** — complete simulation state saves to `.jur` files; PDF reports via QuestPDF.
+=======
+- **Case files** — complete simulation state saves to `.jur` files; plain-text case reports. (PDF export temporarily removed for licensing reasons — returning in a future release.)
+>>>>>>> 3e9edbd (Remove PDF generation, disable PDF export, API fallback labeling, Gooey provider)
 
 ## Status
 
@@ -62,7 +66,7 @@ Verdict is a .NET 9 WPF application designed for native Windows deployment. It u
 - **Multi-Provider Support**: Connect to various LLM providers (OpenAI, Anthropic, Google Gemini, Ollama, DeepSeek, Grok, etc.)
 - **Case File System**: Save/load simulations (.jur files) with full state preservation
 - **Character Profiles**: Save reusable agent configurations as .vcs files
-- **PDF Reports**: Generate PDF case reports via QuestPDF
+- **Case Reports**: Generate plain-text case reports (PDF export temporarily removed for licensing reasons)
 - **Dynamic Role Assignment**: Automatically assign agents to recommended roles based on case analysis
 - **Logger**: File-based logging to `VerdictSimulation.log` in the application directory
 
@@ -119,7 +123,7 @@ The application follows a **delegated service pattern** — `MainViewModel` owns
 
 | Service | Interface | Responsibility |
 |---------|-----------|----------------|
-| `CaseService` | `ICaseService` | Save/load .jur case files; generate PDF reports |
+| `CaseService` | `ICaseService` | Save/load .jur case files |
 | `TranscriptService` | `ITranscriptService` | Load/parse transcript files; LLM entity extraction |
 | `SettingsService` | `ISettingsService` | Default case settings persistence |
 | `CourtroomManagerService` | `ICourtroomManagerService` | Courtroom initialization, slot occupancy, agent reset |
@@ -132,7 +136,7 @@ The application follows a **delegated service pattern** — `MainViewModel` owns
 | `AgentInteractionService` | `IAgentInteractionService` | Manages agent statements, examination, deliberation, court record internalization |
 | `CharacterManager` | — | Save/load .vcs character profiles |
 | `LegalDatabaseService` | — | Query legal citations (IPC sections, U.S. Federal Law) |
-| `ReportGenerationService` | `IReportGenerationService` | PDF report rendering with QuestPDF |
+| `ReportGenerationService` | `IReportGenerationService` | Plain-text case report building (PDF rendering removed for licensing reasons) |
 | `ProviderDiscoveryService` | — | Discovers installed LLM providers and their metadata |
 | `ModelDownloadService` | — | Downloads ONNX models from HuggingFace for local inference |
 | `Logger` | — | Static file-based logger writing to `VerdictSimulation.log` |
@@ -335,7 +339,11 @@ Use the **Stage** menu to switch between trial phases (Discovery, Pretrial, Tria
 
 ## License
 
+<<<<<<< HEAD
 PolyForm Noncommercial 1.0.0 — see [LICENSE](LICENSE). Source is publicly available for noncommercial use (research, evaluation, education). Commercial use requires a separate license from 14QBD273 LLC.
+=======
+This project is for demonstration and research purposes.
+>>>>>>> 3e9edbd (Remove PDF generation, disable PDF export, API fallback labeling, Gooey provider)
 #   V e r d i c t 
  
  
