@@ -335,7 +335,7 @@ Use the **Stage** menu to switch between trial phases (Discovery, Pretrial, Tria
 
 ## License
 
-This project is for demonstration and research purposes.
+PolyForm Noncommercial 1.0.0 — see [LICENSE](LICENSE). Source is publicly available for noncommercial use (research, evaluation, education). Commercial use requires a separate license from 14QBD273 LLC.
 #   V e r d i c t 
  
  
