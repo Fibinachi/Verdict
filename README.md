@@ -2,6 +2,8 @@
 
 A courtroom simulator where twelve AI jurors — each with a persistent memory, demographic biases, and a model of how human memory actually degrades — hear a case, weigh evidence, and deliberate to a verdict.
 
+Follow the analysis: [GRID Keeper](https://gridkeeper.substack.com/), a 14QBD273 project.
+
 ## The idea
 
 Most agent frameworks treat memory as retrieval: score it, keep it or drop it. Verdict treats memory as *fidelity loss*. As a juror's memories decay, their content degrades in precision — "$2,546" becomes "about $2,500," then "$2,000–3,000," then "some amount of money." Vivid narrative testimony persists; dry figures evaporate. That's not a heuristic — it's how human memory works (fuzzy-trace theory: verbatim traces fade, gist endures), operationalized in `Services/MemoryDecayService.cs`.
